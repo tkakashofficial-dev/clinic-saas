@@ -1,0 +1,58 @@
+# Visual Studio
+.vs/
+.vscode/
+*.user
+*.suo
+*.sln.docstates
+
+# Build results
+bin/
+obj/
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+
+# NuGet
+*.nupkg
+*.snupkg
+*.nuget.props
+*.nuget.targets
+.nuget/
+
+# Entity Framework
+*.edmx.diagram
+*.edmx
+
+# Rider
+.idea/
+*.sln.iml
+
+# Local environment files
+appsettings.Local.json
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+
+# Miscellaneous
+*.log
+*.tmp
+/publish/
+node_modules/
+dist/
