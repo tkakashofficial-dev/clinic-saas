@@ -17,6 +17,19 @@ public class Tenant : BaseEntity
 
     public bool IsInTrial => TrialEndsAt.HasValue && DateTime.UtcNow < TrialEndsAt.Value;
 
+    /// <summary>True when the trial lapsed and no plan was ever chosen.</summary>
+    public bool TrialExpired => TrialEndsAt.HasValue && DateTime.UtcNow >= TrialEndsAt.Value;
+
+    /// <summary>
+    /// What the tenant is actually entitled to RIGHT NOW:
+    /// in trial -> full Clinic tier; trial lapsed without choosing -> Solo floor;
+    /// otherwise the chosen plan. All enforcement must use THIS, never Plan.
+    /// </summary>
+    public PlanType EffectivePlan =>
+        IsInTrial ? PlanType.Clinic
+        : TrialExpired ? PlanType.Solo
+        : Plan;
+
     private Tenant() { }
 
     public Tenant(string name, string? phone = null, string? address = null)

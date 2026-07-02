@@ -177,7 +177,8 @@ public class AppointmentService : IAppointmentService
         if (appointment is null)
             throw new NotFoundException("Appointment not found.");
 
-        if (!Enum.TryParse<AppointmentStatus>(request.Status, true, out var newStatus))
+        if (!Enum.TryParse<AppointmentStatus>(request.Status, true, out var newStatus)
+            || !Enum.IsDefined(newStatus))   // TryParse accepts raw numbers like "99"
             throw new BadRequestException("Invalid status value.");
 
         appointment.UpdateStatus(newStatus);

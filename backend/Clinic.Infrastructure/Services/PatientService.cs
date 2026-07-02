@@ -37,8 +37,9 @@ public class PatientService : IPatientService
             throw new ConflictException(
                 "A patient with this phone number already exists.");
 
-        // 2. Parse gender
-        if (!Enum.TryParse<Gender>(request.Gender, true, out var gender))
+        // 2. Parse gender (IsDefined: TryParse accepts raw numbers like "9")
+        if (!Enum.TryParse<Gender>(request.Gender, true, out var gender)
+            || !Enum.IsDefined(gender))
             throw new BadRequestException("Invalid gender value.");
 
         // 3. Create patient

@@ -204,6 +204,8 @@ export interface PracticeOverview {
 export interface BillingSummary {
   plan: 'Solo' | 'Clinic' | 'Growth';
   isInTrial: boolean;
+  /** Trial lapsed without choosing a plan — clinic sits on the Solo floor. */
+  trialExpired: boolean;
   trialEndsAt: string | null;
   staffCount: number;
   maxStaff: number;

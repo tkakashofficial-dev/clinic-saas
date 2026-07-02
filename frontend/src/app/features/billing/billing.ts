@@ -63,7 +63,11 @@ export class Billing {
         this.summary.set(summary);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: (err) => {
+        // Never render a silent blank page — say what happened
+        this.error.set(parseApiError(err).message + ' Refresh the page to retry.');
+        this.loading.set(false);
+      },
     });
   }
 

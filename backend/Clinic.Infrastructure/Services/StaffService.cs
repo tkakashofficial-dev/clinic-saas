@@ -54,11 +54,15 @@ public class StaffService : IStaffService
             throw new BadRequestException("At least one role is required.");
 
         // 0b. Plan entitlements — limits live in PlanLimits, enforcement here.
-        //     Trial clinics get full Clinic-tier limits.
+        //     Serializable transaction closes the check-then-insert race
+        //     (two concurrent adds both reading "1 staff" and both passing).
+        await using var transaction = await _context.Database
+            .BeginTransactionAsync(System.Data.IsolationLevel.Serializable, cancellationToken);
+
         var tenant = await _context.Tenants
             .AsNoTracking()
             .FirstAsync(t => t.Id == tenantId, cancellationToken);
-        var effectivePlan = tenant.IsInTrial ? Domain.Enums.PlanType.Clinic : tenant.Plan;
+        var effectivePlan = tenant.EffectivePlan;
 
         var currentStaff = await _context.TenantUsers
             .CountAsync(tu => tu.TenantId == tenantId && tu.IsActive, cancellationToken);
@@ -124,8 +128,9 @@ public class StaffService : IStaffService
             SecurityTokens.Sha256Hex(inviteToken),
             DateTime.UtcNow.AddDays(7)));
 
-        // 6. Save everything
+        // 6. Save everything and release the serializable transaction
         await _context.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         // 7. Welcome/invite email (failure-proof — never blocks staff creation)
         var clinicName = await _context.Tenants

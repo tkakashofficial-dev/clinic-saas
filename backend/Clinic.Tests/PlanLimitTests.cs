@@ -94,6 +94,44 @@ public class PlanLimitTests : IDisposable
     }
 
     [Fact]
+    public async Task ExpiredTrial_FallsBackToSoloFloor()
+    {
+        // Trial lapsed + no plan chosen => Solo limits, NOT free Clinic forever
+        var clinic = await _db.SeedTenantAsync("Lapsed Clinic", "lapsed@clinic.com");
+        _db.CurrentUser.ActAs(clinic.TenantId, clinic.TenantUserId);
+
+        await using (var context = _db.CreateContext())
+        {
+            var tenant = await context.Tenants.IgnoreQueryFilters()
+                .FirstAsync(t => t.Id == clinic.TenantId);
+            context.Entry(tenant).Property("TrialEndsAt").CurrentValue =
+                DateTime.UtcNow.AddDays(-1);
+            await context.SaveChangesAsync();
+        }
+
+        var summary = await CreateBillingService().GetSummaryAsync();
+        Assert.Equal("Solo", summary.Plan);
+        Assert.True(summary.TrialExpired);
+        Assert.Equal(2, summary.MaxStaff);
+
+        // Solo floor enforced: admin (1) + receptionist (2) fills it; #3 blocked
+        await CreateStaffService().AddStaffAsync(Staff("r1@lapsed.com", "Receptionist"));
+        await Assert.ThrowsAsync<PlanLimitException>(
+            () => CreateStaffService().AddStaffAsync(Staff("r2@lapsed.com", "Receptionist")));
+    }
+
+    [Fact]
+    public async Task ChangePlan_NumericEnumString_IsRejected()
+    {
+        // Enum.TryParse accepts "999" -> (PlanType)999; IsDefined must block it
+        var clinic = await _db.SeedTenantAsync("Enum Clinic", "enum@clinic.com");
+        _db.CurrentUser.ActAs(clinic.TenantId, clinic.TenantUserId);
+
+        await Assert.ThrowsAsync<BadRequestException>(
+            () => CreateBillingService().ChangePlanAsync(new ChangePlanRequest { Plan = "999" }));
+    }
+
+    [Fact]
     public async Task ChangePlan_EndsTrial_AndSummaryReflectsIt()
     {
         var clinic = await _db.SeedTenantAsync("Upgrader", "up@clinic.com");

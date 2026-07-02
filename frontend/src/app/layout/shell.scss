@@ -180,8 +180,10 @@
   justify-content: flex-end;
   gap: 14px;
   padding: 10px 40px;
-  background: rgb(244 250 247 / .92);
-  backdrop-filter: blur(8px);
+  /* Solid background on purpose: backdrop-filter would make the topbar a
+     containing block for position:fixed children, shrinking the profile
+     menu's click-away backdrop to the topbar strip (real bug we shipped) */
+  background: var(--color-bg);
   border-bottom: 1px solid var(--color-border);
 
   @media (max-width: 860px) { padding: 10px 16px; }

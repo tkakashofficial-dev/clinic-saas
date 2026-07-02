@@ -31,6 +31,11 @@
             You're enjoying full Clinic-tier limits during the trial. Pick a plan
             below before it ends — no payment needed during beta.
           </p>
+        } @else if (data.trialExpired) {
+          <p class="muted current-note">
+            Your trial has ended, so you're on Solo limits. Pick a plan below to
+            unlock more — it's free during beta.
+          </p>
         }
       </div>
     </div>

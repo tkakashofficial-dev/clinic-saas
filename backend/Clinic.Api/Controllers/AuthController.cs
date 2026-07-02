@@ -1,6 +1,7 @@
 using Clinic.Application.Common.Interfaces;
 using Clinic.Application.Features.Auth.DTOs;
 using Clinic.Application.Features.Auth.Services;
+using Clinic.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -69,9 +70,10 @@ public class AuthController : ControllerBase
         CancellationToken cancellationToken)
         => Ok(await _authService.SwitchClinicAsync(_currentUser.UserId, request, cancellationToken));
 
-    /// <summary>Open an additional clinic — the caller becomes its Admin.</summary>
+    /// <summary>Open an additional clinic — owner move, Admins only
+    /// (the UI hides it for staff; the API must enforce it too).</summary>
     [HttpPost("clinics")]
-    [Authorize]
+    [Authorize(Roles = RoleNames.Admin)]
     public async Task<ActionResult<AuthResponse>> CreateClinic(
         [FromBody] CreateClinicRequest request,
         CancellationToken cancellationToken)

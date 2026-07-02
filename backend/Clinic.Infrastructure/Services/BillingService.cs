@@ -26,15 +26,21 @@ public class BillingService : IBillingService
             .AsNoTracking()
             .FirstAsync(t => t.Id == _currentUser.TenantId, cancellationToken);
 
-        return await BuildSummaryAsync(tenant.Plan, tenant.IsInTrial, tenant.TrialEndsAt, cancellationToken);
+        return await BuildSummaryAsync(tenant, cancellationToken);
     }
 
     public async Task<BillingSummaryDto> ChangePlanAsync(
         ChangePlanRequest request, CancellationToken cancellationToken = default)
     {
-        if (!Enum.TryParse<PlanType>(request.Plan, true, out var newPlan))
+        // IsDefined guard: Enum.TryParse happily accepts "999" -> (PlanType)999
+        if (!Enum.TryParse<PlanType>(request.Plan, true, out var newPlan)
+            || !Enum.IsDefined(newPlan))
             throw new BadRequestException(
                 $"Unknown plan '{request.Plan}'. Available: {string.Join(", ", Enum.GetNames<PlanType>())}.");
+
+        // Serializable: don't let a concurrent staff-add slip past the downgrade guard
+        await using var transaction = await _context.Database
+            .BeginTransactionAsync(System.Data.IsolationLevel.Serializable, cancellationToken);
 
         var tenant = await _context.Tenants
             .FirstAsync(t => t.Id == _currentUser.TenantId, cancellationToken);
@@ -50,20 +56,24 @@ public class BillingService : IBillingService
         // Beta: instant switch. Payment gateway (Razorpay) slots in here later.
         tenant.ChangePlan(newPlan);
         await _context.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
-        return await BuildSummaryAsync(tenant.Plan, tenant.IsInTrial, tenant.TrialEndsAt, cancellationToken);
+        return await BuildSummaryAsync(tenant, cancellationToken);
     }
 
     private async Task<BillingSummaryDto> BuildSummaryAsync(
-        PlanType plan, bool isInTrial, DateTime? trialEndsAt, CancellationToken cancellationToken)
+        Domain.Entities.Tenant tenant, CancellationToken cancellationToken)
     {
-        var effectivePlan = isInTrial ? PlanType.Clinic : plan;
+        // EffectivePlan handles all three states: trialing, trial-lapsed (Solo
+        // floor), and chosen plan — the summary must never diverge from enforcement
+        var effectivePlan = tenant.EffectivePlan;
 
         return new BillingSummaryDto
         {
-            Plan = PlanLimits.DisplayName(plan),
-            IsInTrial = isInTrial,
-            TrialEndsAt = trialEndsAt,
+            Plan = PlanLimits.DisplayName(effectivePlan),
+            IsInTrial = tenant.IsInTrial,
+            TrialExpired = tenant.TrialExpired,
+            TrialEndsAt = tenant.TrialEndsAt,
             StaffCount = await CountStaffAsync(cancellationToken),
             MaxStaff = PlanLimits.MaxStaff(effectivePlan),
             DoctorCount = await CountDoctorsAsync(cancellationToken),

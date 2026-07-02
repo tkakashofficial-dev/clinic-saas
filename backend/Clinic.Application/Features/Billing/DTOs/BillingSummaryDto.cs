@@ -4,6 +4,8 @@ public class BillingSummaryDto
 {
     public string Plan { get; set; } = default!;
     public bool IsInTrial { get; set; }
+    /// <summary>Trial lapsed without choosing a plan — clinic is on the Solo floor.</summary>
+    public bool TrialExpired { get; set; }
     public DateTime? TrialEndsAt { get; set; }
     public int StaffCount { get; set; }
     public int MaxStaff { get; set; }

@@ -5,7 +5,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { BillingService } from '../core/api/billing.service';
 import { NotificationsService } from '../core/api/notifications.service';
 import { AuthService } from '../core/auth/auth.service';
-import { BillingSummary, NotificationDto, Role } from '../core/models/api.models';
+import { NotificationDto, Role } from '../core/models/api.models';
 
 interface NavItem {
   label: string;
@@ -78,10 +78,10 @@ export class Shell {
   readonly notifItems = signal<NotificationDto[]>([]);
   readonly profileOpen = signal(false);
 
-  // Trial banner for owners
-  readonly billingSummary = signal<BillingSummary | null>(null);
+  // Trial banner for owners — reads the SHARED billing signal, so a plan
+  // change on the billing page updates this chip immediately
   readonly trialDaysLeft = computed(() => {
-    const summary = this.billingSummary();
+    const summary = this.billing.summary();
     if (!summary?.isInTrial || !summary.trialEndsAt) return null;
     const ms = new Date(summary.trialEndsAt).getTime() - Date.now();
     return Math.max(0, Math.ceil(ms / 86_400_000));
@@ -90,10 +90,7 @@ export class Shell {
   constructor() {
     this.notifications.startPolling();
     if (this.auth.hasRole('Admin')) {
-      this.billing.getSummary().subscribe({
-        next: (summary) => this.billingSummary.set(summary),
-        error: () => {},
-      });
+      this.billing.getSummary().subscribe({ error: () => {} });
     }
   }
 
