@@ -1,3 +1,4 @@
+using Clinic.Application.Common.Interfaces;
 using Clinic.Application.Features.Reports.DTOs;
 using Clinic.Application.Features.Reports.Services;
 using Clinic.Domain.Enums;
@@ -9,10 +10,26 @@ namespace Clinic.Infrastructure.Services;
 public class ReportsService : IReportsService
 {
     private readonly ClinicDbContext _context;
+    private readonly ICurrentUserService _currentUser;
 
-    public ReportsService(ClinicDbContext context)
+    public ReportsService(ClinicDbContext context, ICurrentUserService currentUser)
     {
         _context = context;
+        _currentUser = currentUser;
+    }
+
+    public async Task<(byte[] Content, string FileName)> GetPracticeOverviewPdfAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var overview = await GetPracticeOverviewAsync(cancellationToken);
+        var clinicName = await _context.Tenants
+            .AsNoTracking()
+            .Where(t => t.Id == _currentUser.TenantId)
+            .Select(t => t.Name)
+            .FirstAsync(cancellationToken);
+
+        var pdf = PracticeReportPdfGenerator.Generate(clinicName, overview);
+        return (pdf, $"practice-report-{DateTime.UtcNow:yyyyMMdd}.pdf");
     }
 
     public async Task<PracticeOverviewDto> GetPracticeOverviewAsync(

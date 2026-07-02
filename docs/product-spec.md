@@ -79,9 +79,17 @@ Based on what Dentrix, CareStack, Cliniko and SimplePractice sell. ✅ = we have
 ⭐ = differentiators clinics actually switch products for: the odontogram (visual
 tooth chart) and WhatsApp reminders matter more in sales demos than any report.
 
-### Phase 5 — Money features (billing + reminders)
-### Phase 6 — Clinical depth (odontogram, treatment plans, attachments, portal)
+### Phase 5 — Money features (patient billing/invoices + WhatsApp reminders + Razorpay)
+### Phase 6 — Clinical depth (odontogram, treatment plans, attachments, portal, permission-based custom roles)
 ### Phase 7 — Platform back-office (super admin, subscriptions, multi-branch)
+
+### Under consideration: Payroll & staff leave
+Verdict (2026-07-02): **Leave/attendance = yes, later** — simple to build
+(leave requests, approvals, a calendar), high stickiness, receptionists love
+it. **Full payroll = not yet** — Indian payroll means PF/ESI/TDS compliance,
+a product in itself; getting it wrong damages trust in the clinical product.
+Sequence: billing → leave/attendance (Phase 6/7) → payroll only via an
+integration or once revenue justifies a dedicated effort.
 
 ## Decision log
 

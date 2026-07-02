@@ -48,21 +48,54 @@
 </div>
 
 @if (overview(); as data) {
-  <section class="card card-pad chart-block">
-    <div class="chart-head">
-      <h2>Appointments — last 14 days</h2>
-      <a routerLink="/reports">Full report</a>
-    </div>
-    <div class="bar-chart">
-      @for (day of data.appointmentsPerDay; track day.date) {
-        <div class="bar-col" [title]="day.count + ' appointments'">
-          <span class="bar-count">{{ day.count || '' }}</span>
-          <div class="bar" [style.height]="barHeight(day.count)" [class.empty]="day.count === 0"></div>
-          <span class="bar-label">{{ day.date | date: 'd/M' }}</span>
+  <div class="charts-row">
+    <section class="card card-pad chart-block">
+      <div class="chart-head">
+        <h2>Appointments — last 14 days</h2>
+        <a routerLink="/reports">Full report</a>
+      </div>
+      <div class="bar-chart">
+        @for (day of data.appointmentsPerDay; track day.date) {
+          <div class="bar-col" [title]="day.count + ' appointments'">
+            <span class="bar-count">{{ day.count || '' }}</span>
+            <div class="bar" [style.height]="barHeight(day.count)" [class.empty]="day.count === 0"></div>
+            <span class="bar-label">{{ day.date | date: 'd/M' }}</span>
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="card card-pad chart-block">
+      <div class="chart-head"><h2>Status mix — 30 days</h2></div>
+      @if (donutSegments().length === 0) {
+        <p class="muted" style="text-align:center; padding: 30px 0;">No appointments yet</p>
+      } @else {
+        <div class="donut-wrap">
+          <svg viewBox="0 0 42 42" class="donut" role="img" aria-label="Appointment status distribution">
+            <circle cx="21" cy="21" r="15.915" fill="none" stroke="var(--color-border)" stroke-width="4.5"/>
+            @for (segment of donutSegments(); track segment.label) {
+              <circle cx="21" cy="21" r="15.915" fill="none"
+                      [attr.stroke]="segment.color" stroke-width="4.5"
+                      [attr.stroke-dasharray]="segment.pct + ' ' + (100 - segment.pct)"
+                      [attr.stroke-dashoffset]="segment.offset"
+                      stroke-linecap="butt"/>
+            }
+            <text x="21" y="20" class="donut-total">{{ donutTotal() }}</text>
+            <text x="21" y="25" class="donut-label">visits</text>
+          </svg>
+          <div class="donut-legend">
+            @for (segment of donutSegments(); track segment.label) {
+              <div class="legend-row">
+                <span class="legend-dot" [style.background]="segment.color"></span>
+                <span class="legend-name">{{ segment.label }}</span>
+                <span class="legend-count num">{{ segment.count }}</span>
+              </div>
+            }
+          </div>
         </div>
       }
-    </div>
-  </section>
+    </section>
+  </div>
 }
 
 <section class="card">

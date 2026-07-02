@@ -11,4 +11,8 @@ export class ReportsService {
   getOverview(): Observable<PracticeOverview> {
     return this.http.get<PracticeOverview>(`${environment.apiUrl}/reports/overview`);
   }
+
+  downloadOverviewPdf(): Observable<Blob> {
+    return this.http.get(`${environment.apiUrl}/reports/overview/pdf`, { responseType: 'blob' });
+  }
 }

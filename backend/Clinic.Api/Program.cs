@@ -3,6 +3,7 @@ using Clinic.Api.Workers;
 using Clinic.Application;
 using Clinic.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -123,6 +124,17 @@ public class Program
         builder.Services.AddAuthorization();
 
         var app = builder.Build();
+
+        // Hosted environments (Render etc.): apply pending EF migrations at
+        // startup so deploys are one step. Local dev keeps explicit
+        // `dotnet ef database update` (flag stays off).
+        if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
+        {
+            using var scope = app.Services.CreateScope();
+            scope.ServiceProvider
+                .GetRequiredService<Clinic.Infrastructure.Persistence.ClinicDbContext>()
+                .Database.Migrate();
+        }
 
         if (app.Environment.IsDevelopment())
         {

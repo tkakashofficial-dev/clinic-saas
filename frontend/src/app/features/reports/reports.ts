@@ -14,6 +14,7 @@ export class Reports {
 
   readonly loading = signal(true);
   readonly overview = signal<PracticeOverview | null>(null);
+  readonly downloading = signal(false);
 
   /** Bars scaled against the busiest day so the chart always fills nicely. */
   readonly maxPerDay = computed(() =>
@@ -32,6 +33,22 @@ export class Reports {
 
   barHeight(count: number): string {
     return `${Math.round((count / this.maxPerDay()) * 100)}%`;
+  }
+
+  downloadPdf(): void {
+    this.downloading.set(true);
+    this.api.downloadOverviewPdf().subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'practice-report.pdf';
+        link.click();
+        URL.revokeObjectURL(url);
+        this.downloading.set(false);
+      },
+      error: () => this.downloading.set(false),
+    });
   }
 
   completionRate(doctor: { total: number; completed: number }): number {

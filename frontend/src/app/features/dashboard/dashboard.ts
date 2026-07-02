@@ -38,6 +38,43 @@ export class Dashboard {
   barHeight(count: number): string {
     return `${Math.round((count / this.maxPerDay()) * 100)}%`;
   }
+
+  // ---- donut: status mix, last 30 days (pure SVG, no chart library) ----
+  private static readonly STATUS_COLORS: Record<string, string> = {
+    Scheduled: '#2563EB',
+    CheckedIn: '#7C3AED',
+    InProgress: '#D97706',
+    Completed: '#16A34A',
+    Cancelled: '#94A3B8',
+  };
+
+  readonly donutTotal = computed(() =>
+    (this.overview()?.byStatusLast30Days ?? []).reduce((sum, s) => sum + s.count, 0),
+  );
+
+  /** SVG stroke segments: dash = percentage of the 100-unit circumference. */
+  readonly donutSegments = computed(() => {
+    const statuses = (this.overview()?.byStatusLast30Days ?? []).filter((s) => s.count > 0);
+    const total = this.donutTotal();
+    if (total === 0) return [];
+
+    let consumed = 0;
+    return statuses.map((status) => {
+      const pct = (status.count / total) * 100;
+      const segment = {
+        label: status.status === 'CheckedIn' ? 'Waiting'
+             : status.status === 'InProgress' ? 'In progress'
+             : status.status,
+        count: status.count,
+        pct,
+        color: Dashboard.STATUS_COLORS[status.status] ?? '#94A3B8',
+        // 25 = start at 12 o'clock; each segment starts where the last ended
+        offset: 25 - consumed,
+      };
+      consumed += pct;
+      return segment;
+    });
+  });
   readonly totalPatients = signal(0);
   readonly todayCount = signal(0);
   readonly waitingCount = signal(0);
