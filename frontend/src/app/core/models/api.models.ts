@@ -133,6 +133,10 @@ export interface ConsultationDto {
   appointmentId: string;
   diagnosis: string;
   treatmentNotes: string | null;
+  bloodPressure: string | null;
+  pulseBpm: number | null;
+  temperatureCelsius: number | null;
+  weightKg: number | null;
   doctorName: string;
   recordedAt: string;
   prescription: PrescriptionDto | null;
@@ -155,6 +159,10 @@ export interface PrescriptionItemDto {
 export interface RecordConsultationRequest {
   diagnosis: string;
   treatmentNotes?: string | null;
+  bloodPressure?: string | null;
+  pulseBpm?: number | null;
+  temperatureCelsius?: number | null;
+  weightKg?: number | null;
   prescription?: {
     notes?: string | null;
     items: {

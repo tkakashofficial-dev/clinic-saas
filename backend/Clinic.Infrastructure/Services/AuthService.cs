@@ -1,4 +1,5 @@
 using Clinic.Application.Common.Exceptions;
+using Clinic.Application.Common.Interfaces;
 using Clinic.Application.Features.Auth.DTOs;
 using Clinic.Application.Features.Auth.Services;
 using Clinic.Domain.Constants;
@@ -16,11 +17,16 @@ public class AuthService : IAuthService
 
     private readonly ClinicDbContext _context;
     private readonly JwtTokenGenerator _jwtTokenGenerator;
+    private readonly IEmailSender _emailSender;
 
-    public AuthService(ClinicDbContext context, JwtTokenGenerator jwtTokenGenerator)
+    public AuthService(
+        ClinicDbContext context,
+        JwtTokenGenerator jwtTokenGenerator,
+        IEmailSender emailSender)
     {
         _context = context;
         _jwtTokenGenerator = jwtTokenGenerator;
+        _emailSender = emailSender;
     }
 
     public async Task<AuthResponse> RegisterAsync(
@@ -48,6 +54,27 @@ public class AuthService : IAuthService
 
         var refreshToken = IssueRefreshToken(systemUser.Id);
         await _context.SaveChangesAsync(cancellationToken);
+
+        // Welcome email — sender is failure-proof; a mail outage never blocks signup
+        await _emailSender.SendAsync(
+            systemUser.Email,
+            $"Welcome to Klivia — {tenant.Name} is ready",
+            $"""
+            <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto">
+              <h2 style="color:#0C2B23">Welcome, {request.FirstName}! 🎉</h2>
+              <p><strong>{tenant.Name}</strong> is set up and ready.</p>
+              <p>Next steps:</p>
+              <ol>
+                <li>Add your doctors and reception staff</li>
+                <li>Register your first patient</li>
+                <li>Book an appointment and try the consultation flow</li>
+              </ol>
+              <p style="color:#5B6F68;font-size:13px">
+                Questions? Reply to this email or WhatsApp us at +91 62384 56205.
+              </p>
+            </div>
+            """,
+            cancellationToken);
 
         var fullName = $"{request.FirstName} {request.LastName}";
         return BuildResponse(

@@ -16,6 +16,12 @@ public class Consultation : BaseEntity, IMustHaveTenant
     public string Diagnosis { get; private set; } = default!;
     public string? TreatmentNotes { get; private set; }
 
+    // Vitals captured at the visit (all optional)
+    public string? BloodPressure { get; private set; }   // e.g. "120/80"
+    public int? PulseBpm { get; private set; }
+    public decimal? TemperatureCelsius { get; private set; }
+    public decimal? WeightKg { get; private set; }
+
     public Appointment Appointment { get; private set; } = default!;
     public TenantUser Doctor { get; private set; } = default!;
     public Prescription? Prescription { get; private set; }
@@ -34,5 +40,13 @@ public class Consultation : BaseEntity, IMustHaveTenant
         DoctorTenantUserId = doctorTenantUserId;
         Diagnosis = diagnosis ?? throw new ArgumentNullException(nameof(diagnosis));
         TreatmentNotes = treatmentNotes;
+    }
+
+    public void RecordVitals(string? bloodPressure, int? pulseBpm, decimal? temperatureCelsius, decimal? weightKg)
+    {
+        BloodPressure = bloodPressure;
+        PulseBpm = pulseBpm;
+        TemperatureCelsius = temperatureCelsius;
+        WeightKg = weightKg;
     }
 }

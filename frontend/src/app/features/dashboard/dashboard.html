@@ -47,6 +47,24 @@
   }
 </div>
 
+@if (overview(); as data) {
+  <section class="card card-pad chart-block">
+    <div class="chart-head">
+      <h2>Appointments — last 14 days</h2>
+      <a routerLink="/reports">Full report</a>
+    </div>
+    <div class="bar-chart">
+      @for (day of data.appointmentsPerDay; track day.date) {
+        <div class="bar-col" [title]="day.count + ' appointments'">
+          <span class="bar-count">{{ day.count || '' }}</span>
+          <div class="bar" [style.height]="barHeight(day.count)" [class.empty]="day.count === 0"></div>
+          <span class="bar-label">{{ day.date | date: 'd/M' }}</span>
+        </div>
+      }
+    </div>
+  </section>
+}
+
 <section class="card">
   <div class="section-header">
     <h2>{{ isDoctor() ? 'My schedule today' : "Today's schedule" }}</h2>

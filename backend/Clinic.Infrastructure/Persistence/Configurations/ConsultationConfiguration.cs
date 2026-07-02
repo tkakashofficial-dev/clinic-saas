@@ -13,6 +13,9 @@ public class ConsultationConfiguration : IEntityTypeConfiguration<Consultation>
 
         builder.Property(x => x.Diagnosis).IsRequired().HasMaxLength(2000);
         builder.Property(x => x.TreatmentNotes).HasMaxLength(2000);
+        builder.Property(x => x.BloodPressure).HasMaxLength(20);
+        builder.Property(x => x.TemperatureCelsius).HasPrecision(4, 1);
+        builder.Property(x => x.WeightKg).HasPrecision(5, 1);
 
         builder.HasOne(x => x.Appointment)
                .WithMany()

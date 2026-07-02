@@ -74,6 +74,10 @@ export class Appointments {
   readonly consultForm = this.fb.nonNullable.group({
     diagnosis: ['', Validators.required],
     treatmentNotes: [''],
+    bloodPressure: [''],
+    pulseBpm: [''],
+    temperatureCelsius: [''],
+    weightKg: [''],
     prescriptionNotes: [''],
     items: this.fb.array([this.createItemGroup()]),
   });
@@ -137,6 +141,25 @@ export class Appointments {
     this.date.set(value);
     this.page.set(1);
     this.load();
+  }
+
+  /** Day navigator: ‹ yesterday · today · tomorrow › */
+  shiftDate(days: number): void {
+    const current = this.date() ? new Date(this.date()) : new Date();
+    current.setDate(current.getDate() + days);
+    this.setDate(current.toISOString().split('T')[0]);
+  }
+
+  goToday(): void {
+    this.setDate(todayIso());
+  }
+
+  isToday(): boolean {
+    return this.date() === todayIso();
+  }
+
+  openDatePicker(input: HTMLInputElement): void {
+    input.showPicker?.();
   }
 
   setStatus(value: (typeof STATUS_FILTERS)[number]): void {
@@ -225,7 +248,10 @@ export class Appointments {
   // ---------- consultation: record ----------
 
   openRecord(appointment: AppointmentDto): void {
-    this.consultForm.reset({ diagnosis: '', treatmentNotes: '', prescriptionNotes: '' });
+    this.consultForm.reset({
+      diagnosis: '', treatmentNotes: '', prescriptionNotes: '',
+      bloodPressure: '', pulseBpm: '', temperatureCelsius: '', weightKg: '',
+    });
     this.items.clear();
     this.items.push(this.createItemGroup());
     this.withPrescription.set(false);
@@ -255,6 +281,10 @@ export class Appointments {
       .recordConsultation(this.recordFor()!.id, {
         diagnosis: value.diagnosis,
         treatmentNotes: value.treatmentNotes || null,
+        bloodPressure: value.bloodPressure || null,
+        pulseBpm: value.pulseBpm ? Number(value.pulseBpm) : null,
+        temperatureCelsius: value.temperatureCelsius ? Number(value.temperatureCelsius) : null,
+        weightKg: value.weightKg ? Number(value.weightKg) : null,
         prescription: this.withPrescription()
           ? {
               notes: value.prescriptionNotes || null,

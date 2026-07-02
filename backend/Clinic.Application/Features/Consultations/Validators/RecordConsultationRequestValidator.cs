@@ -14,6 +14,22 @@ public class RecordConsultationRequestValidator : AbstractValidator<RecordConsul
         RuleFor(x => x.TreatmentNotes)
             .MaximumLength(2000);
 
+        // Vitals: loose but sane clinical ranges
+        RuleFor(x => x.BloodPressure)
+            .MaximumLength(20)
+            .Matches(@"^\d{2,3}\s*/\s*\d{2,3}$").WithMessage("Blood pressure looks like 120/80.")
+            .When(x => !string.IsNullOrWhiteSpace(x.BloodPressure));
+
+        RuleFor(x => x.PulseBpm)
+            .InclusiveBetween(20, 250).When(x => x.PulseBpm.HasValue);
+
+        RuleFor(x => x.TemperatureCelsius)
+            .InclusiveBetween(30, 45).WithMessage("Temperature is in °C (30–45).")
+            .When(x => x.TemperatureCelsius.HasValue);
+
+        RuleFor(x => x.WeightKg)
+            .InclusiveBetween(0.5m, 500).When(x => x.WeightKg.HasValue);
+
         When(x => x.Prescription is not null, () =>
         {
             RuleFor(x => x.Prescription!.Notes)

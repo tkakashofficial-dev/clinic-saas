@@ -19,7 +19,7 @@ public class MultiClinicTests : IDisposable
             Issuer = "TestIssuer",
             Audience = "TestAudience",
             ExpiresInMinutes = 60
-        })));
+        })), new NoOpEmailSender());
 
     private async Task<AuthResponse> RegisterAsync(string email) =>
         await CreateService().RegisterAsync(new RegisterRequest

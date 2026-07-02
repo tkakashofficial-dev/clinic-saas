@@ -4,9 +4,10 @@ import { RouterLink } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { AppointmentsService } from '../../core/api/appointments.service';
 import { PatientsService } from '../../core/api/patients.service';
+import { ReportsService } from '../../core/api/reports.service';
 import { StaffService } from '../../core/api/staff.service';
 import { AuthService } from '../../core/auth/auth.service';
-import { AppointmentDto } from '../../core/models/api.models';
+import { AppointmentDto, PracticeOverview } from '../../core/models/api.models';
 
 /**
  * The dashboard adapts to WHO is looking at it:
@@ -25,8 +26,18 @@ export class Dashboard {
   private readonly patientsApi = inject(PatientsService);
   private readonly appointmentsApi = inject(AppointmentsService);
   private readonly staffApi = inject(StaffService);
+  private readonly reportsApi = inject(ReportsService);
 
   readonly loading = signal(true);
+  readonly overview = signal<PracticeOverview | null>(null);
+
+  readonly maxPerDay = computed(() =>
+    Math.max(1, ...(this.overview()?.appointmentsPerDay.map((d) => d.count) ?? [1])),
+  );
+
+  barHeight(count: number): string {
+    return `${Math.round((count / this.maxPerDay()) * 100)}%`;
+  }
   readonly totalPatients = signal(0);
   readonly todayCount = signal(0);
   readonly waitingCount = signal(0);
@@ -49,6 +60,13 @@ export class Dashboard {
 
   constructor() {
     this.load();
+
+    // Trend chart for owners — beauty AND signal
+    if (this.auth.hasRole('Admin')) {
+      this.reportsApi.getOverview().subscribe({
+        next: (overview) => this.overview.set(overview),
+      });
+    }
   }
 
   load(): void {

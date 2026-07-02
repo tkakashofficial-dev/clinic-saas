@@ -12,8 +12,24 @@
 </header>
 
 <div class="toolbar">
-  <input type="date" class="input date-input" [value]="date()"
-         (change)="setDate($any($event.target).value)">
+  <div class="date-nav">
+    <button type="button" class="date-arrow" (click)="shiftDate(-1)" aria-label="Previous day">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <button type="button" class="date-display" (click)="openDatePicker(hiddenDate)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      {{ date() | date: 'EEE, d MMM' }}
+    </button>
+    <button type="button" class="date-arrow" (click)="shiftDate(1)" aria-label="Next day">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <input #hiddenDate type="date" class="date-hidden" [value]="date()"
+           (change)="setDate($any($event.target).value)" tabindex="-1" aria-hidden="true">
+  </div>
+
+  @if (!isToday()) {
+    <button type="button" class="filter-chip" (click)="goToday()">Today</button>
+  }
 
   @for (filter of statusFilters; track filter) {
     <button type="button" class="filter-chip" [class.active]="status() === filter"
@@ -225,6 +241,18 @@
                   placeholder="What was done during this visit…"></textarea>
       </div>
 
+      <div class="field">
+        <label>Vitals <span class="muted" style="font-weight:400">(optional)</span></label>
+        <div class="form-row">
+          <input class="input" formControlName="bloodPressure" placeholder="BP · 120/80">
+          <input class="input" type="number" formControlName="pulseBpm" placeholder="Pulse · bpm">
+        </div>
+        <div class="form-row" style="margin-top:10px">
+          <input class="input" type="number" step="0.1" formControlName="temperatureCelsius" placeholder="Temp · °C">
+          <input class="input" type="number" step="0.1" formControlName="weightKg" placeholder="Weight · kg">
+        </div>
+      </div>
+
       <label class="prescription-toggle">
         <input type="checkbox" [checked]="withPrescription()"
                (change)="withPrescription.set($any($event.target).checked)">
@@ -302,6 +330,18 @@
           <div class="view-section">
             <div class="view-label">Treatment notes</div>
             <p>{{ c.treatmentNotes }}</p>
+          </div>
+        }
+
+        @if (c.bloodPressure || c.pulseBpm || c.temperatureCelsius || c.weightKg) {
+          <div class="view-section">
+            <div class="view-label">Vitals</div>
+            <div class="vitals-row">
+              @if (c.bloodPressure) { <span class="vital-chip">BP {{ c.bloodPressure }}</span> }
+              @if (c.pulseBpm) { <span class="vital-chip">{{ c.pulseBpm }} bpm</span> }
+              @if (c.temperatureCelsius) { <span class="vital-chip">{{ c.temperatureCelsius }} °C</span> }
+              @if (c.weightKg) { <span class="vital-chip">{{ c.weightKg }} kg</span> }
+            </div>
           </div>
         }
 

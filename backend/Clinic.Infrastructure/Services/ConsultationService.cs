@@ -44,6 +44,9 @@ public class ConsultationService : IConsultationService
             _currentUser.TenantUserId,   // the doctor recording it
             request.Diagnosis,
             request.TreatmentNotes);
+        consultation.RecordVitals(
+            request.BloodPressure, request.PulseBpm,
+            request.TemperatureCelsius, request.WeightKg);
         _context.Consultations.Add(consultation);
 
         if (request.Prescription is not null)
@@ -86,6 +89,10 @@ public class ConsultationService : IConsultationService
                 AppointmentId = c.AppointmentId,
                 Diagnosis = c.Diagnosis,
                 TreatmentNotes = c.TreatmentNotes,
+                BloodPressure = c.BloodPressure,
+                PulseBpm = c.PulseBpm,
+                TemperatureCelsius = c.TemperatureCelsius,
+                WeightKg = c.WeightKg,
                 DoctorName = c.Doctor.SystemUser.FirstName + " " + c.Doctor.SystemUser.LastName,
                 RecordedAt = c.CreatedAt,
                 Prescription = c.Prescription == null ? null : new PrescriptionDto

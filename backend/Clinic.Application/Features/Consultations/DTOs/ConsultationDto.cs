@@ -6,6 +6,10 @@ public class ConsultationDto
     public Guid AppointmentId { get; set; }
     public string Diagnosis { get; set; } = default!;
     public string? TreatmentNotes { get; set; }
+    public string? BloodPressure { get; set; }
+    public int? PulseBpm { get; set; }
+    public decimal? TemperatureCelsius { get; set; }
+    public decimal? WeightKg { get; set; }
     public string DoctorName { get; set; } = default!;
     public DateTime RecordedAt { get; set; }
     public PrescriptionDto? Prescription { get; set; }

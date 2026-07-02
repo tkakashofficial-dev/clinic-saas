@@ -5,6 +5,12 @@ public class RecordConsultationRequest
     public string Diagnosis { get; set; } = default!;
     public string? TreatmentNotes { get; set; }
 
+    // Vitals at the visit — all optional
+    public string? BloodPressure { get; set; }
+    public int? PulseBpm { get; set; }
+    public decimal? TemperatureCelsius { get; set; }
+    public decimal? WeightKg { get; set; }
+
     /// <summary>Optional — not every consultation ends with medicines.</summary>
     public PrescriptionRequest? Prescription { get; set; }
 }

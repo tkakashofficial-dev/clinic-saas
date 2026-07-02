@@ -2,6 +2,9 @@ import { Component, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 export const BRAND_NAME = 'Klivia';
+export const WHATSAPP_LINK =
+  'https://wa.me/916238456205?text=' +
+  encodeURIComponent('Hi Klivia! I want a demo for my clinic.');
 
 interface PricingPlan {
   name: string;
@@ -21,6 +24,7 @@ interface PricingPlan {
 })
 export class Landing {
   readonly brand = BRAND_NAME;
+  readonly whatsapp = WHATSAPP_LINK;
 
   readonly features = [
     {
@@ -61,7 +65,7 @@ export class Landing {
   readonly plans: PricingPlan[] = [
     {
       name: 'Solo',
-      monthly: 999,
+      monthly: 499,
       scale: '1 doctor · 1 location',
       tagline: 'For independent doctors starting out',
       features: [
@@ -74,7 +78,7 @@ export class Landing {
     },
     {
       name: 'Clinic',
-      monthly: 2499,
+      monthly: 1499,
       scale: '2–5 doctors · 1 location',
       tagline: 'For clinics with a real team',
       popular: true,
@@ -90,7 +94,7 @@ export class Landing {
     },
     {
       name: 'Growth',
-      monthly: 4999,
+      monthly: 2999,
       scale: '6+ doctors · multi-location',
       tagline: 'For practices that keep growing',
       features: [
@@ -105,8 +109,13 @@ export class Landing {
   ];
 
   priceOf(plan: PricingPlan): string {
-    const amount = this.annual() ? Math.round((plan.monthly * 0.8) / 1) : plan.monthly;
+    const amount = this.annual() ? Math.round(plan.monthly * 0.8) : plan.monthly;
     return `₹${amount.toLocaleString('en-IN')}`;
+  }
+
+  /** Annual = one upfront payment (cash-flow for us, discount for them). */
+  yearlyTotalOf(plan: PricingPlan): string {
+    return `₹${Math.round(plan.monthly * 0.8 * 12).toLocaleString('en-IN')}`;
   }
 
   readonly faqs = [

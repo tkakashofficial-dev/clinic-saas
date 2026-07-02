@@ -16,7 +16,7 @@ public class RefreshTokenTests : IDisposable
             Issuer = "TestIssuer",
             Audience = "TestAudience",
             ExpiresInMinutes = 60
-        })));
+        })), new NoOpEmailSender());
 
     private async Task<AuthResponse> RegisterAsync(string email = "owner@clinic.com") =>
         await CreateService().RegisterAsync(new RegisterRequest
