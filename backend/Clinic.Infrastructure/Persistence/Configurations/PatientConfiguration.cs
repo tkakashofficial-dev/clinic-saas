@@ -17,7 +17,9 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
         builder.Property(x => x.Email).HasMaxLength(256);
         builder.Property(x => x.Address).HasMaxLength(500);
         builder.Property(x => x.Gender).HasConversion<string>().HasMaxLength(10);
-        builder.Property(x => x.DateOfBirth).IsRequired();
+        // DateOfBirth is optional — the entity (DateOnly?), DTO and age
+        // calculation all treat it as nullable, so the column must match
+        builder.Property(x => x.DateOfBirth);
 
         builder.HasOne(x => x.Tenant)
                .WithMany()
