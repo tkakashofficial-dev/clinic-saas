@@ -1,4 +1,4 @@
-﻿using Clinic.Application.Features.Staff.DTOs;
+using Clinic.Application.Features.Staff.DTOs;
 using Clinic.Application.Features.Staff.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,7 +7,7 @@ namespace Clinic.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize] // every endpoint here requires JWT token
+[Authorize]
 public class StaffController : ControllerBase
 {
     private readonly IStaffService _staffService;
@@ -18,27 +18,15 @@ public class StaffController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin")] // only Admin can add staff
-    public async Task<IActionResult> AddStaff(
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<StaffDto>> AddStaff(
         [FromBody] AddStaffRequest request,
         CancellationToken cancellationToken)
-    {
-        try
-        {
-            var result = await _staffService.AddStaffAsync(request, cancellationToken);
-            return Ok(result);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
-    }
+        => Ok(await _staffService.AddStaffAsync(request, cancellationToken));
 
     [HttpGet]
-    [Authorize(Roles = "Admin")] // only Admin can list staff
-    public async Task<IActionResult> GetAllStaff(CancellationToken cancellationToken)
-    {
-        var result = await _staffService.GetAllStaffAsync(cancellationToken);
-        return Ok(result);
-    }
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<List<StaffDto>>> GetAllStaff(
+        CancellationToken cancellationToken)
+        => Ok(await _staffService.GetAllStaffAsync(cancellationToken));
 }

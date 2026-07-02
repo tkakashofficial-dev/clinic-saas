@@ -1,4 +1,4 @@
-﻿using Clinic.Application.Features.Patients.DTOs;
+using Clinic.Application.Features.Patients.DTOs;
 using Clinic.Application.Features.Patients.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,48 +19,22 @@ public class PatientController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "Admin,Receptionist")]
-    public async Task<IActionResult> RegisterPatient(
+    public async Task<ActionResult<PatientDto>> RegisterPatient(
         [FromBody] RegisterPatientRequest request,
         CancellationToken cancellationToken)
-    {
-        try
-        {
-            var result = await _patientService.RegisterPatientAsync(
-                request, cancellationToken);
-            return Ok(result);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
-    }
+        => Ok(await _patientService.RegisterPatientAsync(request, cancellationToken));
 
     [HttpGet]
     [Authorize(Roles = "Admin,Doctor,Receptionist")]
-    public async Task<IActionResult> GetAllPatients(
+    public async Task<ActionResult<List<PatientDto>>> GetAllPatients(
         [FromQuery] string? search,
         CancellationToken cancellationToken)
-    {
-        var result = await _patientService.GetAllPatientsAsync(
-            search, cancellationToken);
-        return Ok(result);
-    }
+        => Ok(await _patientService.GetAllPatientsAsync(search, cancellationToken));
 
     [HttpGet("{id}")]
     [Authorize(Roles = "Admin,Doctor,Receptionist")]
-    public async Task<IActionResult> GetPatient(
+    public async Task<ActionResult<PatientDto>> GetPatient(
         Guid id,
         CancellationToken cancellationToken)
-    {
-        try
-        {
-            var result = await _patientService.GetPatientByIdAsync(
-                id, cancellationToken);
-            return Ok(result);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-    }
+        => Ok(await _patientService.GetPatientByIdAsync(id, cancellationToken));
 }

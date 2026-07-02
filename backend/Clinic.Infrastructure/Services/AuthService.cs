@@ -1,4 +1,5 @@
-﻿using Clinic.Application.Features.Auth.DTOs;
+﻿using Clinic.Application.Common.Exceptions;
+using Clinic.Application.Features.Auth.DTOs;
 using Clinic.Application.Features.Auth.Services;
 using Clinic.Domain.Entities;
 using Clinic.Infrastructure.Persistence;
@@ -26,7 +27,7 @@ public class AuthService : IAuthService
             .AnyAsync(u => u.Email == request.Email, cancellationToken);
 
         if (emailExists)
-            throw new InvalidOperationException("Email is already registered.");
+            throw new ConflictException("Email is already registered.");
 
         // 2. Create SystemUser — the global login account
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);

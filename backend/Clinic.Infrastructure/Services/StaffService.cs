@@ -1,4 +1,5 @@
-﻿using Clinic.Application.Common.Interfaces;
+﻿using Clinic.Application.Common.Exceptions;
+using Clinic.Application.Common.Interfaces;
 using Clinic.Application.Features.Staff.DTOs;
 using Clinic.Application.Features.Staff.Services;
 using Clinic.Domain.Entities;
@@ -30,7 +31,7 @@ public class StaffService : IStaffService
             .AnyAsync(u => u.Email == request.Email, cancellationToken);
 
         if (emailExists)
-            throw new InvalidOperationException("Email is already registered.");
+            throw new ConflictException("Email is already registered.");
 
         // 2. Create SystemUser
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);

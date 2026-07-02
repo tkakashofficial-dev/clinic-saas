@@ -1,4 +1,5 @@
-﻿using Clinic.Application.Common.Interfaces;
+﻿using Clinic.Application.Common.Exceptions;
+using Clinic.Application.Common.Interfaces;
 using Clinic.Application.Features.Appointments.DTOs;
 using Clinic.Application.Features.Appointments.Services;
 using Clinic.Domain.Entities;
@@ -32,7 +33,7 @@ public class AppointmentService : IAppointmentService
                 && p.TenantId == tenantId, cancellationToken);
 
         if (!patientExists)
-            throw new InvalidOperationException("Patient not found.");
+            throw new BadRequestException("Patient not found.");
 
         // Verify doctor belongs to this clinic
         var doctorExists = await _context.TenantUsers
@@ -41,7 +42,7 @@ public class AppointmentService : IAppointmentService
                 && tu.IsActive, cancellationToken);
 
         if (!doctorExists)
-            throw new InvalidOperationException("Doctor not found.");
+            throw new BadRequestException("Doctor not found.");
 
         var appointment = new Appointment(
             tenantId,
@@ -139,7 +140,7 @@ public class AppointmentService : IAppointmentService
             .FirstOrDefaultAsync(cancellationToken);
 
         if (appointment is null)
-            throw new KeyNotFoundException("Appointment not found.");
+            throw new NotFoundException("Appointment not found.");
 
         return appointment;
     }
@@ -158,10 +159,10 @@ public class AppointmentService : IAppointmentService
                 a.TenantId == tenantId, cancellationToken);
 
         if (appointment is null)
-            throw new KeyNotFoundException("Appointment not found.");
+            throw new NotFoundException("Appointment not found.");
 
         if (!Enum.TryParse<AppointmentStatus>(request.Status, true, out var newStatus))
-            throw new InvalidOperationException("Invalid status value.");
+            throw new BadRequestException("Invalid status value.");
 
         appointment.UpdateStatus(newStatus);
         await _context.SaveChangesAsync(cancellationToken);

@@ -1,4 +1,5 @@
-﻿using Clinic.Application.Common.Interfaces;
+﻿using Clinic.Application.Common.Exceptions;
+using Clinic.Application.Common.Interfaces;
 using Clinic.Application.Features.Patients.DTOs;
 using Clinic.Application.Features.Patients.Services;
 using Clinic.Domain.Entities;
@@ -32,12 +33,12 @@ public class PatientService : IPatientService
                 && p.Phone == request.Phone, cancellationToken);
 
         if (phoneExists)
-            throw new InvalidOperationException(
+            throw new ConflictException(
                 "A patient with this phone number already exists.");
 
         // 2. Parse gender
         if (!Enum.TryParse<Gender>(request.Gender, true, out var gender))
-            throw new InvalidOperationException("Invalid gender value.");
+            throw new BadRequestException("Invalid gender value.");
 
         // 3. Create patient
         var patient = new Patient(
@@ -140,7 +141,7 @@ public class PatientService : IPatientService
             .FirstOrDefaultAsync(cancellationToken);
 
         if (patient is null)
-            throw new KeyNotFoundException("Patient not found.");
+            throw new NotFoundException("Patient not found.");
 
         return patient;
     }

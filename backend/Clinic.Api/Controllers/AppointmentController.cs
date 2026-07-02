@@ -1,4 +1,4 @@
-﻿using Clinic.Application.Features.Appointments.DTOs;
+using Clinic.Application.Features.Appointments.DTOs;
 using Clinic.Application.Features.Appointments.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,73 +19,33 @@ public class AppointmentController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "Admin,Receptionist")]
-    public async Task<IActionResult> CreateAppointment(
+    public async Task<ActionResult<AppointmentDto>> CreateAppointment(
         [FromBody] CreateAppointmentRequest request,
         CancellationToken cancellationToken)
-    {
-        try
-        {
-            var result = await _appointmentService
-                .CreateAppointmentAsync(request, cancellationToken);
-            return Ok(result);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
+        => Ok(await _appointmentService.CreateAppointmentAsync(request, cancellationToken));
 
     [HttpGet]
     [Authorize(Roles = "Admin,Doctor,Receptionist")]
-    public async Task<IActionResult> GetAppointments(
+    public async Task<ActionResult<List<AppointmentDto>>> GetAppointments(
         [FromQuery] DateTime? date,
         [FromQuery] string? status,
         [FromQuery] Guid? doctorTenantUserId,
         CancellationToken cancellationToken)
-    {
-        var result = await _appointmentService
-            .GetAppointmentsAsync(date, status, doctorTenantUserId, cancellationToken);
-        return Ok(result);
-    }
+        => Ok(await _appointmentService.GetAppointmentsAsync(
+            date, status, doctorTenantUserId, cancellationToken));
 
     [HttpGet("{id}")]
     [Authorize(Roles = "Admin,Doctor,Receptionist")]
-    public async Task<IActionResult> GetAppointment(
+    public async Task<ActionResult<AppointmentDto>> GetAppointment(
         Guid id,
         CancellationToken cancellationToken)
-    {
-        try
-        {
-            var result = await _appointmentService
-                .GetAppointmentByIdAsync(id, cancellationToken);
-            return Ok(result);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-    }
+        => Ok(await _appointmentService.GetAppointmentByIdAsync(id, cancellationToken));
 
     [HttpPatch("{id}/status")]
     [Authorize(Roles = "Admin,Doctor,Receptionist")]
-    public async Task<IActionResult> UpdateStatus(
+    public async Task<ActionResult<AppointmentDto>> UpdateStatus(
         Guid id,
         [FromBody] UpdateAppointmentStatusRequest request,
         CancellationToken cancellationToken)
-    {
-        try
-        {
-            var result = await _appointmentService
-                .UpdateStatusAsync(id, request, cancellationToken);
-            return Ok(result);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
+        => Ok(await _appointmentService.UpdateStatusAsync(id, request, cancellationToken));
 }

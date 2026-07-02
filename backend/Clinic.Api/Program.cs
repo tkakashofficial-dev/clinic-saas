@@ -1,3 +1,4 @@
+using Clinic.Api.Middleware;
 using Clinic.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -16,6 +17,22 @@ public class Program
         builder.Services.AddControllers();
         builder.Services.AddInfrastructure(builder.Configuration);
         builder.Services.AddEndpointsApiExplorer();
+
+        // Centralized error handling: exceptions -> RFC 7807 Problem Details
+        builder.Services.AddProblemDetails();
+        builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+        // CORS: browsers block cross-origin calls (Angular on :4200 -> API) unless
+        // the API explicitly allows the origin. Origins come from config so
+        // production can list the real frontend URL without a code change.
+        var allowedOrigins = builder.Configuration
+            .GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+
+        builder.Services.AddCors(options =>
+            options.AddPolicy("Frontend", policy => policy
+                .WithOrigins(allowedOrigins)
+                .AllowAnyHeader()
+                .AllowAnyMethod()));
 
         builder.Services.AddSwaggerGen(options =>
         {
@@ -90,7 +107,9 @@ public class Program
             });
         }
 
+        app.UseExceptionHandler();
         app.UseHttpsRedirection();
+        app.UseCors("Frontend");
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
