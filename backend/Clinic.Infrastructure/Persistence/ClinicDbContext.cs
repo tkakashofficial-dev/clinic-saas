@@ -27,6 +27,10 @@ public class ClinicDbContext : DbContext
     public DbSet<MedicalCondition> MedicalConditions => Set<MedicalCondition>();
     public DbSet<PatientMedicalCondition> PatientMedicalConditions => Set<PatientMedicalCondition>();
     public DbSet<Appointment> Appointments => Set<Appointment>();
+    public DbSet<Consultation> Consultations => Set<Consultation>();
+    public DbSet<Prescription> Prescriptions => Set<Prescription>();
+    public DbSet<PrescriptionItem> PrescriptionItems => Set<PrescriptionItem>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     // Evaluated per query — EF captures the context instance, so each request's
     // scoped ICurrentUserService supplies the tenant from the verified JWT.
     private Guid CurrentTenantId => _currentUser.TenantId;
@@ -44,6 +48,13 @@ public class ClinicDbContext : DbContext
         builder.Entity<PatientMedicalCondition>()
             .HasQueryFilter(QueryFilters.SoftDelete,
                 x => !x.MedicalCondition.IsDeleted && !x.Patient.IsDeleted);
+
+        // PrescriptionItem has no TenantId of its own — it inherits both
+        // filters through its parent prescription
+        builder.Entity<PrescriptionItem>()
+            .HasQueryFilter(QueryFilters.SoftDelete, x => !x.Prescription.IsDeleted);
+        builder.Entity<PrescriptionItem>()
+            .HasQueryFilter(QueryFilters.Tenant, x => x.Prescription.TenantId == CurrentTenantId);
 
         foreach (var entityType in builder.Model.GetEntityTypes())
         {

@@ -2,10 +2,12 @@ using Clinic.Api.Middleware;
 using Clinic.Application;
 using Clinic.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using System.Threading.RateLimiting;
 
 namespace Clinic.Api;
 
@@ -38,6 +40,22 @@ public class Program
                 .WithOrigins(allowedOrigins)
                 .AllowAnyHeader()
                 .AllowAnyMethod()));
+
+        // Rate limit auth endpoints per client IP — makes password
+        // brute-forcing impractical (10 attempts/minute, then 429)
+        builder.Services.AddRateLimiter(options =>
+        {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            options.AddPolicy("auth", httpContext =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    factory: _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 10,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueLimit = 0
+                    }));
+        });
 
         builder.Services.AddSwaggerGen(options =>
         {
@@ -115,6 +133,7 @@ public class Program
         app.UseExceptionHandler();
         app.UseHttpsRedirection();
         app.UseCors("Frontend");
+        app.UseRateLimiter();
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();

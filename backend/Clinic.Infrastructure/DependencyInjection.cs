@@ -1,6 +1,7 @@
 ﻿using Clinic.Application.Common.Interfaces;
 using Clinic.Application.Features.Appointments.Services;
 using Clinic.Application.Features.Auth.Services;
+using Clinic.Application.Features.Consultations.Services;
 using Clinic.Application.Features.Patients.Services;
 using Clinic.Application.Features.Staff.Services;
 using Clinic.Infrastructure.Persistence;
@@ -8,6 +9,7 @@ using Clinic.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using QuestPDF.Infrastructure;
 
 namespace Clinic.Infrastructure;
 
@@ -17,6 +19,9 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        // QuestPDF Community license (free for organizations < $1M revenue)
+        QuestPDF.Settings.License = LicenseType.Community;
+
         services.AddHttpContextAccessor();
 
         services.AddScoped<ICurrentUserService, CurrentUserService>();
@@ -35,6 +40,7 @@ public static class DependencyInjection
         services.AddScoped<IStaffService, StaffService>();
         services.AddScoped<IPatientService, PatientService>();
         services.AddScoped<IAppointmentService, AppointmentService>();
+        services.AddScoped<IConsultationService, ConsultationService>();
         return services;
     }
 }
