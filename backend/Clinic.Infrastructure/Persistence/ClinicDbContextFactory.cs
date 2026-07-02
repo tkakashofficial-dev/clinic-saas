@@ -10,8 +10,13 @@ public class ClinicDbContextFactory : IDesignTimeDbContextFactory<ClinicDbContex
     {
         var optionsBuilder = new DbContextOptionsBuilder<ClinicDbContext>();
 
-        optionsBuilder.UseNpgsql(
-            "Host=localhost;Port=5432;Database=clinic_db;Username=postgres;Password=admin@789");
+        // Used only by `dotnet ef` at design time. Never hardcode credentials here —
+        // set CLINIC_DB_CONNECTION when a real connection is needed (e.g. `database update`).
+        var connectionString =
+            Environment.GetEnvironmentVariable("CLINIC_DB_CONNECTION")
+            ?? "Host=localhost;Port=5432;Database=clinic_db;Username=postgres";
+
+        optionsBuilder.UseNpgsql(connectionString);
 
         return new ClinicDbContext(
             optionsBuilder.Options,

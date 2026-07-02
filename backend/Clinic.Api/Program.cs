@@ -51,7 +51,14 @@ public class Program
             });
         });
 
-        var jwtSecret = builder.Configuration["JwtSettings:Secret"]!;
+        // Fail fast: a missing/weak signing key must stop startup, not surface later as a
+        // cryptic 500 on the first login. Secret comes from user-secrets (dev) or env vars (prod).
+        var jwtSecret = builder.Configuration["JwtSettings:Secret"];
+        if (string.IsNullOrWhiteSpace(jwtSecret) || jwtSecret.Length < 32)
+            throw new InvalidOperationException(
+                "JwtSettings:Secret is missing or shorter than 32 characters. " +
+                "Set it via 'dotnet user-secrets set \"JwtSettings:Secret\" \"<value>\"' (dev) " +
+                "or an environment variable (prod).");
 
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
