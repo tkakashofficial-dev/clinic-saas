@@ -1,4 +1,5 @@
 using Clinic.Api.Middleware;
+using Clinic.Application;
 using Clinic.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -14,7 +15,11 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        builder.Services.AddControllers();
+        // ValidationFilter runs FluentValidation on every request body before
+        // the controller executes — invalid input never reaches business logic
+        builder.Services.AddControllers(options =>
+            options.Filters.Add<ValidationFilter>());
+        builder.Services.AddApplication();
         builder.Services.AddInfrastructure(builder.Configuration);
         builder.Services.AddEndpointsApiExplorer();
 
