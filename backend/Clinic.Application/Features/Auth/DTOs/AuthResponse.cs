@@ -12,5 +12,8 @@ public class AuthResponse
     public List<string> Roles { get; set; } = new();
     public Guid TenantId { get; set; }
     public Guid TenantUserId { get; set; }
+    public string ClinicName { get; set; } = default!;
+    /// <summary>Every clinic this user belongs to — for the clinic switcher.</summary>
+    public List<MembershipDto> Memberships { get; set; } = new();
     public DateTime ExpiresAt { get; set; }
 }

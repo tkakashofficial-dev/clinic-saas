@@ -3,7 +3,13 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { AuthResponse, LoginRequest, RegisterRequest, Role } from '../models/api.models';
+import {
+  AuthResponse,
+  LoginRequest,
+  Membership,
+  RegisterRequest,
+  Role,
+} from '../models/api.models';
 
 const STORAGE_KEY = 'clinic.auth';
 
@@ -29,9 +35,31 @@ export class AuthService {
     return session.roles?.length ? session.roles : [session.role];
   });
   readonly fullName = computed(() => this._session()?.fullName ?? '');
+  readonly clinicName = computed(() => this._session()?.clinicName ?? '');
+  readonly memberships = computed<Membership[]>(() => this._session()?.memberships ?? []);
+  readonly currentTenantId = computed(() => this._session()?.tenantId ?? '');
 
   hasRole(...allowed: Role[]): boolean {
     return this.roles().some((role) => allowed.includes(role));
+  }
+
+  /** Re-scopes the session to another clinic, then fully reloads the app. */
+  switchClinic(tenantId: string): void {
+    this.http
+      .post<AuthResponse>(`${environment.apiUrl}/auth/switch-clinic`, { tenantId })
+      .subscribe({
+        next: (response) => {
+          this.storeSession(response);
+          location.assign('/'); // full reload: every screen refetches for the new clinic
+        },
+      });
+  }
+
+  /** Opens an additional clinic (caller becomes its Admin) and lands in it. */
+  createClinic(name: string, ownerIsDoctor: boolean): Observable<AuthResponse> {
+    return this.http
+      .post<AuthResponse>(`${environment.apiUrl}/auth/clinics`, { name, ownerIsDoctor })
+      .pipe(tap((response) => this.storeSession(response)));
   }
 
   login(request: LoginRequest): Observable<AuthResponse> {

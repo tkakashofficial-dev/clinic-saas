@@ -1,13 +1,13 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-export const BRAND_NAME = 'Clinora';
+export const BRAND_NAME = 'Klinovo';
 
 interface PricingPlan {
   name: string;
-  price: string;
-  period: string;
+  monthly: number; // 0 = free
   tagline: string;
+  scale: string;
   features: string[];
   popular?: boolean;
   cta: string;
@@ -55,50 +55,58 @@ export class Landing {
     },
   ];
 
+  // Annual billing = 20% off, the standard SaaS lever for cash-flow + retention
+  readonly annual = signal(false);
+
   readonly plans: PricingPlan[] = [
     {
       name: 'Solo',
-      price: '₹0',
-      period: 'forever',
-      tagline: 'For a single practicing doctor',
+      monthly: 999,
+      scale: '1 doctor · 1 location',
+      tagline: 'For independent doctors starting out',
       features: [
-        '1 doctor + 1 receptionist',
-        'Unlimited patients',
-        'Appointments & front-desk flow',
-        'Prescriptions with PDF',
+        'Unlimited patients & appointments',
+        'Front-desk flow with check-in',
+        'Consultations & prescriptions (PDF)',
+        'Works on laptop, tablet & phone',
       ],
-      cta: 'Start free',
+      cta: 'Start free trial',
     },
     {
       name: 'Clinic',
-      price: '₹799',
-      period: 'per month',
-      tagline: 'For growing clinics with a team',
+      monthly: 2499,
+      scale: '2–5 doctors · 1 location',
+      tagline: 'For clinics with a real team',
       popular: true,
       features: [
-        'Up to 10 staff members',
         'Everything in Solo',
-        'Multiple doctors & partners',
-        'Priority support (WhatsApp)',
+        'Multiple doctors, partners & reception',
+        'Waiting-room queue for the whole team',
+        'Priority support on WhatsApp',
         'Reminders & reports — coming soon',
       ],
-      cta: 'Start 30-day free trial',
+      cta: 'Start free trial',
     },
     {
       name: 'Growth',
-      price: '₹1,499',
-      period: 'per month',
-      tagline: 'For multi-doctor practices',
+      monthly: 4999,
+      scale: '6+ doctors · multi-location',
+      tagline: 'For practices that keep growing',
       features: [
-        'Unlimited staff',
         'Everything in Clinic',
-        'Multi-branch — coming soon',
-        'Onboarding & data migration help',
-        'Dedicated support',
+        'Unlimited doctors & staff',
+        'Multiple clinics, one login (switcher)',
+        'Onboarding + data migration help',
+        'Pharmacy & inventory — coming soon',
       ],
-      cta: 'Start 30-day free trial',
+      cta: 'Talk to us',
     },
   ];
+
+  priceOf(plan: PricingPlan): string {
+    const amount = this.annual() ? Math.round((plan.monthly * 0.8) / 1) : plan.monthly;
+    return `₹${amount.toLocaleString('en-IN')}`;
+  }
 
   readonly faqs = [
     {

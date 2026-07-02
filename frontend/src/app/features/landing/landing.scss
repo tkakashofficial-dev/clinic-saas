@@ -230,6 +230,41 @@
 
 /* ---------- Pricing ---------- */
 
+.billing-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 34px;
+
+  .save-badge {
+    background: var(--color-primary-100);
+    color: var(--color-primary-800);
+    font-size: 10.5px;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 2px 8px;
+    margin-left: 4px;
+  }
+}
+
+.plan-scale {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-primary-700);
+  margin-top: 4px;
+}
+
+.trust-strip {
+  display: flex;
+  justify-content: center;
+  gap: 26px;
+  flex-wrap: wrap;
+  margin-top: 34px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
 .pricing-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));

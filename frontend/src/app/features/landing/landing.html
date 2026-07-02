@@ -99,17 +99,28 @@
   <section class="section section-alt" id="pricing">
     <div class="container">
       <h2 class="section-title">Simple pricing. <span>Premium product.</span></h2>
-      <p class="section-sub">Affordable for every clinic in India — and free while we're in early access.</p>
+      <p class="section-sub">
+        One flat monthly price. No per-patient fees, no setup costs,
+        no data monetisation — ever. Free while we're in early access.
+      </p>
+
+      <div class="billing-toggle">
+        <button type="button" class="filter-chip" [class.active]="!annual()" (click)="annual.set(false)">Monthly</button>
+        <button type="button" class="filter-chip" [class.active]="annual()" (click)="annual.set(true)">
+          Annual <span class="save-badge">save 20%</span>
+        </button>
+      </div>
 
       <div class="pricing-grid">
         @for (plan of plans; track plan.name) {
           <div class="price-card card" [class.popular]="plan.popular">
-            @if (plan.popular) { <span class="popular-badge">Most popular</span> }
+            @if (plan.popular) { <span class="popular-badge">✦ Most popular</span> }
             <h3>{{ plan.name }}</h3>
+            <p class="plan-scale">{{ plan.scale }}</p>
             <p class="plan-tagline">{{ plan.tagline }}</p>
             <div class="price">
-              <span class="amount">{{ plan.price }}</span>
-              <span class="period">/ {{ plan.period }}</span>
+              <span class="amount">{{ priceOf(plan) }}</span>
+              <span class="period">/ month{{ annual() ? ', billed yearly' : '' }}</span>
             </div>
             <ul class="plan-features">
               @for (feature of plan.features; track feature) {
@@ -125,6 +136,13 @@
             </a>
           </div>
         }
+      </div>
+
+      <div class="trust-strip">
+        <span>✓ No hidden fees</span>
+        <span>✓ Zero data monetisation</span>
+        <span>✓ Cancel anytime</span>
+        <span>✓ Your data is exportable</span>
       </div>
     </div>
   </section>

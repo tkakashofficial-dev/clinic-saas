@@ -2,8 +2,36 @@
   <aside class="sidebar">
     <div class="brand">
       <span class="mark">✚</span>
-      <span class="name">Clinora</span>
+      <span class="name">Klinovo</span>
     </div>
+
+    @if (showSwitcher()) {
+      <div class="clinic-switcher">
+        <button type="button" class="switcher-trigger" (click)="switcherOpen.set(!switcherOpen())">
+          <span class="clinic-label">CLINIC</span>
+          <span class="clinic-name">{{ auth.clinicName() }}</span>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+
+        @if (switcherOpen()) {
+          <div class="switcher-panel">
+            @for (membership of auth.memberships(); track membership.tenantId) {
+              <button type="button" class="switcher-option"
+                      [class.current]="membership.tenantId === auth.currentTenantId()"
+                      (click)="switchTo(membership.tenantId)">
+                <span>{{ membership.clinicName }}</span>
+                @if (membership.tenantId === auth.currentTenantId()) {
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                }
+              </button>
+            }
+            <button type="button" class="switcher-option new-clinic" (click)="openNewClinic()">
+              <span>＋ New clinic</span>
+            </button>
+          </div>
+        }
+      </div>
+    }
 
     <nav class="nav">
       @for (item of navItems(); track item.path) {
@@ -43,3 +71,39 @@
     <router-outlet />
   </main>
 </div>
+
+@if (newClinicOpen()) {
+  <div class="drawer-backdrop" (click)="newClinicOpen.set(false)"></div>
+  <aside class="drawer" role="dialog" aria-label="Open a new clinic">
+    <div class="drawer-header">
+      <h2>Open a new clinic</h2>
+      <button type="button" class="btn btn-ghost" (click)="newClinicOpen.set(false)" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="drawer-body">
+      <p class="muted" style="margin-bottom:16px">
+        You'll be the Admin of the new clinic. Its patients, staff and appointments
+        are completely separate from this one.
+      </p>
+      <div class="field">
+        <label for="nc-name">Clinic name *</label>
+        <input id="nc-name" class="input" [(ngModel)]="newClinicName"
+               placeholder="Smile Dental — Ernakulam Branch">
+      </div>
+      <label class="doctor-check">
+        <input type="checkbox" [(ngModel)]="newClinicIsDoctor">
+        I practice as a doctor at this clinic too
+      </label>
+    </div>
+
+    <div class="drawer-footer">
+      <button type="button" class="btn btn-secondary" (click)="newClinicOpen.set(false)">Cancel</button>
+      <button type="button" class="btn btn-primary" [disabled]="creating() || !newClinicName.trim()"
+              (click)="createClinic()">
+        {{ creating() ? 'Opening…' : 'Open clinic' }}
+      </button>
+    </div>
+  </aside>
+}

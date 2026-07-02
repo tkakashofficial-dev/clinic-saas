@@ -27,14 +27,12 @@ public class AuthService : IAuthService
         RegisterRequest request,
         CancellationToken cancellationToken = default)
     {
-        // 1. Check email not already taken
         var emailExists = await _context.SystemUsers
             .AnyAsync(u => u.Email == request.Email, cancellationToken);
 
         if (emailExists)
             throw new ConflictException("Email is already registered.");
 
-        // 2. Create SystemUser — the global login account
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
         var systemUser = new SystemUser(
             request.Email,
@@ -44,51 +42,24 @@ public class AuthService : IAuthService
 
         _context.SystemUsers.Add(systemUser);
 
-        // 3. Create Tenant — the clinic
-        var tenant = new Tenant(request.ClinicName);
-        _context.Tenants.Add(tenant);
+        // Provision the clinic: tenant + membership + seeded roles + owner roles
+        var (tenant, tenantUser, ownerRoles) =
+            ProvisionClinic(systemUser.Id, request.ClinicName, request.OwnerIsDoctor);
 
-        // 4. Create TenantUser — links this person to this clinic
-        var tenantUser = new TenantUser(tenant.Id, systemUser.Id);
-        _context.TenantUsers.Add(tenantUser);
-
-        // 5. Seed the full closed set of roles for this tenant so
-        //    [Authorize(Roles = ...)] can always match
-        var seededRoles = new Dictionary<string, Role>();
-        foreach (var roleName in RoleNames.All)
-        {
-            var role = new Role(tenant.Id, roleName, RoleNames.DescriptionOf(roleName));
-            _context.Roles.Add(role);
-            seededRoles[roleName] = role;
-        }
-
-        // 6. The owner is always Admin; a practicing owner is ALSO a Doctor
-        //    so patients can be booked to them (investor-owners stay Admin-only)
-        var ownerRoles = new List<string> { RoleNames.Admin };
-        if (request.OwnerIsDoctor)
-            ownerRoles.Add(RoleNames.Doctor);
-
-        foreach (var roleName in ownerRoles)
-            _context.TenantUserRoles.Add(
-                new TenantUserRole(tenantUser.Id, seededRoles[roleName].Id));
-
-        // 7. Issue the refresh token alongside the account
         var refreshToken = IssueRefreshToken(systemUser.Id);
-
-        // 8. Save everything in one transaction
         await _context.SaveChangesAsync(cancellationToken);
 
         var fullName = $"{request.FirstName} {request.LastName}";
         return BuildResponse(
-            systemUser.Id, tenantUser.Id, tenant.Id,
-            systemUser.Email, fullName, ownerRoles, refreshToken);
+            systemUser.Id, tenantUser.Id, tenant.Id, tenant.Name,
+            systemUser.Email, fullName, ownerRoles, refreshToken,
+            [new MembershipDto { TenantId = tenant.Id, ClinicName = tenant.Name }]);
     }
 
     public async Task<AuthResponse> LoginAsync(
         LoginRequest request,
         CancellationToken cancellationToken = default)
     {
-        // 1. Find SystemUser by email
         var systemUser = await _context.SystemUsers
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive, cancellationToken);
@@ -96,21 +67,11 @@ public class AuthService : IAuthService
         if (systemUser is null)
             throw new UnauthorizedAccessException("Invalid email or password.");
 
-        // 2. Verify password
         var passwordValid = BCrypt.Net.BCrypt.Verify(request.Password, systemUser.PasswordHash);
         if (!passwordValid)
             throw new UnauthorizedAccessException("Invalid email or password.");
 
-        // 3. Resolve membership + roles, issue tokens
-        var (tenantUser, roles) = await ResolveMembershipAsync(systemUser.Id, cancellationToken);
-
-        var refreshToken = IssueRefreshToken(systemUser.Id);
-        await _context.SaveChangesAsync(cancellationToken);
-
-        var fullName = $"{systemUser.FirstName} {systemUser.LastName}";
-        return BuildResponse(
-            systemUser.Id, tenantUser.Id, tenantUser.TenantId,
-            systemUser.Email, fullName, roles, refreshToken);
+        return await IssueForUserAsync(systemUser, preferredTenantId: null, cancellationToken);
     }
 
     public async Task<AuthResponse> RefreshAsync(
@@ -126,50 +87,147 @@ public class AuthService : IAuthService
         if (storedToken is null || !storedToken.IsActive || !storedToken.SystemUser.IsActive)
             throw new UnauthorizedAccessException("Invalid or expired refresh token.");
 
-        // Rotation: every refresh token is single-use. A replayed (stolen)
-        // token is dead the moment the legitimate client has refreshed.
+        // Rotation: every refresh token is single-use
         storedToken.Revoke();
 
-        var systemUser = storedToken.SystemUser;
-        var (tenantUser, roles) = await ResolveMembershipAsync(systemUser.Id, cancellationToken);
+        return await IssueForUserAsync(storedToken.SystemUser, preferredTenantId: null, cancellationToken);
+    }
 
-        var newRefreshToken = IssueRefreshToken(systemUser.Id);
+    public async Task<AuthResponse> CreateClinicAsync(
+        Guid systemUserId,
+        CreateClinicRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var systemUser = await _context.SystemUsers
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == systemUserId && u.IsActive, cancellationToken)
+            ?? throw new UnauthorizedAccessException("User not found.");
+
+        var (tenant, tenantUser, ownerRoles) =
+            ProvisionClinic(systemUser.Id, request.Name, request.OwnerIsDoctor);
+
+        var refreshToken = IssueRefreshToken(systemUser.Id);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        // Respond scoped to the NEW clinic so the UI lands there directly
+        var memberships = await GetMembershipsAsync(systemUser.Id, cancellationToken);
+        var fullName = $"{systemUser.FirstName} {systemUser.LastName}";
+        return BuildResponse(
+            systemUser.Id, tenantUser.Id, tenant.Id, tenant.Name,
+            systemUser.Email, fullName, ownerRoles, refreshToken, memberships);
+    }
+
+    public async Task<AuthResponse> SwitchClinicAsync(
+        Guid systemUserId,
+        SwitchClinicRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var systemUser = await _context.SystemUsers
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == systemUserId && u.IsActive, cancellationToken)
+            ?? throw new UnauthorizedAccessException("User not found.");
+
+        var response = await IssueForUserAsync(systemUser, request.TenantId, cancellationToken);
+
+        // If the preferred tenant wasn't among the memberships, refuse loudly
+        if (response.TenantId != request.TenantId)
+            throw new UnauthorizedAccessException("You are not a member of that clinic.");
+
+        return response;
+    }
+
+    /// <summary>
+    /// Creates a Tenant, links the user as its member, seeds the closed role
+    /// set, and assigns owner roles (Admin, plus Doctor for practicing owners).
+    /// Caller is responsible for SaveChanges.
+    /// </summary>
+    private (Tenant Tenant, TenantUser TenantUser, List<string> OwnerRoles) ProvisionClinic(
+        Guid systemUserId, string clinicName, bool ownerIsDoctor)
+    {
+        var tenant = new Tenant(clinicName);
+        _context.Tenants.Add(tenant);
+
+        var tenantUser = new TenantUser(tenant.Id, systemUserId);
+        _context.TenantUsers.Add(tenantUser);
+
+        var seededRoles = new Dictionary<string, Role>();
+        foreach (var roleName in RoleNames.All)
+        {
+            var role = new Role(tenant.Id, roleName, RoleNames.DescriptionOf(roleName));
+            _context.Roles.Add(role);
+            seededRoles[roleName] = role;
+        }
+
+        var ownerRoles = new List<string> { RoleNames.Admin };
+        if (ownerIsDoctor)
+            ownerRoles.Add(RoleNames.Doctor);
+
+        foreach (var roleName in ownerRoles)
+            _context.TenantUserRoles.Add(
+                new TenantUserRole(tenantUser.Id, seededRoles[roleName].Id));
+
+        return (tenant, tenantUser, ownerRoles);
+    }
+
+    /// <summary>
+    /// Issues a full token pair for a user, scoped to the preferred clinic
+    /// (or their first clinic when no preference). Saves changes.
+    /// </summary>
+    private async Task<AuthResponse> IssueForUserAsync(
+        SystemUser systemUser, Guid? preferredTenantId, CancellationToken cancellationToken)
+    {
+        // No JWT exists yet in these flows, so the tenant filter is skipped
+        // (soft-delete filtering stays active)
+        var tenantUsers = await _context.TenantUsers
+            .AsNoTracking()
+            .IgnoreQueryFilters([QueryFilters.Tenant])
+            .Include(tu => tu.Tenant)
+            .Include(tu => tu.Roles)
+                .ThenInclude(r => r.Role)
+            .Where(tu => tu.SystemUserId == systemUser.Id && tu.IsActive)
+            .OrderBy(tu => tu.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+        if (tenantUsers.Count == 0)
+            throw new UnauthorizedAccessException("No active clinic membership found.");
+
+        var current = tenantUsers.FirstOrDefault(tu => tu.TenantId == preferredTenantId)
+                      ?? tenantUsers[0];
+
+        var roles = current.Roles
+            .Select(r => r.Role.Name)
+            .OrderBy(name => RoleNames.All.ToList().IndexOf(name))
+            .ToList();
+        if (roles.Count == 0)
+            roles.Add(RoleNames.Receptionist);
+
+        var memberships = tenantUsers
+            .Select(tu => new MembershipDto { TenantId = tu.TenantId, ClinicName = tu.Tenant.Name })
+            .ToList();
+
+        var refreshToken = IssueRefreshToken(systemUser.Id);
         await _context.SaveChangesAsync(cancellationToken);
 
         var fullName = $"{systemUser.FirstName} {systemUser.LastName}";
         return BuildResponse(
-            systemUser.Id, tenantUser.Id, tenantUser.TenantId,
-            systemUser.Email, fullName, roles, newRefreshToken);
+            systemUser.Id, current.Id, current.TenantId, current.Tenant.Name,
+            systemUser.Email, fullName, roles, refreshToken, memberships);
     }
 
-    /// <summary>
-    /// Finds the user's active clinic membership and ALL their roles,
-    /// ordered by privilege (Admin first). No JWT exists yet in these flows,
-    /// so the tenant filter is skipped (soft-delete filtering stays active).
-    /// </summary>
-    private async Task<(TenantUser TenantUser, List<string> Roles)> ResolveMembershipAsync(
-        Guid systemUserId,
-        CancellationToken cancellationToken)
+    private async Task<List<MembershipDto>> GetMembershipsAsync(
+        Guid systemUserId, CancellationToken cancellationToken)
     {
-        var tenantUser = await _context.TenantUsers
+        return await _context.TenantUsers
             .AsNoTracking()
             .IgnoreQueryFilters([QueryFilters.Tenant])
-            .Include(tu => tu.Roles)
-                .ThenInclude(r => r.Role)
-            .FirstOrDefaultAsync(tu => tu.SystemUserId == systemUserId && tu.IsActive, cancellationToken);
-
-        if (tenantUser is null)
-            throw new UnauthorizedAccessException("No active clinic membership found.");
-
-        var roles = tenantUser.Roles
-            .Select(r => r.Role.Name)
-            .OrderBy(name => RoleNames.All.ToList().IndexOf(name)) // Admin > Doctor > Receptionist
-            .ToList();
-
-        if (roles.Count == 0)
-            roles.Add(RoleNames.Receptionist);
-
-        return (tenantUser, roles);
+            .Where(tu => tu.SystemUserId == systemUserId && tu.IsActive)
+            .OrderBy(tu => tu.CreatedAt)
+            .Select(tu => new MembershipDto
+            {
+                TenantId = tu.TenantId,
+                ClinicName = tu.Tenant.Name
+            })
+            .ToListAsync(cancellationToken);
     }
 
     /// <summary>
@@ -190,8 +248,9 @@ public class AuthService : IAuthService
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
 
     private AuthResponse BuildResponse(
-        Guid systemUserId, Guid tenantUserId, Guid tenantId,
-        string email, string fullName, List<string> roles, string refreshToken)
+        Guid systemUserId, Guid tenantUserId, Guid tenantId, string clinicName,
+        string email, string fullName, List<string> roles, string refreshToken,
+        List<MembershipDto> memberships)
     {
         var (token, expiresAt) = _jwtTokenGenerator.Generate(
             systemUserId, tenantUserId, tenantId, email, fullName, roles);
@@ -206,6 +265,8 @@ public class AuthService : IAuthService
             Roles = roles,
             TenantId = tenantId,
             TenantUserId = tenantUserId,
+            ClinicName = clinicName,
+            Memberships = memberships,
             ExpiresAt = expiresAt
         };
     }

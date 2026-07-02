@@ -24,7 +24,15 @@ export interface AuthResponse {
   roles: Role[];
   tenantId: string;
   tenantUserId: string;
+  clinicName: string;
+  /** Every clinic this user belongs to — powers the clinic switcher. */
+  memberships: Membership[];
   expiresAt: string;
+}
+
+export interface Membership {
+  tenantId: string;
+  clinicName: string;
 }
 
 export type Role = 'Admin' | 'Doctor' | 'Receptionist';

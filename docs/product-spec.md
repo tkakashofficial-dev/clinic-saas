@@ -72,7 +72,8 @@ Based on what Dentrix, CareStack, Cliniko and SimplePractice sell. ✅ = we have
 | **Clinical** | Consult notes ✅, prescriptions + PDF ✅, medical history ✅ (basic), **dental chart (odontogram)** ⭐, treatment plans with staged visits, allergy alerts, file/X-ray attachments | Core ✅ |
 | **Billing** | Treatment price list, invoices per visit, payment tracking, insurance claims, daily cash report | Phase 5 |
 | **Patient engagement** | Appointment reminders (WhatsApp/SMS) ⭐ high demand, patient portal, recall campaigns ("6-month cleaning due"), digital consent forms | Phase 5–6 |
-| **Operations** | Role dashboards ✅, reports & analytics, audit log, inventory (materials), multi-branch | Phase 4–6 |
+| **Operations** | Role dashboards ✅, multi-clinic switcher ✅, reports & analytics, audit log, **pharmacy & inventory** (dispensing, stock, batch/expiry), multi-branch | Phase 4–6 |
+| **India-specific** | **ABDM / ABHA compliance** (govt health ID — competitors sell this hard), multi-language prescriptions (Malayalam), UPI payments, WhatsApp-first communication | Phase 5–6 |
 | **Platform (Super Admin — the SaaS owner)** | Clinic onboarding & subscription billing, plans/limits, usage analytics, support impersonation — a SEPARATE back-office app, never mixed with clinic UI | Phase 7 |
 
 ⭐ = differentiators clinics actually switch products for: the odontogram (visual
@@ -92,3 +93,6 @@ tooth chart) and WhatsApp reminders matter more in sales demos than any report.
 | 4 | Modular monolith, no microservices, no repository pattern | Right size for the team (1 dev) and stage; EF Core's DbContext already is a repository/UoW. | 2026-07-02 |
 | 5 | Errors as RFC 7807 Problem Details from one handler | Standard, machine-readable, no leaked internals; Angular can render `detail` directly. | 2026-07-02 |
 | 6 | Dental-first (not generic clinic) | Real client is a dental clinic; niche focus is a selling advantage. Generic naming stays in code (Patient, Appointment) so other verticals remain possible. | 2026-07-02 |
+| 7 | Roles stay a closed set; NO admin-created free-text roles | `[Authorize]` matches exact strings — user-invented roles would silently get no permissions (or be a security hole). The industry answer for "other roles" (Nurse, Pharmacist, Accountant) is PERMISSION-BASED RBAC: fine-grained permissions, roles = named permission bundles, custom roles as an enterprise feature. Planned Phase 6. | 2026-07-02 |
+| 8 | Multi-clinic owner = multiple tenant memberships + clinic switcher (not an Organization entity yet) | SystemUser↔TenantUser already supports N clinics per person. Login scopes to one clinic; switch-clinic re-issues the token; "New clinic" self-serve provisioning. A true Organization layer (consolidated reporting, shared patients across branches) only makes sense with real multi-branch customers — Phase 7. | 2026-07-02 |
+| 9 | Brand: Klinovo (provisional) | "Clinora" already exists in market. "Klinovo" had zero search collisions (verified 2026-07-02); formal trademark + domain check still required before spending on branding. | 2026-07-02 |
