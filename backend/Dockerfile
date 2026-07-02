@@ -14,6 +14,13 @@ RUN dotnet publish Clinic.Api/Clinic.Api.csproj -c Release -o /app/publish /p:Us
 
 # ---- Runtime stage ----
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+
+# Npgsql probes Kerberos (libgssapi) during auth negotiation; the slim image
+# lacks it and logs a loud (harmless) error on every connection — install it
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libgssapi-krb5-2 \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 COPY --from=build /app/publish .
 

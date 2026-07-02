@@ -16,7 +16,12 @@ public class ClinicDbContextFactory : IDesignTimeDbContextFactory<ClinicDbContex
             Environment.GetEnvironmentVariable("CLINIC_DB_CONNECTION")
             ?? "Host=localhost;Port=5432;Database=clinic_db;Username=postgres";
 
-        optionsBuilder.UseNpgsql(connectionString);
+        // MUST match AddInfrastructure's configuration exactly — a mismatch
+        // makes CLI migrations write history to 'public' while the app reads
+        // 'clinic', so the app re-applies everything and crashes (shipped bug)
+        optionsBuilder.UseNpgsql(
+            connectionString,
+            npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "clinic"));
 
         return new ClinicDbContext(
             optionsBuilder.Options,
