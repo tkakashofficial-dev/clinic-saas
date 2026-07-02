@@ -1,13 +1,14 @@
 import { DatePipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { parseApiError } from '../../core/api/api-error';
 import { StaffService } from '../../core/api/staff.service';
 import { StaffDto } from '../../core/models/api.models';
 
 @Component({
   selector: 'app-staff',
-  imports: [DatePipe, ReactiveFormsModule],
+  imports: [DatePipe, ReactiveFormsModule, RouterLink],
   templateUrl: './staff.html',
 })
 export class Staff {
@@ -21,6 +22,8 @@ export class Staff {
   readonly saving = signal(false);
   readonly formError = signal('');
   readonly fieldErrors = signal<Record<string, string>>({});
+  /** True when the API said 402: plan limit reached — show the upgrade path. */
+  readonly upgradeNeeded = signal(false);
 
   readonly form = this.fb.nonNullable.group({
     firstName: ['', Validators.required],
@@ -90,6 +93,7 @@ export class Staff {
         const parsed = parseApiError(err);
         this.formError.set(Object.keys(parsed.fieldErrors).length ? '' : parsed.message);
         this.fieldErrors.set(parsed.fieldErrors);
+        this.upgradeNeeded.set(parsed.status === 402);
         this.saving.set(false);
       },
     });

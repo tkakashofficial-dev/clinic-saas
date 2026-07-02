@@ -199,6 +199,18 @@ export interface PracticeOverview {
   perDoctorLast30Days: { doctorName: string; total: number; completed: number }[];
 }
 
+// ---------- Billing ----------
+
+export interface BillingSummary {
+  plan: 'Solo' | 'Clinic' | 'Growth';
+  isInTrial: boolean;
+  trialEndsAt: string | null;
+  staffCount: number;
+  maxStaff: number;
+  doctorCount: number;
+  maxDoctors: number;
+}
+
 // ---------- Errors (RFC 7807) ----------
 
 export interface ProblemDetails {

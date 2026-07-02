@@ -67,7 +67,15 @@
 
     <form [formGroup]="form" (ngSubmit)="save()" class="drawer-body" id="staff-form">
       @if (formError()) {
-        <div class="alert-error">{{ formError() }}</div>
+        <div class="alert-error">
+          {{ formError() }}
+          @if (upgradeNeeded()) {
+            <a routerLink="/billing" class="btn btn-primary"
+               style="margin-top:10px; width:100%;" (click)="closeDrawer()">
+              Upgrade plan →
+            </a>
+          }
+        </div>
       }
 
       <div class="form-row">

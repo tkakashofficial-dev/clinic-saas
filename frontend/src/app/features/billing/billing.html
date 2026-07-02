@@ -1,0 +1,89 @@
+<header class="page-header">
+  <div>
+    <h1>Plan & billing</h1>
+    <p class="sub">What your clinic is on, and where it can grow</p>
+  </div>
+</header>
+
+@if (success()) {
+  <div class="alert-success">{{ success() }}</div>
+}
+@if (error()) {
+  <div class="alert-error">{{ error() }}</div>
+}
+
+@if (loading()) {
+  <div class="card"><div class="skeleton-row"></div><div class="skeleton-row"></div></div>
+} @else if (summary(); as data) {
+
+  <section class="card card-pad current-plan">
+    <div class="current-head">
+      <div>
+        <div class="current-label">CURRENT PLAN</div>
+        <div class="current-name">
+          {{ data.plan }}
+          @if (data.isInTrial) {
+            <span class="trial-badge">Free trial until {{ data.trialEndsAt | date: 'd MMM' }}</span>
+          }
+        </div>
+        @if (data.isInTrial) {
+          <p class="muted current-note">
+            You're enjoying full Clinic-tier limits during the trial. Pick a plan
+            below before it ends — no payment needed during beta.
+          </p>
+        }
+      </div>
+    </div>
+
+    <div class="usage-grid">
+      <div class="usage">
+        <div class="usage-head">
+          <span>Staff members</span>
+          <span class="num">{{ data.staffCount }} / {{ limitLabel(data.maxStaff) }}</span>
+        </div>
+        <div class="usage-track"><div class="usage-fill" [style.width.%]="staffPercent()"></div></div>
+      </div>
+      <div class="usage">
+        <div class="usage-head">
+          <span>Doctors</span>
+          <span class="num">{{ data.doctorCount }} / {{ limitLabel(data.maxDoctors) }}</span>
+        </div>
+        <div class="usage-track"><div class="usage-fill" [style.width.%]="doctorPercent()"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="plans-grid">
+    @for (plan of planCards; track plan.key) {
+      <div class="card card-pad plan-card" [class.popular]="plan.popular" [class.current]="isCurrent(plan)">
+        @if (plan.popular && !isCurrent(plan)) { <span class="pop-badge">✦ Most popular</span> }
+        <h3>{{ plan.key }}</h3>
+        <div class="plan-price">₹{{ plan.price.toLocaleString('en-IN') }}<span>/mo</span></div>
+        <div class="plan-scale">{{ plan.scale }}</div>
+        <ul class="plan-list">
+          @for (feature of plan.features; track feature) {
+            <li>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              {{ feature }}
+            </li>
+          }
+        </ul>
+        @if (isCurrent(plan)) {
+          <button type="button" class="btn btn-secondary" disabled>Current plan</button>
+        } @else {
+          <button type="button" class="btn"
+                  [class.btn-primary]="plan.popular" [class.btn-secondary]="!plan.popular"
+                  [disabled]="switching() !== null"
+                  (click)="choose(plan)">
+            {{ switching() === plan.key ? 'Switching…' : 'Choose ' + plan.key }}
+          </button>
+        }
+      </div>
+    }
+  </div>
+
+  <p class="muted beta-note">
+    Beta: switching plans is instant and free. Online payments (UPI/cards via
+    Razorpay) arrive with public launch — early clinics keep a lifetime discount.
+  </p>
+}

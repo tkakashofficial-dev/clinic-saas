@@ -61,6 +61,12 @@ export const routes: Routes = [
         data: { roles: ['Admin'] },
         loadComponent: () => import('./features/staff/staff').then((m) => m.Staff),
       },
+      {
+        path: 'billing',
+        canActivate: [roleGuard],
+        data: { roles: ['Admin'] },
+        loadComponent: () => import('./features/billing/billing').then((m) => m.Billing),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

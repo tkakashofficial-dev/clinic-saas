@@ -13,5 +13,6 @@ public class TenantConfiguration : IEntityTypeConfiguration<Tenant>
         builder.Property(x => x.Name).IsRequired().HasMaxLength(200);
         builder.Property(x => x.Phone).HasMaxLength(20);
         builder.Property(x => x.Address).HasMaxLength(500);
+        builder.Property(x => x.Plan).HasConversion<string>().HasMaxLength(20);
     }
 }

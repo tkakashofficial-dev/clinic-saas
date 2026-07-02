@@ -32,6 +32,7 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             NotFoundException => (StatusCodes.Status404NotFound, "Resource not found"),
             ConflictException => (StatusCodes.Status409Conflict, "Conflict"),
             BadRequestException => (StatusCodes.Status400BadRequest, "Bad request"),
+            PlanLimitException => (StatusCodes.Status402PaymentRequired, "Plan limit reached"),
             UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "Unauthorized"),
             _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred")
         };

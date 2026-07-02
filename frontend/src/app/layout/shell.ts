@@ -2,14 +2,15 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { BillingService } from '../core/api/billing.service';
 import { NotificationsService } from '../core/api/notifications.service';
 import { AuthService } from '../core/auth/auth.service';
-import { NotificationDto, Role } from '../core/models/api.models';
+import { BillingSummary, NotificationDto, Role } from '../core/models/api.models';
 
 interface NavItem {
   label: string;
   path: string;
-  icon: 'dashboard' | 'patients' | 'appointments' | 'staff' | 'reports';
+  icon: 'dashboard' | 'patients' | 'appointments' | 'staff' | 'reports' | 'billing';
   roles: Role[];
 }
 
@@ -19,6 +20,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Appointments', path: '/appointments', icon: 'appointments', roles: ['Admin', 'Doctor', 'Receptionist'] },
   { label: 'Reports', path: '/reports', icon: 'reports', roles: ['Admin'] },
   { label: 'Staff', path: '/staff', icon: 'staff', roles: ['Admin'] },
+  { label: 'Billing', path: '/billing', icon: 'billing', roles: ['Admin'] },
 ];
 
 @Component({
@@ -30,6 +32,7 @@ const NAV_ITEMS: NavItem[] = [
 export class Shell {
   readonly auth = inject(AuthService);
   readonly notifications = inject(NotificationsService);
+  private readonly billing = inject(BillingService);
 
   readonly navItems = computed(() => {
     const roles = this.auth.roles();
@@ -46,8 +49,6 @@ export class Shell {
       .toUpperCase(),
   );
 
-  // The CLINIC is the hero of the sidebar — the product is just "powered by".
-  // Falls back to the product name for sessions from before clinic branding.
   readonly clinicDisplayName = computed(() => this.auth.clinicName() || 'My Clinic');
   readonly clinicInitials = computed(() =>
     this.clinicDisplayName()
@@ -59,22 +60,41 @@ export class Shell {
       .toUpperCase(),
   );
 
-  // ---- clinic switcher ----
+  // ---- clinic switcher (opening NEW clinics is an owner move — Admin only) ----
   readonly switcherOpen = signal(false);
   readonly newClinicOpen = signal(false);
   readonly creating = signal(false);
   newClinicName = '';
   newClinicIsDoctor = true;
 
-  readonly canSwitch = computed(() => this.auth.memberships().length > 0);
+  readonly canCreateClinic = computed(() => this.auth.hasRole('Admin'));
+  readonly canOpenSwitcher = computed(
+    () => this.auth.memberships().length > 1 || this.canCreateClinic(),
+  );
 
-  // ---- notifications ----
+  // ---- topbar: notifications + profile ----
   readonly notifOpen = signal(false);
   readonly notifLoading = signal(false);
   readonly notifItems = signal<NotificationDto[]>([]);
+  readonly profileOpen = signal(false);
+
+  // Trial banner for owners
+  readonly billingSummary = signal<BillingSummary | null>(null);
+  readonly trialDaysLeft = computed(() => {
+    const summary = this.billingSummary();
+    if (!summary?.isInTrial || !summary.trialEndsAt) return null;
+    const ms = new Date(summary.trialEndsAt).getTime() - Date.now();
+    return Math.max(0, Math.ceil(ms / 86_400_000));
+  });
 
   constructor() {
     this.notifications.startPolling();
+    if (this.auth.hasRole('Admin')) {
+      this.billing.getSummary().subscribe({
+        next: (summary) => this.billingSummary.set(summary),
+        error: () => {},
+      });
+    }
   }
 
   switchTo(tenantId: string): void {
@@ -101,6 +121,7 @@ export class Shell {
   }
 
   openNotifications(): void {
+    this.profileOpen.set(false);
     this.notifOpen.set(true);
     this.notifLoading.set(true);
     this.notifications.getMine(1, 30).subscribe({
@@ -119,6 +140,10 @@ export class Shell {
         this.notifications.unreadCount.set(0);
       },
     });
+  }
+
+  toggleProfile(): void {
+    this.profileOpen.update((open) => !open);
   }
 
   logout(): void {

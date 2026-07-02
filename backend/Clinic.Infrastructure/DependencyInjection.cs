@@ -49,6 +49,7 @@ public static class DependencyInjection
         services.AddScoped<IConsultationService, ConsultationService>();
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IReportsService, ReportsService>();
+        services.AddScoped<Clinic.Application.Features.Billing.Services.IBillingService, BillingService>();
         return services;
     }
 }

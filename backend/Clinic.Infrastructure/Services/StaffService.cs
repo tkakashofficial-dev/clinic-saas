@@ -53,6 +53,31 @@ public class StaffService : IStaffService
         if (roleNames.Count == 0)
             throw new BadRequestException("At least one role is required.");
 
+        // 0b. Plan entitlements — limits live in PlanLimits, enforcement here.
+        //     Trial clinics get full Clinic-tier limits.
+        var tenant = await _context.Tenants
+            .AsNoTracking()
+            .FirstAsync(t => t.Id == tenantId, cancellationToken);
+        var effectivePlan = tenant.IsInTrial ? Domain.Enums.PlanType.Clinic : tenant.Plan;
+
+        var currentStaff = await _context.TenantUsers
+            .CountAsync(tu => tu.TenantId == tenantId && tu.IsActive, cancellationToken);
+        if (currentStaff + 1 > PlanLimits.MaxStaff(effectivePlan))
+            throw new PlanLimitException(
+                $"The {PlanLimits.DisplayName(effectivePlan)} plan allows up to " +
+                $"{PlanLimits.MaxStaff(effectivePlan)} staff members. Upgrade your plan to add more.");
+
+        if (roleNames.Contains(RoleNames.Doctor))
+        {
+            var currentDoctors = await _context.TenantUsers
+                .CountAsync(tu => tu.TenantId == tenantId && tu.IsActive
+                    && tu.Roles.Any(r => r.Role.Name == RoleNames.Doctor), cancellationToken);
+            if (currentDoctors + 1 > PlanLimits.MaxDoctors(effectivePlan))
+                throw new PlanLimitException(
+                    $"The {PlanLimits.DisplayName(effectivePlan)} plan allows up to " +
+                    $"{PlanLimits.MaxDoctors(effectivePlan)} doctors. Upgrade your plan to add more.");
+        }
+
         // 1. Check email not already taken globally
         var emailExists = await _context.SystemUsers
             .AnyAsync(u => u.Email == request.Email, cancellationToken);
