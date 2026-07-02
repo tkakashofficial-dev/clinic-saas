@@ -1,4 +1,5 @@
-﻿using Clinic.Application.Features.Patients.DTOs;
+﻿using Clinic.Application.Common.Models;
+using Clinic.Application.Features.Patients.DTOs;
 
 namespace Clinic.Application.Features.Patients.Services;
 
@@ -8,8 +9,9 @@ public interface IPatientService
         RegisterPatientRequest request,
         CancellationToken cancellationToken = default);
 
-    Task<List<PatientDto>> GetAllPatientsAsync(
+    Task<PagedResult<PatientDto>> GetAllPatientsAsync(
         string? search,
+        PageRequest page,
         CancellationToken cancellationToken = default);
 
     Task<PatientDto> GetPatientByIdAsync(

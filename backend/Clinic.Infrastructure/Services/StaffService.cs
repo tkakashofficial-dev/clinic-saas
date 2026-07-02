@@ -1,5 +1,6 @@
 ﻿using Clinic.Application.Common.Exceptions;
 using Clinic.Application.Common.Interfaces;
+using Clinic.Application.Common.Models;
 using Clinic.Application.Features.Staff.DTOs;
 using Clinic.Application.Features.Staff.Services;
 using Clinic.Domain.Constants;
@@ -85,7 +86,8 @@ public class StaffService : IStaffService
         };
     }
 
-    public async Task<List<StaffDto>> GetAllStaffAsync(
+    public async Task<PagedResult<StaffDto>> GetAllStaffAsync(
+        PageRequest page,
         CancellationToken cancellationToken = default)
     {
         var tenantId = _currentUser.TenantId;
@@ -95,6 +97,7 @@ public class StaffService : IStaffService
         return await _context.TenantUsers
             .AsNoTracking()
             .Where(tu => tu.TenantId == tenantId)
+            .OrderBy(tu => tu.CreatedAt)   // stable order BEFORE Skip/Take
             .Select(tu => new StaffDto
             {
                 Id = tu.Id,
@@ -107,6 +110,6 @@ public class StaffService : IStaffService
                 IsActive = tu.IsActive,
                 CreatedAt = tu.CreatedAt
             })
-            .ToListAsync(cancellationToken);
+            .ToPagedResultAsync(page, cancellationToken);
     }
 }

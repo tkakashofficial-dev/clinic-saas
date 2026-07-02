@@ -1,4 +1,5 @@
-﻿using Clinic.Application.Features.Appointments.DTOs;
+﻿using Clinic.Application.Common.Models;
+using Clinic.Application.Features.Appointments.DTOs;
 
 namespace Clinic.Application.Features.Appointments.Services;
 
@@ -8,10 +9,11 @@ public interface IAppointmentService
         CreateAppointmentRequest request,
         CancellationToken cancellationToken = default);
 
-    Task<List<AppointmentDto>> GetAppointmentsAsync(
+    Task<PagedResult<AppointmentDto>> GetAppointmentsAsync(
         DateTime? date,
         string? status,
         Guid? doctorTenantUserId,
+        PageRequest page,
         CancellationToken cancellationToken = default);
 
     Task<AppointmentDto> GetAppointmentByIdAsync(

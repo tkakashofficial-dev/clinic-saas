@@ -1,5 +1,6 @@
 ﻿using Clinic.Application.Common.Exceptions;
 using Clinic.Application.Common.Interfaces;
+using Clinic.Application.Common.Models;
 using Clinic.Application.Features.Appointments.DTOs;
 using Clinic.Application.Features.Appointments.Services;
 using Clinic.Domain.Entities;
@@ -59,10 +60,11 @@ public class AppointmentService : IAppointmentService
         return await GetAppointmentByIdAsync(appointment.Id, cancellationToken);
     }
 
-    public async Task<List<AppointmentDto>> GetAppointmentsAsync(
+    public async Task<PagedResult<AppointmentDto>> GetAppointmentsAsync(
         DateTime? date,
         string? status,
         Guid? doctorTenantUserId,
+        PageRequest page,
         CancellationToken cancellationToken = default)
     {
         var tenantId = _currentUser.TenantId;
@@ -111,7 +113,7 @@ public class AppointmentService : IAppointmentService
                 Notes = a.Notes,
                 CreatedAt = a.CreatedAt
             })
-            .ToListAsync(cancellationToken);
+            .ToPagedResultAsync(page, cancellationToken);
     }
 
     public async Task<AppointmentDto> GetAppointmentByIdAsync(

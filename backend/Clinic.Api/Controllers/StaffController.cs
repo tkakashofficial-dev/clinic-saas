@@ -1,3 +1,4 @@
+using Clinic.Application.Common.Models;
 using Clinic.Application.Features.Staff.DTOs;
 using Clinic.Application.Features.Staff.Services;
 using Clinic.Domain.Constants;
@@ -27,7 +28,10 @@ public class StaffController : ControllerBase
 
     [HttpGet]
     [Authorize(Roles = RoleNames.Admin)]
-    public async Task<ActionResult<List<StaffDto>>> GetAllStaff(
-        CancellationToken cancellationToken)
-        => Ok(await _staffService.GetAllStaffAsync(cancellationToken));
+    public async Task<ActionResult<PagedResult<StaffDto>>> GetAllStaff(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = PageRequest.DefaultPageSize,
+        CancellationToken cancellationToken = default)
+        => Ok(await _staffService.GetAllStaffAsync(
+            new PageRequest(page, pageSize), cancellationToken));
 }

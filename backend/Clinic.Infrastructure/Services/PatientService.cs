@@ -1,5 +1,6 @@
 ﻿using Clinic.Application.Common.Exceptions;
 using Clinic.Application.Common.Interfaces;
+using Clinic.Application.Common.Models;
 using Clinic.Application.Features.Patients.DTOs;
 using Clinic.Application.Features.Patients.Services;
 using Clinic.Domain.Entities;
@@ -74,8 +75,9 @@ public class PatientService : IPatientService
         return MapToDto(patient, request.MedicalConditionCodes);
     }
 
-    public async Task<List<PatientDto>> GetAllPatientsAsync(
+    public async Task<PagedResult<PatientDto>> GetAllPatientsAsync(
         string? search,
+        PageRequest page,
         CancellationToken cancellationToken = default)
     {
         var tenantId = _currentUser.TenantId;
@@ -95,6 +97,7 @@ public class PatientService : IPatientService
         }
 
         return await query
+            .OrderByDescending(p => p.CreatedAt)   // stable order BEFORE Skip/Take
             .Select(p => new PatientDto
             {
                 Id = p.Id,
@@ -110,8 +113,7 @@ public class PatientService : IPatientService
                     .ToList(),
                 RegisteredAt = p.CreatedAt
             })
-            .OrderByDescending(p => p.RegisteredAt)
-            .ToListAsync(cancellationToken);
+            .ToPagedResultAsync(page, cancellationToken);
     }
 
     public async Task<PatientDto> GetPatientByIdAsync(

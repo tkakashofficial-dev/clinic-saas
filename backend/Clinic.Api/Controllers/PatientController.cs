@@ -1,3 +1,4 @@
+using Clinic.Application.Common.Models;
 using Clinic.Application.Features.Patients.DTOs;
 using Clinic.Application.Features.Patients.Services;
 using Clinic.Domain.Constants;
@@ -27,10 +28,13 @@ public class PatientController : ControllerBase
 
     [HttpGet]
     [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Doctor},{RoleNames.Receptionist}")]
-    public async Task<ActionResult<List<PatientDto>>> GetAllPatients(
+    public async Task<ActionResult<PagedResult<PatientDto>>> GetAllPatients(
         [FromQuery] string? search,
-        CancellationToken cancellationToken)
-        => Ok(await _patientService.GetAllPatientsAsync(search, cancellationToken));
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = PageRequest.DefaultPageSize,
+        CancellationToken cancellationToken = default)
+        => Ok(await _patientService.GetAllPatientsAsync(
+            search, new PageRequest(page, pageSize), cancellationToken));
 
     [HttpGet("{id}")]
     [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Doctor},{RoleNames.Receptionist}")]

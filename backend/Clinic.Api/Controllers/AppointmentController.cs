@@ -1,3 +1,4 @@
+using Clinic.Application.Common.Models;
 using Clinic.Application.Features.Appointments.DTOs;
 using Clinic.Application.Features.Appointments.Services;
 using Clinic.Domain.Constants;
@@ -27,13 +28,15 @@ public class AppointmentController : ControllerBase
 
     [HttpGet]
     [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Doctor},{RoleNames.Receptionist}")]
-    public async Task<ActionResult<List<AppointmentDto>>> GetAppointments(
+    public async Task<ActionResult<PagedResult<AppointmentDto>>> GetAppointments(
         [FromQuery] DateTime? date,
         [FromQuery] string? status,
         [FromQuery] Guid? doctorTenantUserId,
-        CancellationToken cancellationToken)
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = PageRequest.DefaultPageSize,
+        CancellationToken cancellationToken = default)
         => Ok(await _appointmentService.GetAppointmentsAsync(
-            date, status, doctorTenantUserId, cancellationToken));
+            date, status, doctorTenantUserId, new PageRequest(page, pageSize), cancellationToken));
 
     [HttpGet("{id}")]
     [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Doctor},{RoleNames.Receptionist}")]
