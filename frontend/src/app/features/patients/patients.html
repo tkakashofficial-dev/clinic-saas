@@ -1,0 +1,157 @@
+<header class="page-header">
+  <div>
+    <h1>Patients</h1>
+    <p class="sub">{{ result()?.totalCount ?? '—' }} registered</p>
+  </div>
+  @if (auth.hasRole('Admin', 'Receptionist')) {
+    <button type="button" class="btn btn-primary" (click)="openDrawer()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Register patient
+    </button>
+  }
+</header>
+
+<div class="toolbar">
+  <div class="search-box">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" class="input" placeholder="Search by name or phone…"
+           (input)="onSearchInput($any($event.target).value)">
+  </div>
+</div>
+
+<section class="card">
+  @if (loading()) {
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
+  } @else if ((result()?.items ?? []).length === 0) {
+    <div class="empty-state">
+      <div class="icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      </div>
+      <h3>{{ search() ? 'No patients match your search' : 'No patients yet' }}</h3>
+      <p>{{ search() ? 'Try a different name or phone number.' : 'Register your first patient to get started.' }}</p>
+      @if (!search() && auth.hasRole('Admin', 'Receptionist')) {
+        <button type="button" class="btn btn-secondary" (click)="openDrawer()">Register patient</button>
+      }
+    </div>
+  } @else {
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Patient</th>
+            <th>Phone</th>
+            <th>Gender</th>
+            <th>Age</th>
+            <th>Registered</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (patient of result()!.items; track patient.id) {
+            <tr>
+              <td>
+                <div class="cell-main">{{ patient.fullName }}</div>
+                @if (patient.email) { <div class="cell-sub">{{ patient.email }}</div> }
+              </td>
+              <td class="num">{{ patient.phone }}</td>
+              <td>{{ patient.gender }}</td>
+              <td class="num">{{ patient.age ?? '—' }}</td>
+              <td class="muted">{{ patient.registeredAt | date: 'd MMM y' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <footer class="paginator">
+      <span>
+        Page {{ result()!.page }} of {{ result()!.totalPages }}
+        · {{ result()!.totalCount }} total
+      </span>
+      <div class="pages">
+        <button type="button" class="btn btn-secondary" [disabled]="!result()!.hasPreviousPage"
+                (click)="goToPage(result()!.page - 1)">Previous</button>
+        <button type="button" class="btn btn-secondary" [disabled]="!result()!.hasNextPage"
+                (click)="goToPage(result()!.page + 1)">Next</button>
+      </div>
+    </footer>
+  }
+</section>
+
+@if (drawerOpen()) {
+  <div class="drawer-backdrop" (click)="closeDrawer()"></div>
+  <aside class="drawer" role="dialog" aria-label="Register patient">
+    <div class="drawer-header">
+      <h2>Register patient</h2>
+      <button type="button" class="btn btn-ghost" (click)="closeDrawer()" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="save()" class="drawer-body" id="patient-form">
+      @if (formError()) {
+        <div class="alert-error">{{ formError() }}</div>
+      }
+
+      <div class="form-row">
+        <div class="field">
+          <label for="p-first">First name *</label>
+          <input id="p-first" class="input" formControlName="firstName" placeholder="John"
+                 [class.invalid]="!!errorFor('firstName')">
+          @if (errorFor('firstName')) { <span class="field-error">{{ errorFor('firstName') }}</span> }
+        </div>
+        <div class="field">
+          <label for="p-last">Last name *</label>
+          <input id="p-last" class="input" formControlName="lastName" placeholder="Doe"
+                 [class.invalid]="!!errorFor('lastName')">
+          @if (errorFor('lastName')) { <span class="field-error">{{ errorFor('lastName') }}</span> }
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="p-phone">Phone *</label>
+        <input id="p-phone" class="input" formControlName="phone" placeholder="+31 6 12345678"
+               [class.invalid]="!!errorFor('phone')">
+        @if (errorFor('phone')) { <span class="field-error">{{ errorFor('phone') }}</span> }
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label for="p-gender">Gender *</label>
+          <select id="p-gender" class="input" formControlName="gender">
+            <option>Male</option>
+            <option>Female</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="p-dob">Date of birth</label>
+          <input id="p-dob" type="date" class="input" formControlName="dateOfBirth"
+                 [class.invalid]="!!errorFor('dateOfBirth')">
+          @if (errorFor('dateOfBirth')) { <span class="field-error">{{ errorFor('dateOfBirth') }}</span> }
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="p-email">Email</label>
+        <input id="p-email" type="email" class="input" formControlName="email" placeholder="john@example.com"
+               [class.invalid]="!!errorFor('email')">
+        @if (errorFor('email')) { <span class="field-error">{{ errorFor('email') }}</span> }
+      </div>
+
+      <div class="field">
+        <label for="p-address">Address</label>
+        <textarea id="p-address" class="input" formControlName="address" placeholder="Street, city"></textarea>
+      </div>
+    </form>
+
+    <div class="drawer-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeDrawer()">Cancel</button>
+      <button type="submit" form="patient-form" class="btn btn-primary" [disabled]="saving()">
+        {{ saving() ? 'Saving…' : 'Register patient' }}
+      </button>
+    </div>
+  </aside>
+}

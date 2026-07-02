@@ -1,0 +1,119 @@
+<header class="page-header">
+  <div>
+    <h1>Staff</h1>
+    <p class="sub">Your clinic team</p>
+  </div>
+  <button type="button" class="btn btn-primary" (click)="openDrawer()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Add staff member
+  </button>
+</header>
+
+<section class="card">
+  @if (loading()) {
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
+  } @else if (staff().length === 0) {
+    <div class="empty-state">
+      <div class="icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <h3>No team members yet</h3>
+      <p>Add your doctors and receptionists so they can sign in.</p>
+      <button type="button" class="btn btn-secondary" (click)="openDrawer()">Add staff member</button>
+    </div>
+  } @else {
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Joined</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (member of staff(); track member.id) {
+            <tr>
+              <td class="cell-main">{{ member.fullName }}</td>
+              <td class="muted">{{ member.email }}</td>
+              <td>{{ member.role }}</td>
+              <td>
+                <span class="chip" [class.chip-completed]="member.isActive" [class.chip-cancelled]="!member.isActive">
+                  {{ member.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td class="muted">{{ member.createdAt | date: 'd MMM y' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>
+
+@if (drawerOpen()) {
+  <div class="drawer-backdrop" (click)="closeDrawer()"></div>
+  <aside class="drawer" role="dialog" aria-label="Add staff member">
+    <div class="drawer-header">
+      <h2>Add staff member</h2>
+      <button type="button" class="btn btn-ghost" (click)="closeDrawer()" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="save()" class="drawer-body" id="staff-form">
+      @if (formError()) {
+        <div class="alert-error">{{ formError() }}</div>
+      }
+
+      <div class="form-row">
+        <div class="field">
+          <label for="s-first">First name *</label>
+          <input id="s-first" class="input" formControlName="firstName"
+                 [class.invalid]="!!errorFor('firstName')">
+          @if (errorFor('firstName')) { <span class="field-error">{{ errorFor('firstName') }}</span> }
+        </div>
+        <div class="field">
+          <label for="s-last">Last name *</label>
+          <input id="s-last" class="input" formControlName="lastName"
+                 [class.invalid]="!!errorFor('lastName')">
+          @if (errorFor('lastName')) { <span class="field-error">{{ errorFor('lastName') }}</span> }
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="s-email">Email *</label>
+        <input id="s-email" type="email" class="input" formControlName="email"
+               placeholder="doctor@clinic.com" [class.invalid]="!!errorFor('email')">
+        @if (errorFor('email')) { <span class="field-error">{{ errorFor('email') }}</span> }
+      </div>
+
+      <div class="field">
+        <label for="s-role">Role *</label>
+        <select id="s-role" class="input" formControlName="role">
+          <option>Doctor</option>
+          <option>Receptionist</option>
+          <option>Admin</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="s-password">Temporary password *</label>
+        <input id="s-password" type="password" class="input" formControlName="password"
+               placeholder="They can use this to sign in" [class.invalid]="!!errorFor('password')">
+        @if (errorFor('password')) { <span class="field-error">{{ errorFor('password') }}</span> }
+      </div>
+    </form>
+
+    <div class="drawer-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeDrawer()">Cancel</button>
+      <button type="submit" form="staff-form" class="btn btn-primary" [disabled]="saving()">
+        {{ saving() ? 'Adding…' : 'Add staff member' }}
+      </button>
+    </div>
+  </aside>
+}

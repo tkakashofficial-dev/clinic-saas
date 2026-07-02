@@ -1,0 +1,118 @@
+.shell {
+  display: grid;
+  grid-template-columns: 248px 1fr;
+  min-height: 100dvh;
+
+  @media (max-width: 860px) { grid-template-columns: 68px 1fr; }
+}
+
+.sidebar {
+  background: var(--color-ink-900);
+  color: var(--color-text-invert);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 14px;
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font: 700 18px var(--font-heading);
+  padding: 4px 10px 20px;
+
+  .mark {
+    width: 30px; height: 30px; flex: none;
+    border-radius: 9px;
+    background: var(--color-primary-500);
+    color: #06362B;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+
+  @media (max-width: 860px) { .name { display: none; } }
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: rgb(244 250 247 / .64);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background .15s ease, color .15s ease;
+
+  &:hover { background: rgb(244 250 247 / .06); color: var(--color-text-invert); text-decoration: none; }
+
+  &.active {
+    background: rgb(0 189 143 / .14);
+    color: var(--color-primary-300);
+  }
+
+  svg { flex: none; }
+
+  @media (max-width: 860px) {
+    justify-content: center;
+    font-size: 0;
+    gap: 0;
+  }
+}
+
+.user-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgb(244 250 247 / .05);
+
+  .avatar {
+    width: 34px; height: 34px; flex: none;
+    border-radius: 50%;
+    background: var(--color-primary-500);
+    color: #06362B;
+    font: 600 12px var(--font-body);
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .user-meta { flex: 1; min-width: 0; }
+  .user-name {
+    font-size: 13px; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .user-role { font-size: 11px; color: rgb(244 250 247 / .55); }
+
+  .logout {
+    background: none; border: none; cursor: pointer;
+    color: rgb(244 250 247 / .55);
+    padding: 6px; border-radius: 8px;
+    display: flex;
+    &:hover { color: #FCA5A5; background: rgb(244 250 247 / .06); }
+  }
+
+  @media (max-width: 860px) {
+    flex-direction: column;
+    .user-meta { display: none; }
+  }
+}
+
+.content {
+  padding: 28px 32px;
+  max-width: 1200px;
+  width: 100%;
+
+  @media (max-width: 860px) { padding: 20px 16px; }
+}

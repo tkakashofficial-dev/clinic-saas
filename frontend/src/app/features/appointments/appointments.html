@@ -1,0 +1,334 @@
+<header class="page-header">
+  <div>
+    <h1>Appointments</h1>
+    <p class="sub">{{ result()?.totalCount ?? '—' }} on {{ date() ? (date() | date: 'd MMM y') : 'all days' }}</p>
+  </div>
+  @if (canManage()) {
+    <button type="button" class="btn btn-primary" (click)="openBook()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Book appointment
+    </button>
+  }
+</header>
+
+<div class="toolbar">
+  <input type="date" class="input date-input" [value]="date()"
+         (change)="setDate($any($event.target).value)">
+
+  @for (filter of statusFilters; track filter) {
+    <button type="button" class="filter-chip" [class.active]="status() === filter"
+            (click)="setStatus(filter)">{{ filter === 'InProgress' ? 'In progress' : filter }}</button>
+  }
+
+  @if (auth.hasRole('Doctor', 'Admin')) {
+    <span class="spacer"></span>
+    <button type="button" class="filter-chip" [class.active]="onlyMine()" (click)="toggleMine()">
+      My patients only
+    </button>
+  }
+</div>
+
+<section class="card">
+  @if (loading()) {
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
+  } @else if ((result()?.items ?? []).length === 0) {
+    <div class="empty-state">
+      <div class="icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </div>
+      <h3>No appointments found</h3>
+      <p>Adjust the filters, or book a new appointment.</p>
+    </div>
+  } @else {
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Patient</th>
+            <th>Doctor</th>
+            <th>Status</th>
+            <th class="actions-col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (a of result()!.items; track a.id) {
+            <tr>
+              <td class="num">
+                <div class="cell-main">{{ a.appointmentDate | date: 'HH:mm' }}</div>
+                <div class="cell-sub">{{ a.appointmentDate | date: 'd MMM' }}</div>
+              </td>
+              <td>
+                <div class="cell-main">{{ a.patientName }}</div>
+                <div class="cell-sub">{{ a.patientPhone }}</div>
+              </td>
+              <td>{{ a.doctorName }}</td>
+              <td><span class="chip chip-{{ a.status.toLowerCase() }}">{{ a.status === 'InProgress' ? 'In progress' : a.status }}</span></td>
+              <td class="actions">
+                @if (a.status === 'Scheduled') {
+                  @if (canConsult()) {
+                    <button type="button" class="btn btn-ghost" (click)="updateStatus(a, 'InProgress')">Start</button>
+                  }
+                  @if (canConsult()) {
+                    <button type="button" class="btn btn-ghost" (click)="openRecord(a)">Consult</button>
+                  }
+                  <button type="button" class="btn btn-danger-ghost" (click)="updateStatus(a, 'Cancelled')">Cancel</button>
+                } @else if (a.status === 'InProgress') {
+                  @if (canConsult()) {
+                    <button type="button" class="btn btn-ghost" (click)="openRecord(a)">Record consultation</button>
+                  }
+                } @else if (a.status === 'Completed') {
+                  <button type="button" class="btn btn-ghost" (click)="openView(a)">View consultation</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <footer class="paginator">
+      <span>Page {{ result()!.page }} of {{ result()!.totalPages }} · {{ result()!.totalCount }} total</span>
+      <div class="pages">
+        <button type="button" class="btn btn-secondary" [disabled]="!result()!.hasPreviousPage"
+                (click)="goToPage(result()!.page - 1)">Previous</button>
+        <button type="button" class="btn btn-secondary" [disabled]="!result()!.hasNextPage"
+                (click)="goToPage(result()!.page + 1)">Next</button>
+      </div>
+    </footer>
+  }
+</section>
+
+<!-- ============ Book drawer ============ -->
+@if (bookOpen()) {
+  <div class="drawer-backdrop" (click)="closeDrawers()"></div>
+  <aside class="drawer" role="dialog" aria-label="Book appointment">
+    <div class="drawer-header">
+      <h2>Book appointment</h2>
+      <button type="button" class="btn btn-ghost" (click)="closeDrawers()" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="drawer-body">
+      @if (formError()) {
+        <div class="alert-error">{{ formError() }}</div>
+      }
+
+      <div class="field">
+        <label>Patient *</label>
+        @if (selectedPatient(); as patient) {
+          <div class="picked-patient">
+            <div>
+              <div class="cell-main">{{ patient.fullName }}</div>
+              <div class="cell-sub">{{ patient.phone }}</div>
+            </div>
+            <button type="button" class="btn btn-ghost" (click)="selectedPatient.set(null)">Change</button>
+          </div>
+        } @else {
+          <input type="text" class="input" placeholder="Search patient by name or phone…"
+                 (input)="searchPatients($any($event.target).value)">
+          @if (patientResults().length > 0) {
+            <div class="patient-results">
+              @for (patient of patientResults(); track patient.id) {
+                <button type="button" class="patient-option" (click)="pickPatient(patient)">
+                  <span>{{ patient.fullName }}</span>
+                  <span class="muted">{{ patient.phone }}</span>
+                </button>
+              }
+            </div>
+          }
+        }
+      </div>
+
+      <form [formGroup]="bookForm" id="book-form" (ngSubmit)="book()">
+        <div class="field">
+          <label for="b-doctor">Doctor *</label>
+          <select id="b-doctor" class="input" formControlName="doctorTenantUserId">
+            <option value="" disabled>Select a doctor…</option>
+            @for (doctor of doctors(); track doctor.id) {
+              <option [value]="doctor.id">{{ doctor.fullName }} ({{ doctor.role }})</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label for="b-date">Date *</label>
+            <input id="b-date" type="date" class="input" formControlName="date">
+          </div>
+          <div class="field">
+            <label for="b-time">Time *</label>
+            <input id="b-time" type="time" class="input" formControlName="time">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="b-notes">Notes</label>
+          <textarea id="b-notes" class="input" formControlName="notes"
+                    placeholder="Reason for visit, special requirements…"></textarea>
+        </div>
+      </form>
+    </div>
+
+    <div class="drawer-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeDrawers()">Cancel</button>
+      <button type="submit" form="book-form" class="btn btn-primary" [disabled]="saving()">
+        {{ saving() ? 'Booking…' : 'Book appointment' }}
+      </button>
+    </div>
+  </aside>
+}
+
+<!-- ============ Record consultation drawer ============ -->
+@if (recordFor(); as appointment) {
+  <div class="drawer-backdrop" (click)="closeDrawers()"></div>
+  <aside class="drawer" role="dialog" aria-label="Record consultation">
+    <div class="drawer-header">
+      <div>
+        <h2>Record consultation</h2>
+        <p class="cell-sub">{{ appointment.patientName }} · {{ appointment.appointmentDate | date: 'd MMM, HH:mm' }}</p>
+      </div>
+      <button type="button" class="btn btn-ghost" (click)="closeDrawers()" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <form [formGroup]="consultForm" id="consult-form" class="drawer-body" (ngSubmit)="saveConsultation()">
+      @if (formError()) {
+        <div class="alert-error">{{ formError() }}</div>
+      }
+
+      <div class="field">
+        <label for="c-diagnosis">Diagnosis *</label>
+        <textarea id="c-diagnosis" class="input" formControlName="diagnosis" rows="3"
+                  placeholder="e.g. Caries on molar 36, gingivitis upper right…"
+                  [class.invalid]="consultForm.controls.diagnosis.invalid && consultForm.controls.diagnosis.touched"></textarea>
+        @if (consultForm.controls.diagnosis.invalid && consultForm.controls.diagnosis.touched) {
+          <span class="field-error">Diagnosis is required.</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="c-notes">Treatment notes</label>
+        <textarea id="c-notes" class="input" formControlName="treatmentNotes"
+                  placeholder="What was done during this visit…"></textarea>
+      </div>
+
+      <label class="prescription-toggle">
+        <input type="checkbox" [checked]="withPrescription()"
+               (change)="withPrescription.set($any($event.target).checked)">
+        Add a prescription
+      </label>
+
+      @if (withPrescription()) {
+        <div formArrayName="items" class="rx-items">
+          @for (item of items.controls; track $index) {
+            <div [formGroupName]="$index" class="rx-item">
+              <div class="rx-item-head">
+                <span class="rx-index">Medicine {{ $index + 1 }}</span>
+                @if (items.length > 1) {
+                  <button type="button" class="btn btn-danger-ghost" (click)="removeItem($index)">Remove</button>
+                }
+              </div>
+              <div class="field">
+                <input class="input" formControlName="medicineName" placeholder="Medicine name (e.g. Amoxicillin)">
+              </div>
+              <div class="form-row">
+                <input class="input" formControlName="dosage" placeholder="Dosage (500 mg)">
+                <input class="input" formControlName="frequency" placeholder="Frequency (3x daily)">
+              </div>
+              <div class="form-row">
+                <input class="input" type="number" min="1" formControlName="durationDays" placeholder="Days">
+                <input class="input" formControlName="instructions" placeholder="Instructions (after meals)">
+              </div>
+            </div>
+          }
+          <button type="button" class="btn btn-secondary" (click)="addItem()">+ Add medicine</button>
+
+          <div class="field" style="margin-top: 12px;">
+            <label for="c-rx-notes">Prescription notes</label>
+            <input id="c-rx-notes" class="input" formControlName="prescriptionNotes"
+                   placeholder="General advice for the patient">
+          </div>
+        </div>
+      }
+    </form>
+
+    <div class="drawer-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeDrawers()">Cancel</button>
+      <button type="submit" form="consult-form" class="btn btn-primary" [disabled]="saving()">
+        {{ saving() ? 'Saving…' : 'Save & complete appointment' }}
+      </button>
+    </div>
+  </aside>
+}
+
+<!-- ============ View consultation drawer ============ -->
+@if (viewFor(); as appointment) {
+  <div class="drawer-backdrop" (click)="closeDrawers()"></div>
+  <aside class="drawer" role="dialog" aria-label="Consultation details">
+    <div class="drawer-header">
+      <div>
+        <h2>Consultation</h2>
+        <p class="cell-sub">{{ appointment.patientName }} · {{ appointment.appointmentDate | date: 'd MMM y, HH:mm' }}</p>
+      </div>
+      <button type="button" class="btn btn-ghost" (click)="closeDrawers()" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="drawer-body">
+      @if (consultationLoading()) {
+        <div class="skeleton-row"></div>
+        <div class="skeleton-row"></div>
+      } @else if (consultation(); as c) {
+        <div class="view-section">
+          <div class="view-label">Diagnosis</div>
+          <p>{{ c.diagnosis }}</p>
+        </div>
+
+        @if (c.treatmentNotes) {
+          <div class="view-section">
+            <div class="view-label">Treatment notes</div>
+            <p>{{ c.treatmentNotes }}</p>
+          </div>
+        }
+
+        <div class="view-section">
+          <div class="view-label">Recorded by</div>
+          <p>{{ c.doctorName }} · {{ c.recordedAt | date: 'd MMM y, HH:mm' }}</p>
+        </div>
+
+        @if (c.prescription; as rx) {
+          <div class="view-section">
+            <div class="view-label">Prescription</div>
+            @for (item of rx.items; track $index) {
+              <div class="rx-view-item">
+                <div class="cell-main">{{ item.medicineName }}</div>
+                <div class="cell-sub">
+                  {{ item.dosage || '' }}
+                  {{ item.frequency ? '· ' + item.frequency : '' }}
+                  {{ item.durationDays ? '· ' + item.durationDays + ' days' : '' }}
+                  {{ item.instructions ? '· ' + item.instructions : '' }}
+                </div>
+              </div>
+            }
+            @if (rx.notes) { <p class="muted" style="margin-top: 8px;">{{ rx.notes }}</p> }
+          </div>
+
+          <button type="button" class="btn btn-primary" (click)="downloadPdf()" [disabled]="downloadingPdf()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            {{ downloadingPdf() ? 'Preparing…' : 'Download prescription PDF' }}
+          </button>
+        } @else {
+          <p class="muted">No prescription was issued for this consultation.</p>
+        }
+      } @else {
+        <p class="muted">No consultation was recorded for this appointment.</p>
+      }
+    </div>
+  </aside>
+}

@@ -1,0 +1,93 @@
+<div class="auth-page">
+  <aside class="auth-brand">
+    <div class="brand-logo"><span class="mark">✚</span> Clinic</div>
+
+    <div class="brand-message">
+      <h1>Set up your clinic in <em>two minutes</em>.</h1>
+      <p>Create your workspace, invite your team, and run your practice from one calm dashboard.</p>
+    </div>
+
+    <div class="brand-points">
+      <span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        You become the clinic admin automatically
+      </span>
+      <span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Add doctors & receptionists right after
+      </span>
+      <span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        No credit card required
+      </span>
+    </div>
+  </aside>
+
+  <main class="auth-form-side">
+    <div class="auth-card">
+      <h2>Create your clinic</h2>
+      <p class="sub">One account — you can rename things later.</p>
+
+      @if (error()) {
+        <div class="alert-error">{{ error() }}</div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <div class="field">
+          <label for="clinicName">Clinic name</label>
+          <input id="clinicName" class="input" formControlName="clinicName"
+                 placeholder="Bright Smiles Dental" [class.invalid]="!!errorFor('clinicName')">
+          @if (errorFor('clinicName')) {
+            <span class="field-error">{{ errorFor('clinicName') }}</span>
+          }
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label for="firstName">First name</label>
+            <input id="firstName" class="input" formControlName="firstName"
+                   placeholder="Aisha" [class.invalid]="!!errorFor('firstName')">
+            @if (errorFor('firstName')) {
+              <span class="field-error">{{ errorFor('firstName') }}</span>
+            }
+          </div>
+          <div class="field">
+            <label for="lastName">Last name</label>
+            <input id="lastName" class="input" formControlName="lastName"
+                   placeholder="Rahman" [class.invalid]="!!errorFor('lastName')">
+            @if (errorFor('lastName')) {
+              <span class="field-error">{{ errorFor('lastName') }}</span>
+            }
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="email">Work email</label>
+          <input id="email" type="email" class="input" formControlName="email"
+                 placeholder="you@clinic.com" [class.invalid]="!!errorFor('email')" autocomplete="email">
+          @if (errorFor('email')) {
+            <span class="field-error">{{ errorFor('email') }}</span>
+          }
+        </div>
+
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" type="password" class="input" formControlName="password"
+                 placeholder="Min. 8 characters, letters + digits"
+                 [class.invalid]="!!errorFor('password')" autocomplete="new-password">
+          @if (errorFor('password')) {
+            <span class="field-error">{{ errorFor('password') }}</span>
+          }
+        </div>
+
+        <button type="submit" class="btn btn-primary" [disabled]="loading()">
+          {{ loading() ? 'Creating workspace…' : 'Create clinic workspace' }}
+        </button>
+      </form>
+
+      <p class="switch">
+        Already have an account? <a routerLink="/login">Sign in</a>
+      </p>
+    </div>
+  </main>
+</div>

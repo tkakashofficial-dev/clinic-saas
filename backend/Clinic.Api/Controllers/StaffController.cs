@@ -26,8 +26,10 @@ public class StaffController : ControllerBase
         CancellationToken cancellationToken)
         => Ok(await _staffService.AddStaffAsync(request, cancellationToken));
 
+    // All staff can READ the team list (reception needs doctors to book
+    // appointments); only Admin can modify it
     [HttpGet]
-    [Authorize(Roles = RoleNames.Admin)]
+    [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Doctor},{RoleNames.Receptionist}")]
     public async Task<ActionResult<PagedResult<StaffDto>>> GetAllStaff(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = PageRequest.DefaultPageSize,
