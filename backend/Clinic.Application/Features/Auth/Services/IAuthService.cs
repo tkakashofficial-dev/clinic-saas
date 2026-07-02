@@ -15,4 +15,10 @@ public interface IAuthService
 
     /// <summary>Issues a token pair scoped to another clinic the user belongs to.</summary>
     Task<AuthResponse> SwitchClinicAsync(Guid systemUserId, SwitchClinicRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Emails a reset link. Always succeeds outwardly — never reveals whether the email exists.</summary>
+    Task ForgotPasswordAsync(ForgotPasswordRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Sets a new password from a valid single-use token; revokes all refresh tokens.</summary>
+    Task ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken = default);
 }

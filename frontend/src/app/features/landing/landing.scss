@@ -29,10 +29,13 @@
 
 .landing-nav {
   position: sticky; top: 0; z-index: 30;
-  background: rgb(255 255 255 / .86);
+  background: rgb(255 255 255 / .95);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--color-border);
 }
+
+/* Anchor targets stop BELOW the sticky navbar, not underneath it */
+.section, .hero { scroll-margin-top: 78px; }
 
 .nav-inner {
   display: flex; align-items: center; gap: 32px;

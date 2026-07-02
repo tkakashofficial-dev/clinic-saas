@@ -18,6 +18,19 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/register').then((m) => m.Register),
   },
   {
+    path: 'forgot-password',
+    canActivate: [guestGuard],
+    loadComponent: () =>
+      import('./features/auth/forgot-password').then((m) => m.ForgotPassword),
+  },
+  {
+    // NOT guest-guarded: invited staff may open this while an admin session
+    // exists on the same machine
+    path: 'reset-password',
+    loadComponent: () =>
+      import('./features/auth/reset-password').then((m) => m.ResetPassword),
+  },
+  {
     path: '',
     canActivate: [authGuard],
     loadComponent: () => import('./layout/shell').then((m) => m.Shell),

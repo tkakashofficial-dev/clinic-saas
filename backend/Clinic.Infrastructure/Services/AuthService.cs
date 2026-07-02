@@ -6,27 +6,38 @@ using Clinic.Domain.Constants;
 using Clinic.Domain.Entities;
 using Clinic.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace Clinic.Infrastructure.Services;
 
+/// <summary>Where the Angular app lives — used to build email links.</summary>
+public class FrontendSettings
+{
+    public string BaseUrl { get; set; } = "http://localhost:4200";
+}
+
 public class AuthService : IAuthService
 {
     private const int RefreshTokenLifetimeDays = 7;
+    private const int ResetTokenLifetimeMinutes = 60;
 
     private readonly ClinicDbContext _context;
     private readonly JwtTokenGenerator _jwtTokenGenerator;
     private readonly IEmailSender _emailSender;
+    private readonly FrontendSettings _frontend;
 
     public AuthService(
         ClinicDbContext context,
         JwtTokenGenerator jwtTokenGenerator,
-        IEmailSender emailSender)
+        IEmailSender emailSender,
+        IOptions<FrontendSettings> frontendSettings)
     {
         _context = context;
         _jwtTokenGenerator = jwtTokenGenerator;
         _emailSender = emailSender;
+        _frontend = frontendSettings.Value;
     }
 
     public async Task<AuthResponse> RegisterAsync(
@@ -161,6 +172,84 @@ public class AuthService : IAuthService
             throw new UnauthorizedAccessException("You are not a member of that clinic.");
 
         return response;
+    }
+
+    public async Task ForgotPasswordAsync(
+        ForgotPasswordRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var systemUser = await _context.SystemUsers
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive, cancellationToken);
+
+        // SECURITY: identical outward behavior whether or not the account
+        // exists — otherwise this endpoint becomes an email-enumeration oracle
+        if (systemUser is null)
+            return;
+
+        var resetLink = await CreatePasswordLinkAsync(
+            systemUser.Id, TimeSpan.FromMinutes(ResetTokenLifetimeMinutes), cancellationToken);
+
+        await _emailSender.SendAsync(
+            systemUser.Email,
+            "Reset your Klivia password",
+            $"""
+            <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto">
+              <h2 style="color:#0C2B23">Password reset</h2>
+              <p>Hi {systemUser.FirstName}, click below to choose a new password.
+                 The link works once and expires in {ResetTokenLifetimeMinutes} minutes.</p>
+              <p><a href="{resetLink}" style="background:#00BD8F;color:#06362B;padding:12px 22px;
+                 border-radius:10px;text-decoration:none;font-weight:bold">Choose new password</a></p>
+              <p style="color:#5B6F68;font-size:13px">Didn't request this? You can safely ignore it.</p>
+            </div>
+            """,
+            cancellationToken);
+    }
+
+    public async Task ResetPasswordAsync(
+        ResetPasswordRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var tokenHash = HashToken(request.Token);
+
+        var resetToken = await _context.PasswordResetTokens
+            .Include(t => t.SystemUser)
+            .FirstOrDefaultAsync(t => t.TokenHash == tokenHash, cancellationToken);
+
+        if (resetToken is null || !resetToken.IsValid || !resetToken.SystemUser.IsActive)
+            throw new UnauthorizedAccessException(
+                "This reset link is invalid or has expired. Request a new one.");
+
+        resetToken.MarkUsed();
+        resetToken.SystemUser.UpdatePassword(BCrypt.Net.BCrypt.HashPassword(request.NewPassword));
+
+        // A password change invalidates every existing session — if the reset
+        // happened because of a stolen password, the thief is logged out too
+        var activeRefreshTokens = await _context.RefreshTokens
+            .Where(t => t.SystemUserId == resetToken.SystemUserId && t.RevokedAt == null)
+            .ToListAsync(cancellationToken);
+        foreach (var token in activeRefreshTokens)
+            token.Revoke();
+
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Creates a single-use password token and returns the full frontend link.
+    /// Used by forgot-password (short expiry) and staff invites (long expiry).
+    /// Saves changes.
+    /// </summary>
+    public async Task<string> CreatePasswordLinkAsync(
+        Guid systemUserId, TimeSpan lifetime, CancellationToken cancellationToken)
+    {
+        var rawToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(48))
+            .Replace('+', '-').Replace('/', '_').TrimEnd('=');   // URL-safe
+
+        _context.PasswordResetTokens.Add(new PasswordResetToken(
+            systemUserId, HashToken(rawToken), DateTime.UtcNow.Add(lifetime)));
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return $"{_frontend.BaseUrl.TrimEnd('/')}/reset-password?token={rawToken}";
     }
 
     /// <summary>

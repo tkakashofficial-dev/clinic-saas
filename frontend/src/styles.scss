@@ -60,6 +60,11 @@
 
 html, body { height: 100%; }
 
+html {
+  /* In-page anchor jumps glide instead of teleporting */
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
   font-family: var(--font-body);
@@ -80,7 +85,15 @@ h1, h2, h3, h4 {
 p { margin: 0; }
 
 a { color: var(--color-primary-700); text-decoration: none; }
+/* Underline is for TEXT links only — anything shaped like a button/chip
+   must never underline (it reads as a rendering glitch) */
 a:hover { text-decoration: underline; }
+a.btn, a.btn:hover, a.btn:focus,
+a.filter-chip, a.filter-chip:hover,
+a.nav-item, a.nav-item:hover,
+a.wa-float, a.wa-float:hover {
+  text-decoration: none;
+}
 
 /* Accessible focus — visible on every interactive element */
 :focus-visible {

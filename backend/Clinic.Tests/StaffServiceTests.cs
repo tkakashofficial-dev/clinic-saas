@@ -3,6 +3,7 @@ using Clinic.Application.Features.Staff.DTOs;
 using Clinic.Domain.Constants;
 using Clinic.Infrastructure.Services;
 using Clinic.Tests.TestInfrastructure;
+using Microsoft.Extensions.Options;
 
 namespace Clinic.Tests;
 
@@ -11,7 +12,7 @@ public class StaffServiceTests : IDisposable
     private readonly TestDb _db = new();
 
     private StaffService CreateService() =>
-        new(_db.CreateContext(), _db.CurrentUser);
+        new(_db.CreateContext(), _db.CurrentUser, new NoOpEmailSender(), Options.Create(new FrontendSettings()));
 
     private static AddStaffRequest ValidStaff(string email, params string[] roles) => new()
     {

@@ -7,6 +7,7 @@ using Clinic.Domain.Constants;
 using Clinic.Domain.Entities;
 using Clinic.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Clinic.Infrastructure.Services;
 
@@ -14,11 +15,19 @@ public class StaffService : IStaffService
 {
     private readonly ClinicDbContext _context;
     private readonly ICurrentUserService _currentUser;
+    private readonly IEmailSender _emailSender;
+    private readonly FrontendSettings _frontend;
 
-    public StaffService(ClinicDbContext context, ICurrentUserService currentUser)
+    public StaffService(
+        ClinicDbContext context,
+        ICurrentUserService currentUser,
+        IEmailSender emailSender,
+        IOptions<FrontendSettings> frontendSettings)
     {
         _context = context;
         _currentUser = currentUser;
+        _emailSender = emailSender;
+        _frontend = frontendSettings.Value;
     }
 
     public async Task<StaffDto> AddStaffAsync(
@@ -82,8 +91,40 @@ public class StaffService : IStaffService
             _context.TenantUserRoles.Add(new TenantUserRole(tenantUser.Id, role.Id));
         }
 
-        // 5. Save everything
+        // 5. Invite link: staff should choose their OWN password on first
+        //    login — the admin's temporary one keeps working meanwhile
+        var inviteToken = SecurityTokens.CreateUrlSafe();
+        _context.PasswordResetTokens.Add(new PasswordResetToken(
+            systemUser.Id,
+            SecurityTokens.Sha256Hex(inviteToken),
+            DateTime.UtcNow.AddDays(7)));
+
+        // 6. Save everything
         await _context.SaveChangesAsync(cancellationToken);
+
+        // 7. Welcome/invite email (failure-proof — never blocks staff creation)
+        var clinicName = await _context.Tenants
+            .Where(t => t.Id == tenantId)
+            .Select(t => t.Name)
+            .FirstAsync(cancellationToken);
+        var inviteLink = $"{_frontend.BaseUrl.TrimEnd('/')}/reset-password?token={inviteToken}";
+
+        await _emailSender.SendAsync(
+            request.Email,
+            $"You've been added to {clinicName}",
+            $"""
+            <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto">
+              <h2 style="color:#0C2B23">Welcome to {clinicName} 👋</h2>
+              <p>Hi {request.FirstName}, you've been added as
+                 <strong>{string.Join(" & ", roleNames)}</strong>.</p>
+              <p><a href="{inviteLink}" style="background:#00BD8F;color:#06362B;padding:12px 22px;
+                 border-radius:10px;text-decoration:none;font-weight:bold">Set your password</a></p>
+              <p style="color:#5B6F68;font-size:13px">
+                 The link is valid for 7 days. You can also sign in with the temporary
+                 password your admin gave you, and change it later.</p>
+            </div>
+            """,
+            cancellationToken);
 
         return new StaffDto
         {

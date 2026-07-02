@@ -43,7 +43,10 @@
         </div>
 
         <div class="field">
-          <label for="password">Password</label>
+          <div class="label-row">
+            <label for="password">Password</label>
+            <a routerLink="/forgot-password" class="forgot-link">Forgot password?</a>
+          </div>
           <input id="password" type="password" class="input" formControlName="password"
                  placeholder="••••••••" [class.invalid]="invalid('password')" autocomplete="current-password">
           @if (invalid('password')) {

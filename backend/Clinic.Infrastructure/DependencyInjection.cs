@@ -38,6 +38,7 @@ public static class DependencyInjection
             configuration.GetSection(nameof(JwtSettings)));
 
         services.Configure<EmailSettings>(configuration.GetSection("Email"));
+        services.Configure<FrontendSettings>(configuration.GetSection("Frontend"));
         services.AddScoped<IEmailSender, SmtpEmailSender>();
 
         services.AddScoped<JwtTokenGenerator>();

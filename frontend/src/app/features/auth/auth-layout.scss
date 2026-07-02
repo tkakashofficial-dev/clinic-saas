@@ -55,6 +55,14 @@
   }
 }
 
+.label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  .forgot-link { font-size: 12.5px; }
+}
+
 .doctor-toggle {
   display: flex;
   gap: 10px;

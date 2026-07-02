@@ -42,6 +42,25 @@ public class AuthController : ControllerBase
         CancellationToken cancellationToken)
         => Ok(await _authService.RefreshAsync(request, cancellationToken));
 
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword(
+        [FromBody] ForgotPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        await _authService.ForgotPasswordAsync(request, cancellationToken);
+        // Always 200 — response must not reveal whether the email exists
+        return Ok(new { message = "If that email is registered, a reset link is on its way." });
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword(
+        [FromBody] ResetPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        await _authService.ResetPasswordAsync(request, cancellationToken);
+        return Ok(new { message = "Password updated. You can sign in now." });
+    }
+
     /// <summary>Multi-clinic owners: get a token scoped to another of their clinics.</summary>
     [HttpPost("switch-clinic")]
     [Authorize]
