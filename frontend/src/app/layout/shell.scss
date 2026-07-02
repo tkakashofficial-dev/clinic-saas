@@ -139,6 +139,7 @@
 }
 
 .nav-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -155,6 +156,16 @@
   &.active {
     background: rgb(0 189 143 / .14);
     color: var(--color-primary-300);
+
+    /* Accent bar — the eye finds "where am I" instantly */
+    &::before {
+      content: '';
+      position: absolute;
+      left: -14px; top: 8px; bottom: 8px;
+      width: 3px;
+      border-radius: 0 3px 3px 0;
+      background: var(--color-primary-400);
+    }
   }
 
   svg { flex: none; }
@@ -205,9 +216,21 @@
 }
 
 .content {
-  padding: 28px 32px;
-  max-width: 1200px;
+  /* Centered column: wide monitors get balanced margins, not a dead right side */
   width: 100%;
+  max-width: 1240px;
+  margin-inline: auto;
+  padding: 32px 40px;
 
   @media (max-width: 860px) { padding: 20px 16px; }
+}
+
+/* Every routed page eases in — navigation feels alive, never abrupt */
+.content > :not(router-outlet) {
+  display: block;
+  animation: pageIn .28s cubic-bezier(.25, .8, .35, 1);
+}
+
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(6px); }
 }

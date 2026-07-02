@@ -89,6 +89,24 @@ a:hover { text-decoration: underline; }
   border-radius: 4px;
 }
 
+/* Brand-colored text selection — tiny detail, premium feel */
+::selection {
+  background: var(--color-primary-200);
+  color: var(--color-ink-900);
+}
+
+/* Refined scrollbars (WebKit) — thin, quiet, on-brand */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: #C4D6CE;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+
+  &:hover { background-color: #9CB1A9; }
+}
+
 /* ---------- Buttons ---------- */
 
 .btn {
@@ -101,8 +119,11 @@ a:hover { text-decoration: underline; }
   padding: 10px 18px;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: background .15s ease, border-color .15s ease, color .15s ease;
+  transition: background .15s ease, border-color .15s ease, color .15s ease,
+              transform .12s ease, box-shadow .15s ease;
   white-space: nowrap;
+
+  &:active:not(:disabled) { transform: scale(.985); }
 
   &:disabled { opacity: .55; cursor: not-allowed; }
 
@@ -113,7 +134,16 @@ a:hover { text-decoration: underline; }
   background: var(--color-primary-500);
   color: #06362B;
   font-weight: 600;
-  &:hover:not(:disabled) { background: var(--color-primary-400); }
+  box-shadow: 0 2px 8px rgb(0 189 143 / .28);
+
+  &:hover:not(:disabled) {
+    background: var(--color-primary-400);
+    box-shadow: 0 4px 14px rgb(0 189 143 / .36);
+    transform: translateY(-1px);
+  }
+
+  /* Tactile press — the button responds like a physical object */
+  &:active:not(:disabled) { transform: translateY(0) scale(.985); box-shadow: 0 1px 4px rgb(0 189 143 / .3); }
 }
 
 .btn-secondary {
