@@ -54,7 +54,7 @@ dotnet run --project Clinic.Api
 ### Frontend setup
 
 ```bash
-cd frontend/clinic-frontend
+cd frontend
 npm install
 npm start   # http://localhost:4200
 ```
@@ -67,10 +67,10 @@ backend/
   Clinic.Application/     # Use-case interfaces + DTOs — depends only on Domain
   Clinic.Infrastructure/  # EF Core, services, JWT — implements Application interfaces
   Clinic.Api/             # Controllers, middleware, composition root
-frontend/
-  clinic-frontend/        # Angular app
+frontend/                 # Angular app
 docs/
-  design/                 # UI mockups
+  design/                 # UI mockups + design system
+  product-spec.md         # Product vision, workflows, decision log
 ```
 
 ## Roles
