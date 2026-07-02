@@ -117,21 +117,15 @@
         @if (errorFor('phone')) { <span class="field-error">{{ errorFor('phone') }}</span> }
       </div>
 
-      <div class="form-row">
-        <div class="field">
-          <label for="p-gender">Gender *</label>
-          <select id="p-gender" class="input" formControlName="gender">
-            <option>Male</option>
-            <option>Female</option>
-            <option>Other</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="p-dob">Date of birth</label>
-          <input id="p-dob" type="date" class="input" formControlName="dateOfBirth"
-                 [class.invalid]="!!errorFor('dateOfBirth')">
-          @if (errorFor('dateOfBirth')) { <span class="field-error">{{ errorFor('dateOfBirth') }}</span> }
-        </div>
+      <div class="field">
+        <label>Gender *</label>
+        <app-segmented [options]="['Male', 'Female', 'Other']" formControlName="gender" />
+      </div>
+
+      <div class="field">
+        <label>Date of birth</label>
+        <app-date-field [maxToday]="true" formControlName="dateOfBirth" />
+        @if (errorFor('dateOfBirth')) { <span class="field-error">{{ errorFor('dateOfBirth') }}</span> }
       </div>
 
       <div class="field">

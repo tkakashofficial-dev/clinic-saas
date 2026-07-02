@@ -93,12 +93,8 @@
       </div>
 
       <div class="field">
-        <label for="s-role">Role *</label>
-        <select id="s-role" class="input" formControlName="role">
-          <option>Doctor</option>
-          <option>Receptionist</option>
-          <option>Admin</option>
-        </select>
+        <label>Role *</label>
+        <app-segmented [options]="['Doctor', 'Receptionist', 'Admin']" formControlName="role" />
       </div>
 
       <div class="field">

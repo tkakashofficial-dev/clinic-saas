@@ -57,10 +57,30 @@ closed role set, RFC 7807 error handling, CORS, missing Appointments migration.
 - Prescription module + PDF generation
 - Refresh tokens, login rate limiting, audit log of patient-record access
 
-### Phase 4 — SaaS business
+### Phase 4 — Ship it
 - CI/CD: GitHub Actions → Azure (App Service + Static Web Apps free tiers)
-- Subscription plans & billing
-- Reminders (WhatsApp/SMS), reports, multi-branch
+- Audit log of patient-record access (who viewed what, when)
+- Error monitoring + structured logging
+
+## Competitive feature map — the road to "replaces modern systems"
+
+Based on what Dentrix, CareStack, Cliniko and SimplePractice sell. ✅ = we have it.
+
+| Domain | Features | Status |
+|---|---|---|
+| **Scheduling** | Booking ✅, day view ✅, check-in / waiting room ✅, calendar week view, recurring appointments, online patient self-booking, waitlist | Core ✅ |
+| **Clinical** | Consult notes ✅, prescriptions + PDF ✅, medical history ✅ (basic), **dental chart (odontogram)** ⭐, treatment plans with staged visits, allergy alerts, file/X-ray attachments | Core ✅ |
+| **Billing** | Treatment price list, invoices per visit, payment tracking, insurance claims, daily cash report | Phase 5 |
+| **Patient engagement** | Appointment reminders (WhatsApp/SMS) ⭐ high demand, patient portal, recall campaigns ("6-month cleaning due"), digital consent forms | Phase 5–6 |
+| **Operations** | Role dashboards ✅, reports & analytics, audit log, inventory (materials), multi-branch | Phase 4–6 |
+| **Platform (Super Admin — the SaaS owner)** | Clinic onboarding & subscription billing, plans/limits, usage analytics, support impersonation — a SEPARATE back-office app, never mixed with clinic UI | Phase 7 |
+
+⭐ = differentiators clinics actually switch products for: the odontogram (visual
+tooth chart) and WhatsApp reminders matter more in sales demos than any report.
+
+### Phase 5 — Money features (billing + reminders)
+### Phase 6 — Clinical depth (odontogram, treatment plans, attachments, portal)
+### Phase 7 — Platform back-office (super admin, subscriptions, multi-branch)
 
 ## Decision log
 

@@ -17,7 +17,7 @@
 
   @for (filter of statusFilters; track filter) {
     <button type="button" class="filter-chip" [class.active]="status() === filter"
-            (click)="setStatus(filter)">{{ filter === 'InProgress' ? 'In progress' : filter }}</button>
+            (click)="setStatus(filter)">{{ filter === 'All' ? 'All' : statusLabel(filter) }}</button>
   }
 
   @if (auth.hasRole('Doctor', 'Admin')) {
@@ -65,16 +65,26 @@
                 <div class="cell-sub">{{ a.patientPhone }}</div>
               </td>
               <td>{{ a.doctorName }}</td>
-              <td><span class="chip chip-{{ a.status.toLowerCase() }}">{{ a.status === 'InProgress' ? 'In progress' : a.status }}</span></td>
+              <td><span class="chip chip-{{ a.status.toLowerCase() }}">{{ statusLabel(a.status) }}</span></td>
               <td class="actions">
                 @if (a.status === 'Scheduled') {
-                  @if (canConsult()) {
-                    <button type="button" class="btn btn-ghost" (click)="updateStatus(a, 'InProgress')">Start</button>
+                  <!-- Front desk: patient has arrived -->
+                  @if (canManage()) {
+                    <button type="button" class="btn btn-ghost" (click)="updateStatus(a, 'CheckedIn')">Check in</button>
                   }
                   @if (canConsult()) {
                     <button type="button" class="btn btn-ghost" (click)="openRecord(a)">Consult</button>
                   }
                   <button type="button" class="btn btn-danger-ghost" (click)="updateStatus(a, 'Cancelled')">Cancel</button>
+                } @else if (a.status === 'CheckedIn') {
+                  <!-- Patient is in the waiting room -->
+                  @if (canConsult()) {
+                    <button type="button" class="btn btn-ghost" (click)="updateStatus(a, 'InProgress')">Start</button>
+                    <button type="button" class="btn btn-ghost" (click)="openRecord(a)">Consult</button>
+                  }
+                  @if (canManage()) {
+                    <button type="button" class="btn btn-danger-ghost" (click)="updateStatus(a, 'Cancelled')">Cancel</button>
+                  }
                 } @else if (a.status === 'InProgress') {
                   @if (canConsult()) {
                     <button type="button" class="btn btn-ghost" (click)="openRecord(a)">Record consultation</button>
@@ -145,13 +155,11 @@
 
       <form [formGroup]="bookForm" id="book-form" (ngSubmit)="book()">
         <div class="field">
-          <label for="b-doctor">Doctor *</label>
-          <select id="b-doctor" class="input" formControlName="doctorTenantUserId">
-            <option value="" disabled>Select a doctor…</option>
-            @for (doctor of doctors(); track doctor.id) {
-              <option [value]="doctor.id">{{ doctor.fullName }} ({{ doctor.role }})</option>
-            }
-          </select>
+          <label>Doctor *</label>
+          <app-select
+            [options]="doctorOptions()"
+            placeholder="Select a doctor…"
+            formControlName="doctorTenantUserId" />
         </div>
 
         <div class="form-row">

@@ -67,7 +67,12 @@ export interface RegisterPatientRequest {
 
 // ---------- Appointments ----------
 
-export type AppointmentStatus = 'Scheduled' | 'InProgress' | 'Completed' | 'Cancelled';
+export type AppointmentStatus =
+  | 'Scheduled'
+  | 'CheckedIn'
+  | 'InProgress'
+  | 'Completed'
+  | 'Cancelled';
 
 export interface AppointmentDto {
   id: string;

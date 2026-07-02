@@ -4,10 +4,11 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { parseApiError } from '../../core/api/api-error';
 import { StaffService } from '../../core/api/staff.service';
 import { StaffDto } from '../../core/models/api.models';
+import { Segmented } from '../../shared/ui/segmented';
 
 @Component({
   selector: 'app-staff',
-  imports: [DatePipe, ReactiveFormsModule],
+  imports: [DatePipe, ReactiveFormsModule, Segmented],
   templateUrl: './staff.html',
 })
 export class Staff {

@@ -1,31 +1,47 @@
 <header class="page-header">
   <div>
     <h1>{{ greeting }}, {{ auth.fullName().split(' ')[0] }}</h1>
-    <p class="sub">{{ today | date: 'EEEE, d MMMM y' }}</p>
+    <p class="sub">{{ subtitle() }} · {{ today | date: 'EEEE, d MMMM' }}</p>
   </div>
-  <a routerLink="/appointments" class="btn btn-primary">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    Book appointment
-  </a>
+  @if (canCheckIn()) {
+    <a routerLink="/appointments" class="btn btn-primary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Book appointment
+    </a>
+  }
 </header>
 
 <div class="stats-grid">
-  <div class="card card-pad stat">
-    <div class="stat-label">Patients</div>
-    <div class="stat-value">{{ loading() ? '—' : totalPatients() }}</div>
-    <div class="stat-hint">registered in your clinic</div>
-  </div>
-
   <div class="card card-pad stat stat-accent">
-    <div class="stat-label">Today's appointments</div>
+    <div class="stat-label">{{ isDoctor() ? 'My appointments today' : "Today's appointments" }}</div>
     <div class="stat-value">{{ loading() ? '—' : todayCount() }}</div>
     <div class="stat-hint">{{ today | date: 'd MMM' }}</div>
   </div>
 
-  @if (staffCount() !== null) {
+  <div class="card card-pad stat" [class.stat-waiting]="waitingCount() > 0">
+    <div class="stat-label">Waiting room</div>
+    <div class="stat-value">{{ loading() ? '—' : waitingCount() }}</div>
+    <div class="stat-hint">{{ waitingCount() === 1 ? 'patient checked in' : 'patients checked in' }}</div>
+  </div>
+
+  @if (isDoctor()) {
     <div class="card card-pad stat">
-      <div class="stat-label">Team members</div>
-      <div class="stat-value">{{ staffCount() }}</div>
+      <div class="stat-label">Completed today</div>
+      <div class="stat-value">{{ loading() ? '—' : completedToday() }}</div>
+      <div class="stat-hint">consultations recorded</div>
+    </div>
+  } @else {
+    <div class="card card-pad stat">
+      <div class="stat-label">Patients</div>
+      <div class="stat-value">{{ loading() ? '—' : totalPatients() }}</div>
+      <div class="stat-hint">registered in your clinic</div>
+    </div>
+  }
+
+  @if (auth.hasRole('Admin')) {
+    <div class="card card-pad stat">
+      <div class="stat-label">Team</div>
+      <div class="stat-value">{{ loading() ? '—' : staffCount() }}</div>
       <div class="stat-hint">doctors & reception</div>
     </div>
   }
@@ -33,7 +49,7 @@
 
 <section class="card">
   <div class="section-header">
-    <h2>Today's schedule</h2>
+    <h2>{{ isDoctor() ? 'My schedule today' : "Today's schedule" }}</h2>
     <a routerLink="/appointments">View all</a>
   </div>
 
@@ -47,8 +63,10 @@
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       </div>
       <h3>No appointments today</h3>
-      <p>The calendar is clear — book the first one.</p>
-      <a routerLink="/appointments" class="btn btn-secondary">Book appointment</a>
+      <p>The calendar is clear{{ canCheckIn() ? ' — book the first one.' : '.' }}</p>
+      @if (canCheckIn()) {
+        <a routerLink="/appointments" class="btn btn-secondary">Book appointment</a>
+      }
     </div>
   } @else {
     <div class="table-wrap">
@@ -57,8 +75,9 @@
           <tr>
             <th>Time</th>
             <th>Patient</th>
-            <th>Doctor</th>
+            @if (!isDoctor()) { <th>Doctor</th> }
             <th>Status</th>
+            @if (canCheckIn()) { <th class="checkin-col"></th> }
           </tr>
         </thead>
         <tbody>
@@ -69,8 +88,17 @@
                 <div class="cell-main">{{ appointment.patientName }}</div>
                 <div class="cell-sub">{{ appointment.patientPhone }}</div>
               </td>
-              <td>{{ appointment.doctorName }}</td>
-              <td><span class="chip chip-{{ appointment.status.toLowerCase() }}">{{ appointment.status }}</span></td>
+              @if (!isDoctor()) { <td>{{ appointment.doctorName }}</td> }
+              <td><span class="chip chip-{{ appointment.status.toLowerCase() }}">{{ statusLabel(appointment.status) }}</span></td>
+              @if (canCheckIn()) {
+                <td class="checkin-col">
+                  @if (appointment.status === 'Scheduled') {
+                    <button type="button" class="btn btn-secondary btn-checkin" (click)="checkIn(appointment)">
+                      Check in
+                    </button>
+                  }
+                </td>
+              }
             </tr>
           }
         </tbody>

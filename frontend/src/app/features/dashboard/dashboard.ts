@@ -1,13 +1,19 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
 import { AppointmentsService } from '../../core/api/appointments.service';
 import { PatientsService } from '../../core/api/patients.service';
 import { StaffService } from '../../core/api/staff.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { AppointmentDto } from '../../core/models/api.models';
 
+/**
+ * The dashboard adapts to WHO is looking at it:
+ * - Receptionist -> front desk: today's arrivals + waiting room + check-in
+ * - Doctor       -> my day: my queue, who's waiting for me
+ * - Admin        -> the clinic: patients, schedule, team
+ */
 @Component({
   selector: 'app-dashboard',
   imports: [DatePipe, RouterLink],
@@ -23,34 +29,72 @@ export class Dashboard {
   readonly loading = signal(true);
   readonly totalPatients = signal(0);
   readonly todayCount = signal(0);
-  readonly staffCount = signal<number | null>(null);
+  readonly waitingCount = signal(0);
+  readonly completedToday = signal(0);
+  readonly staffCount = signal(0);
   readonly todaysAppointments = signal<AppointmentDto[]>([]);
   readonly today = new Date();
 
   readonly greeting = getGreeting();
+  readonly isDoctor = computed(() => this.auth.role() === 'Doctor');
+  readonly canCheckIn = computed(() => this.auth.hasRole('Admin', 'Receptionist'));
+
+  readonly subtitle = computed(() => {
+    switch (this.auth.role()) {
+      case 'Doctor': return 'Your day at a glance';
+      case 'Receptionist': return 'Front desk overview';
+      default: return 'Clinic overview';
+    }
+  });
 
   constructor() {
-    const todayIso = this.today.toISOString().split('T')[0];
+    this.load();
+  }
 
-    // totalCount from pageSize=1 requests — stats without extra endpoints
+  load(): void {
+    this.loading.set(true);
+    const todayIso = this.today.toISOString().split('T')[0];
+    // Doctors see THEIR day; front desk and admin see the whole clinic
+    const doctorFilter = this.isDoctor()
+      ? (this.auth.session()?.tenantUserId ?? undefined)
+      : undefined;
+
     forkJoin({
-      patients: this.patientsApi.getAll('', 1, 1),
-      todays: this.appointmentsApi.getAll({ date: todayIso, page: 1, pageSize: 8 }),
+      todays: this.appointmentsApi.getAll({
+        date: todayIso, doctorTenantUserId: doctorFilter, page: 1, pageSize: 8,
+      }),
+      waiting: this.appointmentsApi.getAll({
+        date: todayIso, status: 'CheckedIn', doctorTenantUserId: doctorFilter, page: 1, pageSize: 1,
+      }),
+      completed: this.isDoctor()
+        ? this.appointmentsApi.getAll({
+            date: todayIso, status: 'Completed', doctorTenantUserId: doctorFilter, page: 1, pageSize: 1,
+          })
+        : of(null),
+      patients: this.isDoctor() ? of(null) : this.patientsApi.getAll('', 1, 1),
+      staff: this.auth.hasRole('Admin') ? this.staffApi.getAll(1, 1) : of(null),
     }).subscribe({
-      next: ({ patients, todays }) => {
-        this.totalPatients.set(patients.totalCount);
-        this.todayCount.set(todays.totalCount);
+      next: ({ todays, waiting, completed, patients, staff }) => {
         this.todaysAppointments.set(todays.items);
+        this.todayCount.set(todays.totalCount);
+        this.waitingCount.set(waiting.totalCount);
+        if (completed) this.completedToday.set(completed.totalCount);
+        if (patients) this.totalPatients.set(patients.totalCount);
+        if (staff) this.staffCount.set(staff.totalCount);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
     });
+  }
 
-    if (this.auth.hasRole('Admin')) {
-      this.staffApi.getAll(1, 1).subscribe({
-        next: (staff) => this.staffCount.set(staff.totalCount),
-      });
-    }
+  checkIn(appointment: AppointmentDto): void {
+    this.appointmentsApi.updateStatus(appointment.id, 'CheckedIn').subscribe({
+      next: () => this.load(),
+    });
+  }
+
+  statusLabel(status: string): string {
+    return status === 'CheckedIn' ? 'Waiting' : status === 'InProgress' ? 'In progress' : status;
   }
 }
 

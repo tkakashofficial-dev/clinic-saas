@@ -38,6 +38,7 @@
 
   /* Appointment status */
   --status-scheduled:  var(--color-info);
+  --status-checkedin:  #7C3AED;   /* waiting room */
   --status-inprogress: var(--color-warning);
   --status-completed:  var(--color-success);
   --status-cancelled:  #94A3B8;
@@ -293,6 +294,7 @@ textarea.input { resize: vertical; min-height: 72px; }
 }
 
 .chip-scheduled  { color: var(--status-scheduled);  background: rgb(37 99 235 / .10); }
+.chip-checkedin  { color: var(--status-checkedin);  background: rgb(124 58 237 / .10); }
 .chip-inprogress { color: var(--status-inprogress); background: rgb(217 119 6 / .10); }
 .chip-completed  { color: var(--status-completed);  background: rgb(22 163 74 / .10); }
 .chip-cancelled  { color: var(--status-cancelled);  background: rgb(148 163 184 / .14); }

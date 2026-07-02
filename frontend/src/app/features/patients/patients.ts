@@ -7,10 +7,12 @@ import { parseApiError } from '../../core/api/api-error';
 import { PatientsService } from '../../core/api/patients.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { PagedResult, PatientDto } from '../../core/models/api.models';
+import { DateField } from '../../shared/ui/date-field';
+import { Segmented } from '../../shared/ui/segmented';
 
 @Component({
   selector: 'app-patients',
-  imports: [DatePipe, ReactiveFormsModule],
+  imports: [DatePipe, ReactiveFormsModule, Segmented, DateField],
   templateUrl: './patients.html',
 })
 export class Patients {

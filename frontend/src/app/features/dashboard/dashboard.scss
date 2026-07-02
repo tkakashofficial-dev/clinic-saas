@@ -32,6 +32,16 @@
   .stat-hint { color: rgb(244 250 247 / .55); }
 }
 
+/* Waiting-room card gently pulses attention when someone is waiting */
+.stat-waiting {
+  border-color: rgb(124 58 237 / .4);
+  .stat-value { color: #7C3AED; }
+}
+
+.checkin-col { text-align: right; width: 110px; }
+
+.btn-checkin { padding: 6px 12px; font-size: 13px; }
+
 .section-header {
   display: flex;
   align-items: center;

@@ -15,12 +15,18 @@ import {
   PatientDto,
   StaffDto,
 } from '../../core/models/api.models';
+import { Select, SelectOption } from '../../shared/ui/select';
 
-const STATUS_FILTERS = ['All', 'Scheduled', 'InProgress', 'Completed', 'Cancelled'] as const;
+const STATUS_FILTERS = ['All', 'Scheduled', 'CheckedIn', 'InProgress', 'Completed', 'Cancelled'] as const;
+
+const STATUS_LABELS: Record<string, string> = {
+  CheckedIn: 'Waiting',
+  InProgress: 'In progress',
+};
 
 @Component({
   selector: 'app-appointments',
-  imports: [DatePipe, ReactiveFormsModule],
+  imports: [DatePipe, ReactiveFormsModule, Select],
   templateUrl: './appointments.html',
   styleUrl: './appointments.scss',
 })
@@ -78,6 +84,18 @@ export class Appointments {
 
   readonly canManage = computed(() => this.auth.hasRole('Admin', 'Receptionist'));
   readonly canConsult = computed(() => this.auth.hasRole('Admin', 'Doctor'));
+
+  readonly doctorOptions = computed<SelectOption[]>(() =>
+    this.doctors().map((doctor) => ({
+      value: doctor.id,
+      label: doctor.fullName,
+      sublabel: doctor.role,
+    })),
+  );
+
+  statusLabel(status: string): string {
+    return STATUS_LABELS[status] ?? status;
+  }
 
   constructor() {
     this.patientSearch$
