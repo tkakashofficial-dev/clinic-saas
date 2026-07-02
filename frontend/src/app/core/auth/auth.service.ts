@@ -22,11 +22,16 @@ export class AuthService {
   readonly session = this._session.asReadonly();
   readonly isLoggedIn = computed(() => this._session() !== null);
   readonly role = computed<Role | null>(() => this._session()?.role ?? null);
+  /** All roles; falls back to [role] for sessions stored before multi-role. */
+  readonly roles = computed<Role[]>(() => {
+    const session = this._session();
+    if (!session) return [];
+    return session.roles?.length ? session.roles : [session.role];
+  });
   readonly fullName = computed(() => this._session()?.fullName ?? '');
 
-  hasRole(...roles: Role[]): boolean {
-    const current = this.role();
-    return current !== null && roles.includes(current);
+  hasRole(...allowed: Role[]): boolean {
+    return this.roles().some((role) => allowed.includes(role));
   }
 
   login(request: LoginRequest): Observable<AuthResponse> {

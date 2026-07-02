@@ -1,4 +1,4 @@
-﻿namespace Clinic.Application.Features.Staff.DTOs;
+namespace Clinic.Application.Features.Staff.DTOs;
 
 public class AddStaffRequest
 {
@@ -6,5 +6,10 @@ public class AddStaffRequest
     public string LastName { get; set; } = default!;
     public string Email { get; set; } = default!;
     public string Password { get; set; } = default!;
-    public string Role { get; set; } = default!; // "Doctor" or "Receptionist"
+
+    /// <summary>
+    /// One or more roles. Roles combine: a partner who also practices gets
+    /// ["Admin", "Doctor"]; a hired dentist gets ["Doctor"].
+    /// </summary>
+    public List<string> Roles { get; set; } = new();
 }

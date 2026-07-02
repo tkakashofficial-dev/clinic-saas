@@ -18,7 +18,10 @@ export interface AuthResponse {
   refreshToken: string;
   email: string;
   fullName: string;
+  /** Primary role (highest privilege) — for display. */
   role: Role;
+  /** All roles held — e.g. a doctor-owner has ['Admin', 'Doctor']. */
+  roles: Role[];
   tenantId: string;
   tenantUserId: string;
   expiresAt: string;
@@ -37,6 +40,7 @@ export interface RegisterRequest {
   email: string;
   password: string;
   clinicName: string;
+  ownerIsDoctor: boolean;
 }
 
 // ---------- Patients ----------
@@ -101,7 +105,7 @@ export interface StaffDto {
   systemUserId: string;
   fullName: string;
   email: string;
-  role: string;
+  roles: string[];
   isActive: boolean;
   createdAt: string;
 }
@@ -111,7 +115,7 @@ export interface AddStaffRequest {
   lastName: string;
   email: string;
   password: string;
-  role: string;
+  roles: string[];
 }
 
 // ---------- Consultations & prescriptions ----------

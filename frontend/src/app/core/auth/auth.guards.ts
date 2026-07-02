@@ -3,11 +3,11 @@ import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from './auth.service';
 import { Role } from '../models/api.models';
 
-/** Blocks the app shell for anonymous visitors. */
+/** Blocks the app shell for anonymous visitors — they see the landing page. */
 export const authGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  return auth.isLoggedIn() ? true : router.createUrlTree(['/login']);
+  return auth.isLoggedIn() ? true : router.createUrlTree(['/welcome']);
 };
 
 /** Sends logged-in users away from login/register. */

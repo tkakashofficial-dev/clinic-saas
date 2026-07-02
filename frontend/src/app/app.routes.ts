@@ -3,6 +3,11 @@ import { authGuard, guestGuard, roleGuard } from './core/auth/auth.guards';
 
 export const routes: Routes = [
   {
+    // Public marketing page — what future customers see first
+    path: 'welcome',
+    loadComponent: () => import('./features/landing/landing').then((m) => m.Landing),
+  },
+  {
     path: 'login',
     canActivate: [guestGuard],
     loadComponent: () => import('./features/auth/login').then((m) => m.Login),

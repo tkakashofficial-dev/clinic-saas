@@ -31,11 +31,26 @@ public class AuthServiceTests : IDisposable
     };
 
     [Fact]
+    public async Task Register_OwnerIsDoctor_GetsBothRoles()
+    {
+        // The common Kerala case: the clinic owner is the practicing dentist
+        var request = ValidRegistration("drowner@clinic.com");
+        request.OwnerIsDoctor = true;
+
+        var response = await CreateService().RegisterAsync(request);
+
+        Assert.Equal(RoleNames.Admin, response.Role); // primary stays Admin
+        Assert.Contains(RoleNames.Doctor, response.Roles);
+        Assert.Equal(2, response.Roles.Count);
+    }
+
+    [Fact]
     public async Task Register_CreatesTenant_SeedsAllRoles_AssignsAdmin()
     {
         var response = await CreateService().RegisterAsync(ValidRegistration());
 
         Assert.Equal(RoleNames.Admin, response.Role);
+        Assert.Equal([RoleNames.Admin], response.Roles); // investor-owner: Admin only
         Assert.NotEqual(Guid.Empty, response.TenantId);
         Assert.False(string.IsNullOrWhiteSpace(response.AccessToken));
 

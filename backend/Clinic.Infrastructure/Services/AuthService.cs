@@ -53,19 +53,24 @@ public class AuthService : IAuthService
         _context.TenantUsers.Add(tenantUser);
 
         // 5. Seed the full closed set of roles for this tenant so
-        //    [Authorize(Roles = ...)] can always match, then keep the Admin one
-        Role adminRole = default!;
+        //    [Authorize(Roles = ...)] can always match
+        var seededRoles = new Dictionary<string, Role>();
         foreach (var roleName in RoleNames.All)
         {
             var role = new Role(tenant.Id, roleName, RoleNames.DescriptionOf(roleName));
             _context.Roles.Add(role);
-            if (roleName == RoleNames.Admin)
-                adminRole = role;
+            seededRoles[roleName] = role;
         }
 
-        // 6. Assign Admin role to this TenantUser
-        var tenantUserRole = new TenantUserRole(tenantUser.Id, adminRole.Id);
-        _context.TenantUserRoles.Add(tenantUserRole);
+        // 6. The owner is always Admin; a practicing owner is ALSO a Doctor
+        //    so patients can be booked to them (investor-owners stay Admin-only)
+        var ownerRoles = new List<string> { RoleNames.Admin };
+        if (request.OwnerIsDoctor)
+            ownerRoles.Add(RoleNames.Doctor);
+
+        foreach (var roleName in ownerRoles)
+            _context.TenantUserRoles.Add(
+                new TenantUserRole(tenantUser.Id, seededRoles[roleName].Id));
 
         // 7. Issue the refresh token alongside the account
         var refreshToken = IssueRefreshToken(systemUser.Id);
@@ -76,7 +81,7 @@ public class AuthService : IAuthService
         var fullName = $"{request.FirstName} {request.LastName}";
         return BuildResponse(
             systemUser.Id, tenantUser.Id, tenant.Id,
-            systemUser.Email, fullName, RoleNames.Admin, refreshToken);
+            systemUser.Email, fullName, ownerRoles, refreshToken);
     }
 
     public async Task<AuthResponse> LoginAsync(
@@ -96,8 +101,8 @@ public class AuthService : IAuthService
         if (!passwordValid)
             throw new UnauthorizedAccessException("Invalid email or password.");
 
-        // 3. Resolve membership + role, issue tokens
-        var (tenantUser, role) = await ResolveMembershipAsync(systemUser.Id, cancellationToken);
+        // 3. Resolve membership + roles, issue tokens
+        var (tenantUser, roles) = await ResolveMembershipAsync(systemUser.Id, cancellationToken);
 
         var refreshToken = IssueRefreshToken(systemUser.Id);
         await _context.SaveChangesAsync(cancellationToken);
@@ -105,7 +110,7 @@ public class AuthService : IAuthService
         var fullName = $"{systemUser.FirstName} {systemUser.LastName}";
         return BuildResponse(
             systemUser.Id, tenantUser.Id, tenantUser.TenantId,
-            systemUser.Email, fullName, role, refreshToken);
+            systemUser.Email, fullName, roles, refreshToken);
     }
 
     public async Task<AuthResponse> RefreshAsync(
@@ -126,7 +131,7 @@ public class AuthService : IAuthService
         storedToken.Revoke();
 
         var systemUser = storedToken.SystemUser;
-        var (tenantUser, role) = await ResolveMembershipAsync(systemUser.Id, cancellationToken);
+        var (tenantUser, roles) = await ResolveMembershipAsync(systemUser.Id, cancellationToken);
 
         var newRefreshToken = IssueRefreshToken(systemUser.Id);
         await _context.SaveChangesAsync(cancellationToken);
@@ -134,15 +139,15 @@ public class AuthService : IAuthService
         var fullName = $"{systemUser.FirstName} {systemUser.LastName}";
         return BuildResponse(
             systemUser.Id, tenantUser.Id, tenantUser.TenantId,
-            systemUser.Email, fullName, role, newRefreshToken);
+            systemUser.Email, fullName, roles, newRefreshToken);
     }
 
     /// <summary>
-    /// Finds the user's active clinic membership and primary role.
-    /// No JWT exists yet in these flows, so the tenant filter is skipped
-    /// (soft-delete filtering stays active).
+    /// Finds the user's active clinic membership and ALL their roles,
+    /// ordered by privilege (Admin first). No JWT exists yet in these flows,
+    /// so the tenant filter is skipped (soft-delete filtering stays active).
     /// </summary>
-    private async Task<(TenantUser TenantUser, string Role)> ResolveMembershipAsync(
+    private async Task<(TenantUser TenantUser, List<string> Roles)> ResolveMembershipAsync(
         Guid systemUserId,
         CancellationToken cancellationToken)
     {
@@ -156,11 +161,15 @@ public class AuthService : IAuthService
         if (tenantUser is null)
             throw new UnauthorizedAccessException("No active clinic membership found.");
 
-        var role = tenantUser.Roles
+        var roles = tenantUser.Roles
             .Select(r => r.Role.Name)
-            .FirstOrDefault() ?? "Staff";
+            .OrderBy(name => RoleNames.All.ToList().IndexOf(name)) // Admin > Doctor > Receptionist
+            .ToList();
 
-        return (tenantUser, role);
+        if (roles.Count == 0)
+            roles.Add(RoleNames.Receptionist);
+
+        return (tenantUser, roles);
     }
 
     /// <summary>
@@ -182,10 +191,10 @@ public class AuthService : IAuthService
 
     private AuthResponse BuildResponse(
         Guid systemUserId, Guid tenantUserId, Guid tenantId,
-        string email, string fullName, string role, string refreshToken)
+        string email, string fullName, List<string> roles, string refreshToken)
     {
         var (token, expiresAt) = _jwtTokenGenerator.Generate(
-            systemUserId, tenantUserId, tenantId, email, fullName, role);
+            systemUserId, tenantUserId, tenantId, email, fullName, roles);
 
         return new AuthResponse
         {
@@ -193,7 +202,8 @@ public class AuthService : IAuthService
             RefreshToken = refreshToken,
             Email = email,
             FullName = fullName,
-            Role = role,
+            Role = roles[0],
+            Roles = roles,
             TenantId = tenantId,
             TenantUserId = tenantUserId,
             ExpiresAt = expiresAt

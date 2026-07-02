@@ -29,10 +29,20 @@ public class StaffService : IStaffService
         var tenantId = _currentUser.TenantId;
 
         // 0. Roles are a closed set — free-text would silently break
-        //    [Authorize(Roles = ...)] matching (e.g. a typo like "Docter")
-        if (!RoleNames.TryNormalize(request.Role, out var roleName))
-            throw new BadRequestException(
-                $"Invalid role '{request.Role}'. Allowed roles: {string.Join(", ", RoleNames.All)}.");
+        //    [Authorize(Roles = ...)] matching (e.g. a typo like "Docter").
+        //    Multiple roles combine: a partner who practices = Admin + Doctor.
+        var roleNames = new List<string>();
+        foreach (var requested in request.Roles.Distinct())
+        {
+            if (!RoleNames.TryNormalize(requested, out var normalized))
+                throw new BadRequestException(
+                    $"Invalid role '{requested}'. Allowed roles: {string.Join(", ", RoleNames.All)}.");
+            if (!roleNames.Contains(normalized))
+                roleNames.Add(normalized);
+        }
+
+        if (roleNames.Count == 0)
+            throw new BadRequestException("At least one role is required.");
 
         // 1. Check email not already taken globally
         var emailExists = await _context.SystemUsers
@@ -55,23 +65,24 @@ public class StaffService : IStaffService
         var tenantUser = new TenantUser(tenantId, systemUser.Id);
         _context.TenantUsers.Add(tenantUser);
 
-        // 4. Find the seeded role (create only as fallback for tenants
-        //    registered before role seeding existed)
-        var role = await _context.Roles
-            .FirstOrDefaultAsync(r => r.TenantId == tenantId
-                && r.Name == roleName, cancellationToken);
-
-        if (role is null)
+        // 4. Assign every requested role (seeded roles; create as fallback
+        //    for tenants registered before role seeding existed)
+        foreach (var roleName in roleNames)
         {
-            role = new Role(tenantId, roleName, RoleNames.DescriptionOf(roleName));
-            _context.Roles.Add(role);
+            var role = await _context.Roles
+                .FirstOrDefaultAsync(r => r.TenantId == tenantId
+                    && r.Name == roleName, cancellationToken);
+
+            if (role is null)
+            {
+                role = new Role(tenantId, roleName, RoleNames.DescriptionOf(roleName));
+                _context.Roles.Add(role);
+            }
+
+            _context.TenantUserRoles.Add(new TenantUserRole(tenantUser.Id, role.Id));
         }
 
-        // 5. Assign role
-        var tenantUserRole = new TenantUserRole(tenantUser.Id, role.Id);
-        _context.TenantUserRoles.Add(tenantUserRole);
-
-        // 6. Save everything
+        // 5. Save everything
         await _context.SaveChangesAsync(cancellationToken);
 
         return new StaffDto
@@ -80,7 +91,7 @@ public class StaffService : IStaffService
             SystemUserId = systemUser.Id,
             FullName = $"{request.FirstName} {request.LastName}",
             Email = request.Email,
-            Role = roleName,
+            Roles = roleNames,
             IsActive = true,
             CreatedAt = tenantUser.CreatedAt
         };
@@ -104,9 +115,7 @@ public class StaffService : IStaffService
                 SystemUserId = tu.SystemUserId,
                 FullName = tu.SystemUser.FirstName + " " + tu.SystemUser.LastName,
                 Email = tu.SystemUser.Email,
-                Role = tu.Roles
-                    .Select(r => r.Role.Name)
-                    .FirstOrDefault() ?? "Unknown",
+                Roles = tu.Roles.Select(r => r.Role.Name).ToList(),
                 IsActive = tu.IsActive,
                 CreatedAt = tu.CreatedAt
             })

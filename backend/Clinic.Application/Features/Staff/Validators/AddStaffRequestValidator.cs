@@ -27,9 +27,11 @@ public class AddStaffRequestValidator : AbstractValidator<AddStaffRequest>
             .Matches("[a-zA-Z]").WithMessage("Password must contain a letter.")
             .Matches("[0-9]").WithMessage("Password must contain a digit.");
 
-        RuleFor(x => x.Role)
-            .NotEmpty().WithMessage("Role is required.")
+        RuleFor(x => x.Roles)
+            .NotEmpty().WithMessage("At least one role is required.");
+
+        RuleForEach(x => x.Roles)
             .Must(r => RoleNames.TryNormalize(r, out _))
-            .WithMessage($"Role must be one of: {string.Join(", ", RoleNames.All)}.");
+            .WithMessage($"Roles must be from: {string.Join(", ", RoleNames.All)}.");
     }
 }

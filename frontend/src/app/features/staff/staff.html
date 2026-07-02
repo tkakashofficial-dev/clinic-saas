@@ -40,7 +40,7 @@
             <tr>
               <td class="cell-main">{{ member.fullName }}</td>
               <td class="muted">{{ member.email }}</td>
-              <td>{{ member.role }}</td>
+              <td>{{ member.roles.join(' · ') }}</td>
               <td>
                 <span class="chip" [class.chip-completed]="member.isActive" [class.chip-cancelled]="!member.isActive">
                   {{ member.isActive ? 'Active' : 'Inactive' }}
@@ -93,8 +93,14 @@
       </div>
 
       <div class="field">
-        <label>Role *</label>
-        <app-segmented [options]="['Doctor', 'Receptionist', 'Admin']" formControlName="role" />
+        <label>Roles * <span class="muted" style="font-weight:400">(combine them — a partner who treats patients = Admin + Doctor)</span></label>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          @for (role of allRoles; track role) {
+            <button type="button" class="filter-chip"
+                    [class.active]="selectedRoles().includes(role)"
+                    (click)="toggleRole(role)">{{ role }}</button>
+          }
+        </div>
       </div>
 
       <div class="field">

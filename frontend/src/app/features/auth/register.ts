@@ -25,6 +25,7 @@ export class Register {
     lastName: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(8)]],
+    ownerIsDoctor: [true], // most small-clinic owners are the practicing doctor
   });
 
   submit(): void {

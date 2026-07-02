@@ -4,11 +4,10 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { parseApiError } from '../../core/api/api-error';
 import { StaffService } from '../../core/api/staff.service';
 import { StaffDto } from '../../core/models/api.models';
-import { Segmented } from '../../shared/ui/segmented';
 
 @Component({
   selector: 'app-staff',
-  imports: [DatePipe, ReactiveFormsModule, Segmented],
+  imports: [DatePipe, ReactiveFormsModule],
   templateUrl: './staff.html',
 })
 export class Staff {
@@ -28,8 +27,17 @@ export class Staff {
     lastName: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(8)]],
-    role: ['Doctor', Validators.required],
   });
+
+  // Roles combine: a partner who practices = Admin + Doctor
+  readonly allRoles = ['Doctor', 'Receptionist', 'Admin'];
+  readonly selectedRoles = signal<string[]>(['Doctor']);
+
+  toggleRole(role: string): void {
+    this.selectedRoles.update((current) =>
+      current.includes(role) ? current.filter((r) => r !== role) : [...current, role],
+    );
+  }
 
   constructor() {
     this.load();
@@ -47,7 +55,8 @@ export class Staff {
   }
 
   openDrawer(): void {
-    this.form.reset({ role: 'Doctor' });
+    this.form.reset();
+    this.selectedRoles.set(['Doctor']);
     this.formError.set('');
     this.fieldErrors.set({});
     this.drawerOpen.set(true);
@@ -62,12 +71,16 @@ export class Staff {
       this.form.markAllAsTouched();
       return;
     }
+    if (this.selectedRoles().length === 0) {
+      this.formError.set('Pick at least one role.');
+      return;
+    }
 
     this.saving.set(true);
     this.formError.set('');
     this.fieldErrors.set({});
 
-    this.api.add(this.form.getRawValue()).subscribe({
+    this.api.add({ ...this.form.getRawValue(), roles: this.selectedRoles() }).subscribe({
       next: () => {
         this.saving.set(false);
         this.drawerOpen.set(false);

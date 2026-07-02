@@ -13,13 +13,13 @@ public class StaffServiceTests : IDisposable
     private StaffService CreateService() =>
         new(_db.CreateContext(), _db.CurrentUser);
 
-    private static AddStaffRequest ValidStaff(string role, string email) => new()
+    private static AddStaffRequest ValidStaff(string email, params string[] roles) => new()
     {
         FirstName = "Staff",
         LastName = "Member",
         Email = email,
         Password = "Str0ng-Pass-123",
-        Role = role
+        Roles = roles.ToList()
     };
 
     [Fact]
@@ -29,7 +29,7 @@ public class StaffServiceTests : IDisposable
         _db.CurrentUser.ActAs(clinic.TenantId, clinic.TenantUserId);
 
         await Assert.ThrowsAsync<BadRequestException>(
-            () => CreateService().AddStaffAsync(ValidStaff("Docter", "typo@clinic.com")));
+            () => CreateService().AddStaffAsync(ValidStaff("typo@clinic.com", "Docter")));
     }
 
     [Fact]
@@ -38,9 +38,34 @@ public class StaffServiceTests : IDisposable
         var clinic = await _db.SeedTenantAsync("Clinic", "a@a.com");
         _db.CurrentUser.ActAs(clinic.TenantId, clinic.TenantUserId);
 
-        var staff = await CreateService().AddStaffAsync(ValidStaff("doctor", "doc@clinic.com"));
+        var staff = await CreateService().AddStaffAsync(ValidStaff("doc@clinic.com", "doctor"));
 
-        Assert.Equal(RoleNames.Doctor, staff.Role);
+        Assert.Equal([RoleNames.Doctor], staff.Roles);
+    }
+
+    [Fact]
+    public async Task AddStaff_MultipleRoles_PartnerWhoPractices()
+    {
+        // A partner who also treats patients: Admin + Doctor on one account
+        var clinic = await _db.SeedTenantAsync("Clinic", "a@a.com");
+        _db.CurrentUser.ActAs(clinic.TenantId, clinic.TenantUserId);
+
+        var staff = await CreateService().AddStaffAsync(
+            ValidStaff("partner@clinic.com", "Admin", "Doctor"));
+
+        Assert.Equal(2, staff.Roles.Count);
+        Assert.Contains(RoleNames.Admin, staff.Roles);
+        Assert.Contains(RoleNames.Doctor, staff.Roles);
+    }
+
+    [Fact]
+    public async Task AddStaff_NoRoles_ThrowsBadRequest()
+    {
+        var clinic = await _db.SeedTenantAsync("Clinic", "a@a.com");
+        _db.CurrentUser.ActAs(clinic.TenantId, clinic.TenantUserId);
+
+        await Assert.ThrowsAsync<BadRequestException>(
+            () => CreateService().AddStaffAsync(ValidStaff("norole@clinic.com")));
     }
 
     [Fact]
@@ -49,10 +74,10 @@ public class StaffServiceTests : IDisposable
         var clinic = await _db.SeedTenantAsync("Clinic", "a@a.com");
         _db.CurrentUser.ActAs(clinic.TenantId, clinic.TenantUserId);
 
-        await CreateService().AddStaffAsync(ValidStaff("Receptionist", "same@clinic.com"));
+        await CreateService().AddStaffAsync(ValidStaff("same@clinic.com", "Receptionist"));
 
         await Assert.ThrowsAsync<ConflictException>(
-            () => CreateService().AddStaffAsync(ValidStaff("Doctor", "same@clinic.com")));
+            () => CreateService().AddStaffAsync(ValidStaff("same@clinic.com", "Doctor")));
     }
 
     public void Dispose() => _db.Dispose();

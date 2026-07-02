@@ -1,0 +1,160 @@
+<div class="landing">
+
+  <!-- ============ Nav ============ -->
+  <nav class="landing-nav">
+    <div class="container nav-inner">
+      <div class="brand-logo"><span class="mark">✚</span> {{ brand }}</div>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#faq">FAQ</a>
+      </div>
+      <div class="nav-actions">
+        <a routerLink="/login" class="btn btn-ghost">Sign in</a>
+        <a routerLink="/register" class="btn btn-primary">Start free</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ============ Hero ============ -->
+  <header class="hero">
+    <div class="container hero-inner">
+      <div class="hero-copy">
+        <span class="hero-badge">Early access — free during beta 🎉</span>
+        <h1>Run your clinic <em>calmly</em>.</h1>
+        <p class="hero-sub">
+          Patients, appointments, consultations and prescriptions — one premium,
+          affordable system built for Indian clinics. Set up in two minutes.
+        </p>
+        <div class="hero-ctas">
+          <a routerLink="/register" class="btn btn-primary btn-lg">Register your clinic — free</a>
+          <a href="#pricing" class="btn btn-secondary btn-lg">See pricing</a>
+        </div>
+        <p class="hero-note">No credit card · No installation · Works in your browser</p>
+      </div>
+
+      <!-- Stylized product preview, built in pure CSS -->
+      <div class="hero-preview" aria-hidden="true">
+        <div class="preview-window">
+          <div class="preview-side">
+            <span class="p-mark">✚</span>
+            <span class="p-navline active"></span>
+            <span class="p-navline"></span>
+            <span class="p-navline"></span>
+          </div>
+          <div class="preview-main">
+            <div class="p-title"></div>
+            <div class="p-stats">
+              <div class="p-stat accent"><b>12</b><i>today</i></div>
+              <div class="p-stat"><b>3</b><i>waiting</i></div>
+              <div class="p-stat"><b>248</b><i>patients</i></div>
+            </div>
+            <div class="p-row"><span class="p-chip blue"></span></div>
+            <div class="p-row"><span class="p-chip violet"></span></div>
+            <div class="p-row"><span class="p-chip green"></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ Features ============ -->
+  <section class="section" id="features">
+    <div class="container">
+      <h2 class="section-title">Everything a clinic needs. <span>Nothing it doesn’t.</span></h2>
+      <div class="features-grid">
+        @for (feature of features; track feature.title) {
+          <div class="feature-card card">
+            <div class="feature-icon">
+              @switch (feature.icon) {
+                @case ('desk') {
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
+                }
+                @case ('doctor') {
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                }
+                @case ('pdf') {
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                }
+                @case ('roles') {
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                }
+                @case ('shield') {
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                }
+                @case ('device') {
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                }
+              }
+            </div>
+            <h3>{{ feature.title }}</h3>
+            <p>{{ feature.text }}</p>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Pricing ============ -->
+  <section class="section section-alt" id="pricing">
+    <div class="container">
+      <h2 class="section-title">Simple pricing. <span>Premium product.</span></h2>
+      <p class="section-sub">Affordable for every clinic in India — and free while we're in early access.</p>
+
+      <div class="pricing-grid">
+        @for (plan of plans; track plan.name) {
+          <div class="price-card card" [class.popular]="plan.popular">
+            @if (plan.popular) { <span class="popular-badge">Most popular</span> }
+            <h3>{{ plan.name }}</h3>
+            <p class="plan-tagline">{{ plan.tagline }}</p>
+            <div class="price">
+              <span class="amount">{{ plan.price }}</span>
+              <span class="period">/ {{ plan.period }}</span>
+            </div>
+            <ul class="plan-features">
+              @for (feature of plan.features; track feature) {
+                <li>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  {{ feature }}
+                </li>
+              }
+            </ul>
+            <a routerLink="/register" class="btn btn-lg"
+               [class.btn-primary]="plan.popular" [class.btn-secondary]="!plan.popular">
+              {{ plan.cta }}
+            </a>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FAQ ============ -->
+  <section class="section" id="faq">
+    <div class="container container-narrow">
+      <h2 class="section-title">Questions clinics ask us</h2>
+      @for (faq of faqs; track faq.q) {
+        <details class="faq-item">
+          <summary>{{ faq.q }}</summary>
+          <p>{{ faq.a }}</p>
+        </details>
+      }
+    </div>
+  </section>
+
+  <!-- ============ Final CTA ============ -->
+  <section class="final-cta">
+    <div class="container">
+      <h2>Your clinic, calm and organized — starting today.</h2>
+      <a routerLink="/register" class="btn btn-primary btn-lg">Register your clinic — free</a>
+    </div>
+  </section>
+
+  <!-- ============ Footer ============ -->
+  <footer class="landing-footer">
+    <div class="container footer-inner">
+      <div class="brand-logo"><span class="mark">✚</span> {{ brand }}</div>
+      <p>Clinic management, made calm. Built with care in Kerala, India.</p>
+    </div>
+  </footer>
+</div>

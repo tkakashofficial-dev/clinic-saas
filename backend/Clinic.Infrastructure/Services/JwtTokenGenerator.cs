@@ -22,20 +22,24 @@ public class JwtTokenGenerator
         Guid tenantId,
         string email,
         string fullName,
-        string role)
+        IReadOnlyCollection<string> roles)
     {
         var expiresAt = DateTime.UtcNow.AddMinutes(_settings.ExpiresInMinutes);
 
-        var claims = new[]
+        var claims = new List<Claim>
         {
-            new Claim(ClaimTypes.NameIdentifier, systemUserId.ToString()),
-            new Claim(ClaimTypes.Email, email),
-            new Claim(ClaimTypes.Name, fullName),
-            new Claim(ClaimTypes.Role, role),
-            new Claim("tenant_id", tenantId.ToString()),
-            new Claim("tenant_user_id", tenantUserId.ToString()),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            new(ClaimTypes.NameIdentifier, systemUserId.ToString()),
+            new(ClaimTypes.Email, email),
+            new(ClaimTypes.Name, fullName),
+            new("tenant_id", tenantId.ToString()),
+            new("tenant_user_id", tenantUserId.ToString()),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
+
+        // One claim per role — [Authorize(Roles = "A,B")] matches if the
+        // user holds ANY of them, so Admin+Doctor combos just work
+        foreach (var role in roles)
+            claims.Add(new Claim(ClaimTypes.Role, role));
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Secret));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

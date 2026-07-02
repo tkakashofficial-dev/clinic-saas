@@ -89,7 +89,7 @@ export class Appointments {
     this.doctors().map((doctor) => ({
       value: doctor.id,
       label: doctor.fullName,
-      sublabel: doctor.role,
+      sublabel: doctor.roles.join(' · '),
     })),
   );
 
@@ -172,7 +172,9 @@ export class Appointments {
     if (this.doctors().length === 0) {
       this.staffApi.getAll().subscribe({
         next: (staff) =>
-          this.doctors.set(staff.items.filter((s) => s.role === 'Doctor' || s.role === 'Admin')),
+          // Only people who actually hold the Doctor role are bookable —
+          // an investor-admin never appears here
+          this.doctors.set(staff.items.filter((s) => s.roles.includes('Doctor'))),
       });
     }
   }
