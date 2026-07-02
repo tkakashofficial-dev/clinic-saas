@@ -96,9 +96,12 @@ public class AuthService : IAuthService
         if (!passwordValid)
             throw new UnauthorizedAccessException("Invalid email or password.");
 
-        // 3. Get TenantUser with roles
+        // 3. Get TenantUser with roles.
+        // No JWT exists yet at login, so no "current tenant" — skip ONLY the tenant
+        // filter (soft-delete filtering stays active).
         var tenantUser = await _context.TenantUsers
             .AsNoTracking()
+            .IgnoreQueryFilters([QueryFilters.Tenant])
             .Include(tu => tu.Roles)
                 .ThenInclude(r => r.Role)
             .FirstOrDefaultAsync(tu => tu.SystemUserId == systemUser.Id && tu.IsActive, cancellationToken);

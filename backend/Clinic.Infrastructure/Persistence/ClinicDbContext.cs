@@ -27,31 +27,52 @@ public class ClinicDbContext : DbContext
     public DbSet<MedicalCondition> MedicalConditions => Set<MedicalCondition>();
     public DbSet<PatientMedicalCondition> PatientMedicalConditions => Set<PatientMedicalCondition>();
     public DbSet<Appointment> Appointments => Set<Appointment>();
+    // Evaluated per query — EF captures the context instance, so each request's
+    // scoped ICurrentUserService supplies the tenant from the verified JWT.
+    private Guid CurrentTenantId => _currentUser.TenantId;
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         builder.HasDefaultSchema("clinic");
         builder.ApplyConfigurationsFromAssembly(typeof(ClinicDbContext).Assembly);
 
-        // Suppress soft delete filter warnings for join tables
+        // Join tables don't implement ISoftDelete themselves — filter via their parents
         builder.Entity<TenantUserRole>()
-            .HasQueryFilter(x => !x.Role.IsDeleted && !x.TenantUser.IsDeleted);
+            .HasQueryFilter(QueryFilters.SoftDelete,
+                x => !x.Role.IsDeleted && !x.TenantUser.IsDeleted);
 
         builder.Entity<PatientMedicalCondition>()
-            .HasQueryFilter(x => !x.MedicalCondition.IsDeleted && !x.Patient.IsDeleted);
+            .HasQueryFilter(QueryFilters.SoftDelete,
+                x => !x.MedicalCondition.IsDeleted && !x.Patient.IsDeleted);
 
-        // Auto soft delete filter for every entity implementing ISoftDelete
         foreach (var entityType in builder.Model.GetEntityTypes())
         {
+            // Auto soft delete filter for every entity implementing ISoftDelete
             if (typeof(ISoftDelete).IsAssignableFrom(entityType.ClrType))
             {
-                var method = typeof(ClinicDbContext)
+                var filter = (LambdaExpression)typeof(ClinicDbContext)
                     .GetMethod(nameof(GetSoftDeleteFilter),
                         BindingFlags.NonPublic | BindingFlags.Static)!
-                    .MakeGenericMethod(entityType.ClrType);
+                    .MakeGenericMethod(entityType.ClrType)
+                    .Invoke(null, null)!;
 
-                var filter = method.Invoke(null, null);
                 builder.Entity(entityType.ClrType)
-                    .HasQueryFilter((LambdaExpression)filter!);
+                    .HasQueryFilter(QueryFilters.SoftDelete, filter);
+            }
+
+            // Tenant isolation: every IMustHaveTenant entity is automatically scoped
+            // to the current tenant in EVERY query. A forgotten Where() can no longer
+            // leak another clinic's data.
+            if (typeof(IMustHaveTenant).IsAssignableFrom(entityType.ClrType))
+            {
+                var filter = (LambdaExpression)typeof(ClinicDbContext)
+                    .GetMethod(nameof(GetTenantFilter),
+                        BindingFlags.NonPublic | BindingFlags.Instance)!
+                    .MakeGenericMethod(entityType.ClrType)
+                    .Invoke(this, null)!;
+
+                builder.Entity(entityType.ClrType)
+                    .HasQueryFilter(QueryFilters.Tenant, filter);
             }
         }
 
@@ -60,6 +81,8 @@ public class ClinicDbContext : DbContext
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        EnforceTenantOnWrites();
+
         var now = DateTime.UtcNow;
         var userId = _currentUser.IsAuthenticated ? _currentUser.UserId : Guid.Empty;
 
@@ -84,6 +107,44 @@ public class ClinicDbContext : DbContext
         return await base.SaveChangesAsync(cancellationToken);
     }
 
+    /// <summary>
+    /// Write-side tenant protection:
+    /// - New entities without a TenantId get the current tenant stamped automatically.
+    /// - Writing an entity that belongs to a DIFFERENT tenant than the caller is blocked.
+    /// (Registration is the exception: it creates a brand-new tenant while unauthenticated,
+    /// which is allowed because the entity carries an explicit TenantId.)
+    /// </summary>
+    private void EnforceTenantOnWrites()
+    {
+        foreach (var entry in ChangeTracker.Entries<IMustHaveTenant>())
+        {
+            if (entry.State is not (EntityState.Added or EntityState.Modified))
+                continue;
+
+            var tenantProperty = entry.Property(nameof(IMustHaveTenant.TenantId));
+            var entityTenantId = (Guid)tenantProperty.CurrentValue!;
+
+            if (entry.State == EntityState.Added && entityTenantId == Guid.Empty)
+            {
+                if (CurrentTenantId == Guid.Empty)
+                    throw new InvalidOperationException(
+                        $"Cannot save '{entry.Metadata.ClrType.Name}' without a TenantId " +
+                        "when no tenant is resolved from the current user.");
+
+                tenantProperty.CurrentValue = CurrentTenantId;
+            }
+            else if (CurrentTenantId != Guid.Empty && entityTenantId != CurrentTenantId)
+            {
+                throw new InvalidOperationException(
+                    $"Cross-tenant write blocked: '{entry.Metadata.ClrType.Name}' belongs to " +
+                    "a different tenant than the current user.");
+            }
+        }
+    }
+
     private static Expression<Func<T, bool>> GetSoftDeleteFilter<T>()
         where T : class, ISoftDelete => x => !x.IsDeleted;
+
+    private Expression<Func<T, bool>> GetTenantFilter<T>()
+        where T : class, IMustHaveTenant => x => x.TenantId == CurrentTenantId;
 }

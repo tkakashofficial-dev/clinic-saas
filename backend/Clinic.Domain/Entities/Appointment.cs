@@ -16,7 +16,8 @@ public class Appointment : BaseEntity, IMustHaveTenant
     public Tenant Tenant { get; private set; } = default!;
     public Patient Patient { get; private set; } = default!;
     public TenantUser Doctor { get; private set; } = default!;
-    public TenantUser CreatedBy { get; private set; } = default!;
+    // Named CreatedByUser (not CreatedBy) to avoid hiding BaseEntity.CreatedBy audit field
+    public TenantUser CreatedByUser { get; private set; } = default!;
 
     private Appointment() { }
 

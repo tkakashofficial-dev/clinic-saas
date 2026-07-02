@@ -36,7 +36,7 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
                .OnDelete(DeleteBehavior.Restrict);
 
         // Who created this appointment
-        builder.HasOne(x => x.CreatedBy)
+        builder.HasOne(x => x.CreatedByUser)
                .WithMany()
                .HasForeignKey(x => x.CreatedByTenantUserId)
                .OnDelete(DeleteBehavior.Restrict);
