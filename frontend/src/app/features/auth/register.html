@@ -25,8 +25,8 @@
 
   <main class="auth-form-side">
     <div class="auth-card">
-      <h2>Create your clinic</h2>
-      <p class="sub">One account — you can rename things later.</p>
+      <h2>Register your clinic</h2>
+      <p class="sub">One-time setup — after this you just sign in.</p>
 
       @if (error()) {
         <div class="alert-error">{{ error() }}</div>
@@ -81,7 +81,7 @@
         </div>
 
         <button type="submit" class="btn btn-primary" [disabled]="loading()">
-          {{ loading() ? 'Creating workspace…' : 'Create clinic workspace' }}
+          {{ loading() ? 'Registering your clinic…' : 'Register clinic' }}
         </button>
       </form>
 
