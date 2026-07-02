@@ -1,5 +1,6 @@
 using Clinic.Application.Features.Staff.DTOs;
 using Clinic.Application.Features.Staff.Services;
+using Clinic.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,14 +19,14 @@ public class StaffController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleNames.Admin)]
     public async Task<ActionResult<StaffDto>> AddStaff(
         [FromBody] AddStaffRequest request,
         CancellationToken cancellationToken)
         => Ok(await _staffService.AddStaffAsync(request, cancellationToken));
 
     [HttpGet]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleNames.Admin)]
     public async Task<ActionResult<List<StaffDto>>> GetAllStaff(
         CancellationToken cancellationToken)
         => Ok(await _staffService.GetAllStaffAsync(cancellationToken));

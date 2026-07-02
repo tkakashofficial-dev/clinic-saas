@@ -1,6 +1,7 @@
 ﻿using Clinic.Application.Common.Exceptions;
 using Clinic.Application.Features.Auth.DTOs;
 using Clinic.Application.Features.Auth.Services;
+using Clinic.Domain.Constants;
 using Clinic.Domain.Entities;
 using Clinic.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -47,9 +48,16 @@ public class AuthService : IAuthService
         var tenantUser = new TenantUser(tenant.Id, systemUser.Id);
         _context.TenantUsers.Add(tenantUser);
 
-        // 5. Create the Admin role for this tenant
-        var adminRole = new Role(tenant.Id, "Admin", "Clinic administrator with full access");
-        _context.Roles.Add(adminRole);
+        // 5. Seed the full closed set of roles for this tenant so
+        //    [Authorize(Roles = ...)] can always match, then keep the Admin one
+        Role adminRole = default!;
+        foreach (var roleName in RoleNames.All)
+        {
+            var role = new Role(tenant.Id, roleName, RoleNames.DescriptionOf(roleName));
+            _context.Roles.Add(role);
+            if (roleName == RoleNames.Admin)
+                adminRole = role;
+        }
 
         // 6. Assign Admin role to this TenantUser
         var tenantUserRole = new TenantUserRole(tenantUser.Id, adminRole.Id);
@@ -66,14 +74,14 @@ public class AuthService : IAuthService
             tenant.Id,
             systemUser.Email,
             fullName,
-            "Admin");
+            RoleNames.Admin);
 
         return new AuthResponse
         {
             AccessToken = token,
             Email = systemUser.Email,
             FullName = fullName,
-            Role = "Admin",
+            Role = RoleNames.Admin,
             TenantId = tenant.Id,
             TenantUserId = tenantUser.Id,
             ExpiresAt = expiresAt

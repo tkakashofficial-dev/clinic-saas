@@ -2,6 +2,7 @@
 using Clinic.Application.Common.Interfaces;
 using Clinic.Application.Features.Staff.DTOs;
 using Clinic.Application.Features.Staff.Services;
+using Clinic.Domain.Constants;
 using Clinic.Domain.Entities;
 using Clinic.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +27,12 @@ public class StaffService : IStaffService
         // TenantId comes from JWT token — never from request body
         var tenantId = _currentUser.TenantId;
 
+        // 0. Roles are a closed set — free-text would silently break
+        //    [Authorize(Roles = ...)] matching (e.g. a typo like "Docter")
+        if (!RoleNames.TryNormalize(request.Role, out var roleName))
+            throw new BadRequestException(
+                $"Invalid role '{request.Role}'. Allowed roles: {string.Join(", ", RoleNames.All)}.");
+
         // 1. Check email not already taken globally
         var emailExists = await _context.SystemUsers
             .AnyAsync(u => u.Email == request.Email, cancellationToken);
@@ -47,14 +54,15 @@ public class StaffService : IStaffService
         var tenantUser = new TenantUser(tenantId, systemUser.Id);
         _context.TenantUsers.Add(tenantUser);
 
-        // 4. Find existing role or create new one
+        // 4. Find the seeded role (create only as fallback for tenants
+        //    registered before role seeding existed)
         var role = await _context.Roles
             .FirstOrDefaultAsync(r => r.TenantId == tenantId
-                && r.Name == request.Role, cancellationToken);
+                && r.Name == roleName, cancellationToken);
 
         if (role is null)
         {
-            role = new Role(tenantId, request.Role);
+            role = new Role(tenantId, roleName, RoleNames.DescriptionOf(roleName));
             _context.Roles.Add(role);
         }
 
@@ -71,7 +79,7 @@ public class StaffService : IStaffService
             SystemUserId = systemUser.Id,
             FullName = $"{request.FirstName} {request.LastName}",
             Email = request.Email,
-            Role = request.Role,
+            Role = roleName,
             IsActive = true,
             CreatedAt = tenantUser.CreatedAt
         };

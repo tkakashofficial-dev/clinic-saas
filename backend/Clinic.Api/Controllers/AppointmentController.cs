@@ -1,5 +1,6 @@
 using Clinic.Application.Features.Appointments.DTOs;
 using Clinic.Application.Features.Appointments.Services;
+using Clinic.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,14 +19,14 @@ public class AppointmentController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,Receptionist")]
+    [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Receptionist}")]
     public async Task<ActionResult<AppointmentDto>> CreateAppointment(
         [FromBody] CreateAppointmentRequest request,
         CancellationToken cancellationToken)
         => Ok(await _appointmentService.CreateAppointmentAsync(request, cancellationToken));
 
     [HttpGet]
-    [Authorize(Roles = "Admin,Doctor,Receptionist")]
+    [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Doctor},{RoleNames.Receptionist}")]
     public async Task<ActionResult<List<AppointmentDto>>> GetAppointments(
         [FromQuery] DateTime? date,
         [FromQuery] string? status,
@@ -35,14 +36,14 @@ public class AppointmentController : ControllerBase
             date, status, doctorTenantUserId, cancellationToken));
 
     [HttpGet("{id}")]
-    [Authorize(Roles = "Admin,Doctor,Receptionist")]
+    [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Doctor},{RoleNames.Receptionist}")]
     public async Task<ActionResult<AppointmentDto>> GetAppointment(
         Guid id,
         CancellationToken cancellationToken)
         => Ok(await _appointmentService.GetAppointmentByIdAsync(id, cancellationToken));
 
     [HttpPatch("{id}/status")]
-    [Authorize(Roles = "Admin,Doctor,Receptionist")]
+    [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Doctor},{RoleNames.Receptionist}")]
     public async Task<ActionResult<AppointmentDto>> UpdateStatus(
         Guid id,
         [FromBody] UpdateAppointmentStatusRequest request,
