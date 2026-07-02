@@ -19,7 +19,7 @@ A multi-tenant clinic management system — one deployment serves many clinics w
 - **Backend:** ASP.NET Core 10 Web API, EF Core 10, PostgreSQL (Npgsql)
 - **Auth:** JWT bearer tokens, BCrypt password hashing, role-based authorization
 - **Frontend:** Angular (standalone components)
-- **Testing:** xUnit *(planned)*
+- **Testing:** xUnit + SQLite in-memory (tenant isolation, auth, services, validators)
 - **CI/CD:** GitHub Actions → Azure App Service + Azure Static Web Apps *(planned)*
 
 ## Getting started
@@ -89,10 +89,10 @@ docs/
 - [x] Appointments: create, list/filter, status updates
 - [x] Tenant isolation enforced by global query filters
 - [x] Centralized error handling (RFC 7807 Problem Details)
-- [ ] Input validation (FluentValidation)
-- [ ] Pagination on all list endpoints
+- [x] Input validation (FluentValidation)
+- [x] Pagination on all list endpoints
+- [x] Unit tests (xUnit + SQLite in-memory)
 - [ ] Refresh tokens + login rate limiting
-- [ ] Unit + integration tests (xUnit)
 - [ ] Angular frontend (login, patients, appointments, staff)
 - [ ] CI/CD: GitHub Actions → Azure
 - [ ] Audit log of patient-record access
