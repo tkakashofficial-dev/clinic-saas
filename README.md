@@ -91,8 +91,10 @@ docs/
 - [x] Centralized error handling (RFC 7807 Problem Details)
 - [x] Input validation (FluentValidation)
 - [x] Pagination on all list endpoints
-- [x] Unit tests (xUnit + SQLite in-memory)
-- [ ] Refresh tokens + login rate limiting
-- [ ] Angular frontend (login, patients, appointments, staff)
+- [x] Unit tests (xUnit + SQLite in-memory, 41 tests)
+- [x] Refresh tokens (rotating, hashed at rest) + login rate limiting
+- [x] Consultations (diagnosis) + prescriptions with branded PDF download
+- [x] Angular frontend (login, dashboard, patients, appointments, consultations, staff)
 - [ ] CI/CD: GitHub Actions → Azure
 - [ ] Audit log of patient-record access
+- [ ] Patient portal + appointment reminders
