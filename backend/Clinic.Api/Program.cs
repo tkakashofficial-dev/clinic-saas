@@ -153,6 +153,14 @@ public class Program
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
+
+        // Health probe for hosting platforms (and humans checking a deploy)
+        app.MapGet("/health", () => Results.Ok(new
+        {
+            status = "ok",
+            timeUtc = DateTime.UtcNow
+        }));
+
         app.Run();
     }
 }
