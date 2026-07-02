@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-export const BRAND_NAME = 'Klinovo';
+export const BRAND_NAME = 'Klivia';
 
 interface PricingPlan {
   name: string;
@@ -82,8 +82,9 @@ export class Landing {
         'Everything in Solo',
         'Multiple doctors, partners & reception',
         'Waiting-room queue for the whole team',
+        'Appointment reminders & notifications',
+        'Practice analytics & doctor reports',
         'Priority support on WhatsApp',
-        'Reminders & reports — coming soon',
       ],
       cta: 'Start free trial',
     },

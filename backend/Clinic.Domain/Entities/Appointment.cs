@@ -12,6 +12,8 @@ public class Appointment : BaseEntity, IMustHaveTenant
     public DateTime AppointmentDate { get; private set; }
     public AppointmentStatus Status { get; private set; } = AppointmentStatus.Scheduled;
     public string? Notes { get; private set; }
+    /// <summary>Set once the reminder engine has notified about this appointment.</summary>
+    public DateTime? ReminderSentAt { get; private set; }
 
     public Tenant Tenant { get; private set; } = default!;
     public Patient Patient { get; private set; } = default!;
@@ -39,4 +41,5 @@ public class Appointment : BaseEntity, IMustHaveTenant
 
     public void UpdateStatus(AppointmentStatus status) => Status = status;
     public void UpdateNotes(string? notes) => Notes = notes;
+    public void MarkReminderSent() => ReminderSentAt = DateTime.UtcNow;
 }

@@ -31,6 +31,7 @@ public class ClinicDbContext : DbContext
     public DbSet<Prescription> Prescriptions => Set<Prescription>();
     public DbSet<PrescriptionItem> PrescriptionItems => Set<PrescriptionItem>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<Notification> Notifications => Set<Notification>();
     // Evaluated per query — EF captures the context instance, so each request's
     // scoped ICurrentUserService supplies the tenant from the verified JWT.
     private Guid CurrentTenantId => _currentUser.TenantId;

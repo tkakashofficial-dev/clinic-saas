@@ -3,6 +3,7 @@ using Clinic.Application.Common.Interfaces;
 using Clinic.Application.Common.Models;
 using Clinic.Application.Features.Appointments.DTOs;
 using Clinic.Application.Features.Appointments.Services;
+using Clinic.Domain.Constants;
 using Clinic.Domain.Entities;
 using Clinic.Domain.Enums;
 using Clinic.Infrastructure.Persistence;
@@ -28,12 +29,13 @@ public class AppointmentService : IAppointmentService
         var tenantId = _currentUser.TenantId;
         var createdByTenantUserId = _currentUser.TenantUserId;
 
-        // Verify patient belongs to this clinic
-        var patientExists = await _context.Patients
-            .AnyAsync(p => p.Id == request.PatientId
-                && p.TenantId == tenantId, cancellationToken);
+        // Verify patient belongs to this clinic (name is used in the notification)
+        var patient = await _context.Patients
+            .Where(p => p.Id == request.PatientId && p.TenantId == tenantId)
+            .Select(p => new { p.FirstName, p.LastName })
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (!patientExists)
+        if (patient is null)
             throw new BadRequestException("Patient not found.");
 
         // Verify doctor belongs to this clinic
@@ -54,6 +56,18 @@ public class AppointmentService : IAppointmentService
             request.Notes);
 
         _context.Appointments.Add(appointment);
+
+        // Tell the doctor — unless they booked it themselves
+        if (request.DoctorTenantUserId != createdByTenantUserId)
+        {
+            _context.Notifications.Add(new Notification(
+                tenantId,
+                request.DoctorTenantUserId,
+                NotificationTypes.Booking,
+                "New appointment booked",
+                $"{patient.FirstName} {patient.LastName} · {appointment.AppointmentDate:d MMM, HH:mm}"));
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
 
         // Return full DTO with names
@@ -167,6 +181,24 @@ public class AppointmentService : IAppointmentService
             throw new BadRequestException("Invalid status value.");
 
         appointment.UpdateStatus(newStatus);
+
+        // Front desk checked the patient in — ping the doctor's bell
+        if (newStatus == AppointmentStatus.CheckedIn
+            && appointment.DoctorTenantUserId != _currentUser.TenantUserId)
+        {
+            var patientName = await _context.Patients
+                .Where(p => p.Id == appointment.PatientId)
+                .Select(p => p.FirstName + " " + p.LastName)
+                .FirstAsync(cancellationToken);
+
+            _context.Notifications.Add(new Notification(
+                tenantId,
+                appointment.DoctorTenantUserId,
+                NotificationTypes.CheckIn,
+                "Patient arrived",
+                $"{patientName} is in the waiting room"));
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
 
         return await GetAppointmentByIdAsync(appointmentId, cancellationToken);

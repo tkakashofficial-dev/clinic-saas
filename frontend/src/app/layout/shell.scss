@@ -17,71 +17,57 @@
   height: 100dvh;
 }
 
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font: 700 18px var(--font-heading);
-  padding: 4px 10px 20px;
-
-  .mark {
-    width: 30px; height: 30px; flex: none;
-    border-radius: 9px;
-    background: var(--color-primary-500);
-    color: #06362B;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px;
-  }
-
-  @media (max-width: 860px) { .name { display: none; } }
-}
-
-/* ---- Clinic switcher ---- */
+/* ---- Clinic identity + switcher: the CLINIC is the hero ---- */
 
 .clinic-switcher {
   position: relative;
-  margin-bottom: 14px;
+  margin-bottom: 18px;
 }
 
-.switcher-trigger {
+.clinic-identity {
   width: 100%;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1px;
+  align-items: center;
+  gap: 11px;
   background: rgb(244 250 247 / .06);
   border: 1px solid rgb(244 250 247 / .10);
-  border-radius: 10px;
-  padding: 9px 12px;
+  border-radius: 12px;
+  padding: 10px 12px;
   cursor: pointer;
   color: var(--color-text-invert);
-  position: relative;
-
-  .clinic-label {
-    font-size: 9.5px;
-    font-weight: 700;
-    letter-spacing: .08em;
-    color: rgb(244 250 247 / .45);
-  }
-
-  .clinic-name {
-    font: 600 13px var(--font-body);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-  }
-
-  svg {
-    position: absolute;
-    right: 10px; top: 50%;
-    transform: translateY(-50%);
-    color: rgb(244 250 247 / .5);
-  }
+  text-align: left;
+  transition: background .15s ease;
 
   &:hover { background: rgb(244 250 247 / .1); }
 
-  @media (max-width: 860px) { .clinic-label, .clinic-name { display: none; } }
+  .clinic-avatar {
+    width: 36px; height: 36px; flex: none;
+    border-radius: 10px;
+    background: var(--color-primary-500);
+    color: #06362B;
+    font: 700 13px var(--font-heading);
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .clinic-meta { flex: 1; min-width: 0; }
+
+  .clinic-name {
+    display: block;
+    font: 700 13.5px var(--font-heading);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .clinic-sub {
+    display: block;
+    font-size: 11px;
+    color: rgb(244 250 247 / .5);
+  }
+
+  .chev { flex: none; color: rgb(244 250 247 / .45); }
+
+  @media (max-width: 860px) { .clinic-meta, .chev { display: none; } }
 }
 
 .switcher-panel {
@@ -175,6 +161,39 @@
     font-size: 0;
     gap: 0;
   }
+}
+
+/* Notifications item + badge */
+.notif-item {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--font-body);
+  width: 100%;
+  margin-top: auto; /* pins to bottom of nav column */
+}
+
+.notif-badge {
+  margin-left: auto;
+  background: var(--color-primary-500);
+  color: #06362B;
+  font-size: 10.5px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 2px 7px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.powered-by {
+  text-align: center;
+  font-size: 10.5px;
+  color: rgb(244 250 247 / .35);
+  padding: 10px 0;
+
+  strong { color: rgb(244 250 247 / .5); font-weight: 600; }
+
+  @media (max-width: 860px) { display: none; }
 }
 
 .user-box {

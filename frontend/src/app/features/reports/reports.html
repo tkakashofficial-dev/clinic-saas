@@ -1,0 +1,62 @@
+<header class="page-header">
+  <div>
+    <h1>Reports</h1>
+    <p class="sub">Practice analytics · last 30 days</p>
+  </div>
+</header>
+
+@if (loading()) {
+  <div class="card"><div class="skeleton-row"></div><div class="skeleton-row"></div><div class="skeleton-row"></div></div>
+} @else if (overview(); as data) {
+
+  <div class="report-stats">
+    <div class="card card-pad stat"><div class="stat-label">Patients</div><div class="stat-value">{{ data.totalPatients }}</div><div class="stat-hint">total registered</div></div>
+    <div class="card card-pad stat"><div class="stat-label">New patients</div><div class="stat-value">{{ data.newPatientsLast30Days }}</div><div class="stat-hint">last 30 days</div></div>
+    <div class="card card-pad stat"><div class="stat-label">Today</div><div class="stat-value">{{ data.appointmentsToday }}</div><div class="stat-hint">appointments</div></div>
+    <div class="card card-pad stat"><div class="stat-label">Completed</div><div class="stat-value ok">{{ data.completedLast30Days }}</div><div class="stat-hint">last 30 days</div></div>
+    <div class="card card-pad stat"><div class="stat-label">Cancelled</div><div class="stat-value muted-val">{{ data.cancelledLast30Days }}</div><div class="stat-hint">last 30 days</div></div>
+  </div>
+
+  <section class="card card-pad chart-card">
+    <h2>Appointments — last 14 days</h2>
+    <div class="bar-chart">
+      @for (day of data.appointmentsPerDay; track day.date) {
+        <div class="bar-col" [title]="day.count + ' on ' + (day.date | date: 'd MMM')">
+          <span class="bar-count">{{ day.count || '' }}</span>
+          <div class="bar" [style.height]="barHeight(day.count)" [class.empty]="day.count === 0"></div>
+          <span class="bar-label">{{ day.date | date: 'd/M' }}</span>
+        </div>
+      }
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-head"><h2>Doctor performance · last 30 days</h2></div>
+    @if (data.perDoctorLast30Days.length === 0) {
+      <div class="empty-state"><p>No appointments in the last 30 days yet.</p></div>
+    } @else {
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr><th>Doctor</th><th>Appointments</th><th>Completed</th><th style="width:220px">Completion rate</th></tr>
+          </thead>
+          <tbody>
+            @for (doctor of data.perDoctorLast30Days; track doctor.doctorName) {
+              <tr>
+                <td class="cell-main">{{ doctor.doctorName }}</td>
+                <td class="num">{{ doctor.total }}</td>
+                <td class="num">{{ doctor.completed }}</td>
+                <td>
+                  <div class="rate-track">
+                    <div class="rate-fill" [style.width.%]="completionRate(doctor)"></div>
+                  </div>
+                  <span class="rate-value">{{ completionRate(doctor) }}%</span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+}

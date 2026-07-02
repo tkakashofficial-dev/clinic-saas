@@ -1,4 +1,5 @@
 using Clinic.Api.Middleware;
+using Clinic.Api.Workers;
 using Clinic.Application;
 using Clinic.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -28,6 +29,9 @@ public class Program
         // Centralized error handling: exceptions -> RFC 7807 Problem Details
         builder.Services.AddProblemDetails();
         builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+        // Reminder engine: notifies doctors/front desk about upcoming appointments
+        builder.Services.AddHostedService<AppointmentReminderWorker>();
 
         // CORS: browsers block cross-origin calls (Angular on :4200 -> API) unless
         // the API explicitly allows the origin. Origins come from config so

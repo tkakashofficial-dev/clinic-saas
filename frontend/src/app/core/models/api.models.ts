@@ -167,6 +167,30 @@ export interface RecordConsultationRequest {
   } | null;
 }
 
+// ---------- Notifications ----------
+
+export interface NotificationDto {
+  id: string;
+  type: 'Booking' | 'CheckIn' | 'Reminder';
+  title: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+// ---------- Reports ----------
+
+export interface PracticeOverview {
+  totalPatients: number;
+  newPatientsLast30Days: number;
+  appointmentsToday: number;
+  completedLast30Days: number;
+  cancelledLast30Days: number;
+  appointmentsPerDay: { date: string; count: number }[];
+  byStatusLast30Days: { status: string; count: number }[];
+  perDoctorLast30Days: { doctorName: string; total: number; completed: number }[];
+}
+
 // ---------- Errors (RFC 7807) ----------
 
 export interface ProblemDetails {

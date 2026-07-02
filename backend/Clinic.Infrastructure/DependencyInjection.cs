@@ -2,7 +2,9 @@
 using Clinic.Application.Features.Appointments.Services;
 using Clinic.Application.Features.Auth.Services;
 using Clinic.Application.Features.Consultations.Services;
+using Clinic.Application.Features.Notifications.Services;
 using Clinic.Application.Features.Patients.Services;
+using Clinic.Application.Features.Reports.Services;
 using Clinic.Application.Features.Staff.Services;
 using Clinic.Infrastructure.Persistence;
 using Clinic.Infrastructure.Services;
@@ -41,6 +43,8 @@ public static class DependencyInjection
         services.AddScoped<IPatientService, PatientService>();
         services.AddScoped<IAppointmentService, AppointmentService>();
         services.AddScoped<IConsultationService, ConsultationService>();
+        services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<IReportsService, ReportsService>();
         return services;
     }
 }

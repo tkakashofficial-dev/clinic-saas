@@ -438,6 +438,34 @@ textarea.input { resize: vertical; min-height: 72px; }
 
 @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
 
+/* ---------- Notifications ---------- */
+
+.notif-row {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  margin-bottom: 6px;
+
+  &.unread { background: var(--color-primary-50); }
+}
+
+.notif-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex: none;
+
+  &.notif-booking { background: var(--color-info); }
+  &.notif-checkin { background: var(--status-checkedin); }
+  &.notif-reminder { background: var(--color-warning); }
+}
+
+.notif-content { min-width: 0; }
+.notif-title { font-weight: 600; font-size: 13.5px; }
+.notif-message { font-size: 13px; color: var(--color-text-muted); }
+.notif-time { font-size: 11.5px; color: var(--color-text-muted); margin-top: 3px; }
+
 /* ---------- Utilities ---------- */
 
 .muted { color: var(--color-text-muted); }
