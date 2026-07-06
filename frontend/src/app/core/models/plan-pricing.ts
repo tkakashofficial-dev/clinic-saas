@@ -12,7 +12,7 @@ export interface PlanPricing {
 export const PLAN_PRICING: PlanPricing[] = [
   {
     key: 'Solo',
-    yearlyPrice: 9999,
+    yearlyPrice: 9599,
     scale: '1 doctor - 1 location',
     tagline: 'For independent doctors starting out',
     features: [
@@ -24,7 +24,7 @@ export const PLAN_PRICING: PlanPricing[] = [
   },
   {
     key: 'Clinic',
-    yearlyPrice: 19999,
+    yearlyPrice: 17999,
     scale: '2-5 doctors - 1 location',
     tagline: 'For clinics with a real team',
     popular: true,
@@ -39,7 +39,7 @@ export const PLAN_PRICING: PlanPricing[] = [
   },
   {
     key: 'Growth',
-    yearlyPrice: 39999,
+    yearlyPrice: 35999,
     scale: '6+ doctors - multi-location',
     tagline: 'For practices that keep growing',
     features: [
@@ -57,5 +57,5 @@ export function formatInr(amount: number): string {
 }
 
 export function monthlyEquivalent(yearlyPrice: number): number {
-  return Math.round(yearlyPrice / 12);
+  return Math.floor(yearlyPrice / 12);
 }

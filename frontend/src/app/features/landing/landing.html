@@ -117,8 +117,9 @@
     <div class="container">
       <h2 class="section-title">Simple pricing. <span>Premium product.</span></h2>
       <p class="section-sub">
-        One flat annual price per clinic. No per-patient fees, no setup costs,
-        no data monetisation - ever. Free while we're in early access.
+        Monthly pricing is shown for easy comparison, but it is calculated from
+        your yearly per-tenant target. No per-patient fees, no setup costs,
+        no data monetisation - ever.
       </p>
 
       <div class="billing-toggle">
@@ -134,9 +135,9 @@
             <p class="plan-scale">{{ plan.scale }}</p>
             <p class="plan-tagline">{{ plan.tagline }}</p>
             <div class="price">
-              <span class="amount">{{ priceOf(plan) }}</span>
-              <span class="period">/ year</span>
-              <div class="yearly-total">{{ monthlyEquivalentOf(plan) }}/month equivalent</div>
+              <span class="amount">{{ monthlyEquivalentOf(plan) }}</span>
+              <span class="period">/ month</span>
+              <div class="yearly-total">Billed yearly at {{ priceOf(plan) }}</div>
             </div>
             <ul class="plan-features">
               @for (feature of plan.features; track feature) {

@@ -63,8 +63,8 @@
       <div class="card card-pad plan-card" [class.popular]="plan.popular" [class.current]="isCurrent(plan)">
         @if (plan.popular && !isCurrent(plan)) { <span class="pop-badge">Most popular</span> }
         <h3>{{ plan.key }}</h3>
-        <div class="plan-price">{{ priceLabel(plan.yearlyPrice) }}<span>/year</span></div>
-        <div class="plan-subprice">{{ monthlyEquivalentLabel(plan.yearlyPrice) }}/month equivalent</div>
+        <div class="plan-price">{{ monthlyEquivalentLabel(plan.yearlyPrice) }}<span>/month</span></div>
+        <div class="plan-subprice">Billed yearly at {{ priceLabel(plan.yearlyPrice) }}</div>
         <div class="plan-scale">{{ plan.scale }}</div>
         <ul class="plan-list">
           @for (feature of plan.features; track feature) {
@@ -89,7 +89,7 @@
   </div>
 
   <p class="muted beta-note">
-    Pricing is configured as annual plans. Beta switching is still instant and free,
-    and online payments (UPI/cards via Razorpay) can plug in at launch.
+    Monthly numbers are calculated from your annual plan target. Beta switching is
+    still instant and free, and online payments (UPI/cards via Razorpay) can plug in at launch.
   </p>
 }
