@@ -449,7 +449,20 @@ textarea.input { resize: vertical; min-height: 72px; }
   animation: shimmer 1.2s infinite ease;
 }
 
+.inline-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgb(255 255 255 / .55);
+  border-top-color: #fff;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+  animation: spin 0.8s linear infinite;
+  vertical-align: middle;
+}
+
 @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ---------- Bar chart (dashboard + reports) ---------- */
 

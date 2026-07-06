@@ -122,7 +122,12 @@
     <div class="drawer-footer">
       <button type="button" class="btn btn-secondary" (click)="closeDrawer()">Cancel</button>
       <button type="submit" form="staff-form" class="btn btn-primary" [disabled]="saving()">
-        {{ saving() ? 'Adding…' : 'Add staff member' }}
+        @if (saving()) {
+          <span class="inline-spinner" aria-hidden="true"></span>
+          Adding staff…
+        } @else {
+          Add staff member
+        }
       </button>
     </div>
   </aside>

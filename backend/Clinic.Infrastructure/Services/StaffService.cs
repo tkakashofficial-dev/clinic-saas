@@ -132,14 +132,15 @@ public class StaffService : IStaffService
         await _context.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
-        // 7. Welcome/invite email (failure-proof — never blocks staff creation)
+        // 7. Invite email is intentionally fire-and-forget so staff creation
+        //    does not feel slow when mail delivery is delayed.
         var clinicName = await _context.Tenants
             .Where(t => t.Id == tenantId)
             .Select(t => t.Name)
             .FirstAsync(cancellationToken);
         var inviteLink = $"{_frontend.BaseUrl.TrimEnd('/')}/reset-password?token={inviteToken}";
 
-        await _emailSender.SendAsync(
+        _ = _emailSender.SendAsync(
             request.Email,
             $"You've been added to {clinicName}",
             $"""
@@ -154,7 +155,7 @@ public class StaffService : IStaffService
                  password your admin gave you, and change it later.</p>
             </div>
             """,
-            cancellationToken);
+            CancellationToken.None);
 
         return new StaffDto
         {
