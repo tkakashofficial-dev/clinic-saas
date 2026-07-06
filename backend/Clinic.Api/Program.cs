@@ -96,8 +96,13 @@ public class Program
             });
         });
 
-        // Fail fast: a missing/weak signing key must stop startup, not surface later as a
-        // cryptic 500 on the first login. Secret comes from user-secrets (dev) or env vars (prod).
+        // Fail fast for deployment-critical config so a bad env setup surfaces
+        // immediately instead of becoming a generic 500 during signup or clinic creation.
+        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+        if (string.IsNullOrWhiteSpace(connectionString))
+            throw new InvalidOperationException(
+                "ConnectionStrings:DefaultConnection is missing. Set it in Render or your hosting environment.");
+
         var jwtSecret = builder.Configuration["JwtSettings:Secret"];
         if (string.IsNullOrWhiteSpace(jwtSecret) || jwtSecret.Length < 32)
             throw new InvalidOperationException(
@@ -155,11 +160,32 @@ public class Program
         app.MapControllers();
 
         // Health probe for hosting platforms (and humans checking a deploy)
-        app.MapGet("/health", () => Results.Ok(new
+        app.MapGet("/health", async (IServiceProvider services) =>
         {
-            status = "ok",
-            timeUtc = DateTime.UtcNow
-        }));
+            try
+            {
+                using var scope = services.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<Clinic.Infrastructure.Persistence.ClinicDbContext>();
+                var dbOk = await db.Database.CanConnectAsync();
+
+                return Results.Ok(new
+                {
+                    status = dbOk ? "ok" : "degraded",
+                    database = dbOk,
+                    timeUtc = DateTime.UtcNow
+                });
+            }
+            catch (Exception ex)
+            {
+                return Results.Json(new
+                {
+                    status = "error",
+                    database = false,
+                    error = ex.Message,
+                    timeUtc = DateTime.UtcNow
+                }, statusCode: StatusCodes.Status503ServiceUnavailable);
+            }
+        });
 
         app.Run();
     }

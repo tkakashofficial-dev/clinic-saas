@@ -113,7 +113,10 @@ export class Shell {
     this.creating.set(true);
     this.auth.createClinic(this.newClinicName.trim(), this.newClinicIsDoctor).subscribe({
       next: () => location.assign('/'),
-      error: () => this.creating.set(false),
+      error: (err) => {
+        this.creating.set(false);
+        console.error('Failed to create clinic', err);
+      },
     });
   }
 
