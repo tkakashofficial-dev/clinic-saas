@@ -1,20 +1,16 @@
-import { Component, signal } from '@angular/core';
+import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import {
+  PLAN_PRICING,
+  PlanPricing,
+  formatInr,
+  monthlyEquivalent,
+} from '../../core/models/plan-pricing';
 
 export const BRAND_NAME = 'Klivia';
 export const WHATSAPP_LINK =
   'https://wa.me/916238456205?text=' +
   encodeURIComponent('Hi Klivia! I want a demo for my clinic.');
-
-interface PricingPlan {
-  name: string;
-  monthly: number; // 0 = free
-  tagline: string;
-  scale: string;
-  features: string[];
-  popular?: boolean;
-  cta: string;
-}
 
 @Component({
   selector: 'app-landing',
@@ -30,98 +26,53 @@ export class Landing {
     {
       icon: 'desk',
       title: 'Front desk that flows',
-      text: 'Register a patient, book the visit, check them in as they arrive — reception works in seconds, not screens.',
+      text: 'Register a patient, book the visit, check them in as they arrive - reception works in seconds, not screens.',
     },
     {
       icon: 'doctor',
-      title: 'Built for the doctor’s day',
+      title: 'Built for the doctor\'s day',
       text: 'Your queue, your waiting room, one tap to start a consult. Diagnosis and prescription in the same flow.',
     },
     {
       icon: 'pdf',
       title: 'Beautiful prescriptions',
-      text: 'Every prescription becomes a branded PDF with your clinic’s name — print it or send it, instantly.',
+      text: 'Every prescription becomes a branded PDF with your clinic\'s name - print it or send it, instantly.',
     },
     {
       icon: 'roles',
       title: 'Roles done right',
-      text: 'Owners, partners, doctors, reception — everyone sees exactly what their job needs. Nothing more.',
+      text: 'Owners, partners, doctors, reception - everyone sees exactly what their job needs. Nothing more.',
     },
     {
       icon: 'shield',
       title: 'Your data stays yours',
-      text: 'Each clinic’s data is isolated at the core of the system. No clinic can ever see another’s patients.',
+      text: 'Each clinic\'s data is isolated at the core of the system. No clinic can ever see another\'s patients.',
     },
     {
       icon: 'device',
       title: 'Works on anything',
-      text: 'Laptop at reception, tablet in the consult room, phone on the go — one calm interface everywhere.',
+      text: 'Laptop at reception, tablet in the consult room, phone on the go - one calm interface everywhere.',
     },
   ];
 
-  // Annual billing = 20% off, the standard SaaS lever for cash-flow + retention
-  readonly annual = signal(false);
+  readonly plans = PLAN_PRICING.map((plan) => ({
+    ...plan,
+    name: plan.key,
+    cta: plan.key === 'Growth' ? 'Talk to us' : 'Start free trial',
+  }));
 
-  readonly plans: PricingPlan[] = [
-    {
-      name: 'Solo',
-      monthly: 499,
-      scale: '1 doctor · 1 location',
-      tagline: 'For independent doctors starting out',
-      features: [
-        'Unlimited patients & appointments',
-        'Front-desk flow with check-in',
-        'Consultations & prescriptions (PDF)',
-        'Works on laptop, tablet & phone',
-      ],
-      cta: 'Start free trial',
-    },
-    {
-      name: 'Clinic',
-      monthly: 1499,
-      scale: '2–5 doctors · 1 location',
-      tagline: 'For clinics with a real team',
-      popular: true,
-      features: [
-        'Everything in Solo',
-        'Multiple doctors, partners & reception',
-        'Waiting-room queue for the whole team',
-        'Appointment reminders & notifications',
-        'Practice analytics & doctor reports',
-        'Priority support on WhatsApp',
-      ],
-      cta: 'Start free trial',
-    },
-    {
-      name: 'Growth',
-      monthly: 2999,
-      scale: '6+ doctors · multi-location',
-      tagline: 'For practices that keep growing',
-      features: [
-        'Everything in Clinic',
-        'Unlimited doctors & staff',
-        'Multiple clinics, one login (switcher)',
-        'Onboarding + data migration help',
-        'Pharmacy & inventory — coming soon',
-      ],
-      cta: 'Talk to us',
-    },
-  ];
-
-  priceOf(plan: PricingPlan): string {
-    const amount = this.annual() ? Math.round(plan.monthly * 0.8) : plan.monthly;
-    return `₹${amount.toLocaleString('en-IN')}`;
+  priceOf(plan: PlanPricing): string {
+    return formatInr(plan.yearlyPrice);
   }
 
-  /** Annual = one upfront payment (cash-flow for us, discount for them). */
-  yearlyTotalOf(plan: PricingPlan): string {
-    return `₹${Math.round(plan.monthly * 0.8 * 12).toLocaleString('en-IN')}`;
+  monthlyEquivalentOf(plan: PlanPricing): string {
+    return formatInr(monthlyEquivalent(plan.yearlyPrice));
   }
 
   readonly faqs = [
     {
       q: 'Is my patient data safe?',
-      a: 'Yes. Every clinic’s data is isolated at the database level — it is architecturally impossible for another clinic to read your records. Access requires login, every staff member has their own account, and passwords are stored using industry-standard hashing.',
+      a: 'Yes. Every clinic\'s data is isolated at the database level - it is architecturally impossible for another clinic to read your records. Access requires login, every staff member has their own account, and passwords are stored using industry-standard hashing.',
     },
     {
       q: 'The owner of our clinic is not a doctor. Does that work?',
@@ -129,11 +80,11 @@ export class Landing {
     },
     {
       q: 'Can we move from paper or another software?',
-      a: 'Yes — you can start fresh in minutes, and on the Growth plan we help migrate your existing patient records.',
+      a: 'Yes - you can start fresh in minutes, and on the Growth plan we help migrate your existing patient records.',
     },
     {
       q: 'What if we want to stop?',
-      a: 'Cancel anytime, no lock-in, and you can export your data. Your clinic’s records belong to you.',
+      a: 'Cancel anytime, no lock-in, and you can export your data. Your clinic\'s records belong to you.',
     },
   ];
 }

@@ -3,36 +3,12 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { parseApiError } from '../../core/api/api-error';
 import { BillingService } from '../../core/api/billing.service';
 import { BillingSummary } from '../../core/models/api.models';
-
-interface PlanCard {
-  key: 'Solo' | 'Clinic' | 'Growth';
-  price: number;
-  scale: string;
-  features: string[];
-  popular?: boolean;
-}
-
-const PLAN_CARDS: PlanCard[] = [
-  {
-    key: 'Solo',
-    price: 499,
-    scale: '1 doctor · 2 staff total',
-    features: ['Unlimited patients', 'Appointments & check-in', 'Prescriptions with PDF'],
-  },
-  {
-    key: 'Clinic',
-    price: 1499,
-    scale: '5 doctors · 10 staff total',
-    popular: true,
-    features: ['Everything in Solo', 'Team waiting-room queue', 'Reminders & notifications', 'Practice reports'],
-  },
-  {
-    key: 'Growth',
-    price: 2999,
-    scale: 'Unlimited doctors & staff',
-    features: ['Everything in Clinic', 'Multiple clinics, one login', 'Priority support'],
-  },
-];
+import {
+  PLAN_PRICING,
+  PlanPricing,
+  formatInr,
+  monthlyEquivalent,
+} from '../../core/models/plan-pricing';
 
 @Component({
   selector: 'app-billing',
@@ -43,7 +19,7 @@ const PLAN_CARDS: PlanCard[] = [
 export class Billing {
   private readonly api = inject(BillingService);
 
-  readonly planCards = PLAN_CARDS;
+  readonly planCards = PLAN_PRICING;
   readonly loading = signal(true);
   readonly summary = signal<BillingSummary | null>(null);
   readonly switching = signal<string | null>(null);
@@ -64,14 +40,14 @@ export class Billing {
         this.loading.set(false);
       },
       error: (err) => {
-        // Never render a silent blank page — say what happened
+        // Never render a silent blank page; say what happened
         this.error.set(parseApiError(err).message + ' Refresh the page to retry.');
         this.loading.set(false);
       },
     });
   }
 
-  choose(plan: PlanCard): void {
+  choose(plan: PlanPricing): void {
     this.error.set('');
     this.success.set('');
     this.switching.set(plan.key);
@@ -89,12 +65,20 @@ export class Billing {
     });
   }
 
-  isCurrent(plan: PlanCard): boolean {
+  isCurrent(plan: PlanPricing): boolean {
     return this.summary()?.plan === plan.key && !this.summary()?.isInTrial;
   }
 
   limitLabel(value: number): string {
-    return value >= 2_000_000_000 ? '∞' : String(value);
+    return value >= 2000000000 ? 'Unlimited' : String(value);
+  }
+
+  priceLabel(amount: number): string {
+    return formatInr(amount);
+  }
+
+  monthlyEquivalentLabel(amount: number): string {
+    return formatInr(monthlyEquivalent(amount));
   }
 
   private usagePercent(kind: 'staff' | 'doctors'): number {
@@ -102,7 +86,7 @@ export class Billing {
     if (!summary) return 0;
     const used = kind === 'staff' ? summary.staffCount : summary.doctorCount;
     const max = kind === 'staff' ? summary.maxStaff : summary.maxDoctors;
-    if (max >= 2_000_000_000) return 8; // unlimited: show a sliver
+    if (max >= 2000000000) return 8; // unlimited: show a sliver
     return Math.min(100, Math.round((used / max) * 100));
   }
 }

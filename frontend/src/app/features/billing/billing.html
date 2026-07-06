@@ -29,12 +29,12 @@
         @if (data.isInTrial) {
           <p class="muted current-note">
             You're enjoying full Clinic-tier limits during the trial. Pick a plan
-            below before it ends — no payment needed during beta.
+            below before it ends - no payment needed during beta.
           </p>
         } @else if (data.trialExpired) {
           <p class="muted current-note">
             Your trial has ended, so you're on Solo limits. Pick a plan below to
-            unlock more — it's free during beta.
+            unlock more before your annual subscription starts.
           </p>
         }
       </div>
@@ -61,9 +61,10 @@
   <div class="plans-grid">
     @for (plan of planCards; track plan.key) {
       <div class="card card-pad plan-card" [class.popular]="plan.popular" [class.current]="isCurrent(plan)">
-        @if (plan.popular && !isCurrent(plan)) { <span class="pop-badge">✦ Most popular</span> }
+        @if (plan.popular && !isCurrent(plan)) { <span class="pop-badge">Most popular</span> }
         <h3>{{ plan.key }}</h3>
-        <div class="plan-price">₹{{ plan.price.toLocaleString('en-IN') }}<span>/mo</span></div>
+        <div class="plan-price">{{ priceLabel(plan.yearlyPrice) }}<span>/year</span></div>
+        <div class="plan-subprice">{{ monthlyEquivalentLabel(plan.yearlyPrice) }}/month equivalent</div>
         <div class="plan-scale">{{ plan.scale }}</div>
         <ul class="plan-list">
           @for (feature of plan.features; track feature) {
@@ -80,7 +81,7 @@
                   [class.btn-primary]="plan.popular" [class.btn-secondary]="!plan.popular"
                   [disabled]="switching() !== null"
                   (click)="choose(plan)">
-            {{ switching() === plan.key ? 'Switching…' : 'Choose ' + plan.key }}
+            {{ switching() === plan.key ? 'Switching...' : 'Choose ' + plan.key }}
           </button>
         }
       </div>
@@ -88,7 +89,7 @@
   </div>
 
   <p class="muted beta-note">
-    Beta: switching plans is instant and free. Online payments (UPI/cards via
-    Razorpay) arrive with public launch — early clinics keep a lifetime discount.
+    Pricing is configured as annual plans. Beta switching is still instant and free,
+    and online payments (UPI/cards via Razorpay) can plug in at launch.
   </p>
 }
