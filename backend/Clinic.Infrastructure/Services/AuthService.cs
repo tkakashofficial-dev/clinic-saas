@@ -66,8 +66,9 @@ public class AuthService : IAuthService
         var refreshToken = IssueRefreshToken(systemUser.Id);
         await _context.SaveChangesAsync(cancellationToken);
 
-        // Welcome email — sender is failure-proof; a mail outage never blocks signup
-        await _emailSender.SendAsync(
+        // Welcome email is intentionally asynchronous so mail delivery issues never
+        // make signup feel stuck or slow for the clinic owner.
+        _ = _emailSender.SendAsync(
             systemUser.Email,
             $"Welcome to Klivia — {tenant.Name} is ready",
             $"""
@@ -85,7 +86,7 @@ public class AuthService : IAuthService
               </p>
             </div>
             """,
-            cancellationToken);
+            CancellationToken.None);
 
         var fullName = $"{request.FirstName} {request.LastName}";
         return BuildResponse(

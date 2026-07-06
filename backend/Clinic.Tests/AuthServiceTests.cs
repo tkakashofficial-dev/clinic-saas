@@ -1,4 +1,5 @@
 using Clinic.Application.Common.Exceptions;
+using Clinic.Application.Common.Interfaces;
 using Clinic.Application.Features.Auth.DTOs;
 using Clinic.Domain.Constants;
 using Clinic.Infrastructure.Services;
@@ -113,4 +114,14 @@ public class AuthServiceTests : IDisposable
     }
 
     public void Dispose() => _db.Dispose();
+
+    private sealed class BlockingEmailSender : IEmailSender
+    {
+        private readonly TaskCompletionSource<bool> _gate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task SendAsync(string to, string subject, string htmlBody, CancellationToken cancellationToken = default)
+            => _gate.Task;
+
+        public void Release() => _gate.SetResult(true);
+    }
 }

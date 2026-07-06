@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { parseApiError } from '../../core/api/api-error';
 import { AuthService } from '../../core/auth/auth.service';
 
@@ -12,7 +12,6 @@ import { AuthService } from '../../core/auth/auth.service';
 })
 export class Register {
   private readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
 
   readonly loading = signal(false);
@@ -39,7 +38,9 @@ export class Register {
     this.fieldErrors.set({});
 
     this.auth.register(this.form.getRawValue()).subscribe({
-      next: () => void this.router.navigate(['/']),
+      next: () => {
+        window.location.assign('/dashboard');
+      },
       error: (err) => {
         const parsed = parseApiError(err);
         this.error.set(Object.keys(parsed.fieldErrors).length ? '' : parsed.message);
