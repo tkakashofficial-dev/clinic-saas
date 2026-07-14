@@ -2,10 +2,12 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { parseApiError } from '../core/api/api-error';
 import { BillingService } from '../core/api/billing.service';
 import { NotificationsService } from '../core/api/notifications.service';
 import { AuthService } from '../core/auth/auth.service';
 import { NotificationDto, Role } from '../core/models/api.models';
+import { ProvisioningOverlay } from '../shared/ui/provisioning-overlay';
 
 interface NavItem {
   label: string;
@@ -25,7 +27,7 @@ const NAV_ITEMS: NavItem[] = [
 
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, FormsModule, DatePipe],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, FormsModule, DatePipe, ProvisioningOverlay],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
 })
@@ -64,6 +66,9 @@ export class Shell {
   readonly switcherOpen = signal(false);
   readonly newClinicOpen = signal(false);
   readonly creating = signal(false);
+  readonly newClinicError = signal('');
+  /** Non-null while a clinic is being provisioned — drives the overlay. */
+  readonly provisioningClinic = signal<string | null>(null);
   newClinicName = '';
   newClinicIsDoctor = true;
 
@@ -104,18 +109,28 @@ export class Shell {
   openNewClinic(): void {
     this.newClinicName = '';
     this.newClinicIsDoctor = true;
+    this.newClinicError.set('');
     this.switcherOpen.set(false);
     this.newClinicOpen.set(true);
   }
 
   createClinic(): void {
-    if (!this.newClinicName.trim()) return;
+    const name = this.newClinicName.trim();
+    if (!name) return;
+
     this.creating.set(true);
-    this.auth.createClinic(this.newClinicName.trim(), this.newClinicIsDoctor).subscribe({
-      next: () => location.assign('/'),
+    this.newClinicError.set('');
+    this.newClinicOpen.set(false);
+    this.provisioningClinic.set(name);   // full-screen "building your clinic" experience
+
+    this.auth.createClinic(name, this.newClinicIsDoctor).subscribe({
+      next: () => location.assign('/'),  // overlay stays up until the reload lands
       error: (err) => {
+        // NEVER fail silently: hide the overlay, reopen the drawer WITH the reason
+        this.provisioningClinic.set(null);
         this.creating.set(false);
-        console.error('Failed to create clinic', err);
+        this.newClinicError.set(parseApiError(err).message);
+        this.newClinicOpen.set(true);
       },
     });
   }

@@ -181,7 +181,9 @@ public class Program
                 {
                     status = "error",
                     database = false,
-                    error = ex.Message,
+                    // Never expose exception text on a public endpoint — it can
+                    // leak hostnames/connection details. Logs have the real error.
+                    error = "database unreachable",
                     timeUtc = DateTime.UtcNow
                 }, statusCode: StatusCodes.Status503ServiceUnavailable);
             }

@@ -14,6 +14,4 @@
 - When a new clinic owner completes registration, the app redirects to /dashboard after the API call succeeds.
 - If registration fails, the form shows the returned error message and remains editable.
 
-## Important note
-- No code was pushed.
-- No unrelated changes were made.
+> Historical working note — this change has since been pushed and is live.

@@ -3,10 +3,11 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { parseApiError } from '../../core/api/api-error';
 import { AuthService } from '../../core/auth/auth.service';
+import { ProvisioningOverlay } from '../../shared/ui/provisioning-overlay';
 
 @Component({
   selector: 'app-register',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, ProvisioningOverlay],
   templateUrl: './register.html',
   styleUrl: './auth-layout.scss',
 })
@@ -17,6 +18,8 @@ export class Register {
   readonly loading = signal(false);
   readonly error = signal('');
   readonly fieldErrors = signal<Record<string, string>>({});
+  /** Non-empty while the clinic is being provisioned — drives the overlay. */
+  readonly provisioningName = signal('');
 
   readonly form = this.fb.nonNullable.group({
     clinicName: ['', Validators.required],
@@ -37,11 +40,17 @@ export class Register {
     this.error.set('');
     this.fieldErrors.set({});
 
-    this.auth.register(this.form.getRawValue()).subscribe({
+    // The wait can be long (cold server) — show the "building your clinic"
+    // experience instead of a frozen button
+    const value = this.form.getRawValue();
+    this.provisioningName.set(value.clinicName.trim() || 'your clinic');
+
+    this.auth.register(value).subscribe({
       next: () => {
-        window.location.assign('/dashboard');
+        window.location.assign('/dashboard'); // overlay stays up until the app loads
       },
       error: (err) => {
+        this.provisioningName.set('');
         const parsed = parseApiError(err);
         this.error.set(Object.keys(parsed.fieldErrors).length ? '' : parsed.message);
         this.fieldErrors.set(parsed.fieldErrors);
