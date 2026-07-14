@@ -143,18 +143,11 @@ public class StaffService : IStaffService
         _ = _emailSender.SendAsync(
             request.Email,
             $"You've been added to {clinicName}",
-            $"""
-            <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto">
-              <h2 style="color:#0C2B23">Welcome to {clinicName} 👋</h2>
-              <p>Hi {request.FirstName}, you've been added as
-                 <strong>{string.Join(" & ", roleNames)}</strong>.</p>
-              <p><a href="{inviteLink}" style="background:#00BD8F;color:#06362B;padding:12px 22px;
-                 border-radius:10px;text-decoration:none;font-weight:bold">Set your password</a></p>
-              <p style="color:#5B6F68;font-size:13px">
-                 The link is valid for 7 days. You can also sign in with the temporary
-                 password your admin gave you, and change it later.</p>
-            </div>
-            """,
+            EmailTemplates.StaffInvite(
+                request.FirstName,
+                clinicName,
+                string.Join(" & ", roleNames),
+                inviteLink),
             CancellationToken.None);
 
         return new StaffDto

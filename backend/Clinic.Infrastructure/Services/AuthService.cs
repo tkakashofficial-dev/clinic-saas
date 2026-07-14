@@ -71,21 +71,10 @@ public class AuthService : IAuthService
         _ = _emailSender.SendAsync(
             systemUser.Email,
             $"Welcome to Klivia — {tenant.Name} is ready",
-            $"""
-            <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto">
-              <h2 style="color:#0C2B23">Welcome, {request.FirstName}! 🎉</h2>
-              <p><strong>{tenant.Name}</strong> is set up and ready.</p>
-              <p>Next steps:</p>
-              <ol>
-                <li>Add your doctors and reception staff</li>
-                <li>Register your first patient</li>
-                <li>Book an appointment and try the consultation flow</li>
-              </ol>
-              <p style="color:#5B6F68;font-size:13px">
-                Questions? Reply to this email or WhatsApp us at +91 62384 56205.
-              </p>
-            </div>
-            """,
+            EmailTemplates.Welcome(
+                request.FirstName,
+                tenant.Name,
+                $"{_frontend.BaseUrl.TrimEnd('/')}/dashboard"),
             CancellationToken.None);
 
         var fullName = $"{request.FirstName} {request.LastName}";
@@ -194,16 +183,8 @@ public class AuthService : IAuthService
         await _emailSender.SendAsync(
             systemUser.Email,
             "Reset your Klivia password",
-            $"""
-            <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto">
-              <h2 style="color:#0C2B23">Password reset</h2>
-              <p>Hi {systemUser.FirstName}, click below to choose a new password.
-                 The link works once and expires in {ResetTokenLifetimeMinutes} minutes.</p>
-              <p><a href="{resetLink}" style="background:#00BD8F;color:#06362B;padding:12px 22px;
-                 border-radius:10px;text-decoration:none;font-weight:bold">Choose new password</a></p>
-              <p style="color:#5B6F68;font-size:13px">Didn't request this? You can safely ignore it.</p>
-            </div>
-            """,
+            EmailTemplates.PasswordReset(
+                systemUser.FirstName, resetLink, ResetTokenLifetimeMinutes),
             cancellationToken);
     }
 
