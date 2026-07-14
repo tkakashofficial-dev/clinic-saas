@@ -9,6 +9,9 @@ export interface PlanPricing {
   popular?: boolean;
 }
 
+// Positioning: EVERY plan gets every feature — tiers price team size, not
+// crippled functionality. That is the anti-eka.care pitch: no ₹9,999/yr
+// add-ons for forms, no per-module pricing. Simple to sell, simple to buy.
 export const PLAN_PRICING: PlanPricing[] = [
   {
     key: 'Solo',
@@ -17,8 +20,10 @@ export const PLAN_PRICING: PlanPricing[] = [
     tagline: 'For independent doctors starting out',
     features: [
       'Unlimited patients & appointments',
-      'Front-desk flow with check-in',
-      'Consultations & prescriptions (PDF)',
+      'Front-desk flow with check-in & waiting room',
+      'Consultations, vitals & designer PDF prescriptions',
+      'Printable intake forms — dental & general',
+      'Pharmacy & inventory with low-stock alerts',
       'Works on laptop, tablet & phone',
     ],
   },
@@ -31,9 +36,9 @@ export const PLAN_PRICING: PlanPricing[] = [
     features: [
       'Everything in Solo',
       'Multiple doctors, partners & reception',
-      'Waiting-room queue for the whole team',
+      'Visiting doctors — one account, many clinics',
       'Appointment reminders & notifications',
-      'Practice analytics & doctor reports',
+      'Practice analytics, doctor reports & PDF export',
       'Priority support on WhatsApp',
     ],
   },
@@ -47,7 +52,7 @@ export const PLAN_PRICING: PlanPricing[] = [
       'Unlimited doctors & staff',
       'Multiple clinics, one login (switcher)',
       'Onboarding + data migration help',
-      'Pharmacy & inventory - coming soon',
+      'Early access to new features (form builder, WhatsApp)',
     ],
   },
 ];

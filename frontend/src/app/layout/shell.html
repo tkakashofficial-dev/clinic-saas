@@ -3,7 +3,7 @@
 
     <!-- The CLINIC is the brand inside the app -->
     <div class="clinic-switcher">
-      <button type="button" class="clinic-identity"
+      <button type="button" class="clinic-identity" data-tour="switcher"
               (click)="canOpenSwitcher() && switcherOpen.set(!switcherOpen())">
         <span class="clinic-avatar">{{ clinicInitials() }}</span>
         <span class="clinic-meta">
@@ -16,20 +16,36 @@
       </button>
 
       @if (switcherOpen()) {
+        <div class="switcher-backdrop" (click)="switcherOpen.set(false)"></div>
         <div class="switcher-panel">
+          <div class="switcher-heading">Your clinics</div>
           @for (membership of auth.memberships(); track membership.tenantId) {
             <button type="button" class="switcher-option"
                     [class.current]="membership.tenantId === auth.currentTenantId()"
                     (click)="switchTo(membership.tenantId)">
-              <span>{{ membership.clinicName }}</span>
+              <span class="switcher-avatar">{{ clinicInitialsOf(membership.clinicName) }}</span>
+              <span class="switcher-meta">
+                <span class="switcher-name">{{ membership.clinicName }}</span>
+                @if (membership.tenantId === auth.currentTenantId()) {
+                  <span class="switcher-sub">Current clinic</span>
+                }
+              </span>
               @if (membership.tenantId === auth.currentTenantId()) {
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span class="switcher-check">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </span>
               }
             </button>
           }
           @if (canCreateClinic()) {
             <button type="button" class="switcher-option new-clinic" (click)="openNewClinic()">
-              <span>＋ New clinic</span>
+              <span class="switcher-avatar plus">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </span>
+              <span class="switcher-meta">
+                <span class="switcher-name">New clinic</span>
+                <span class="switcher-sub">Separate patients, staff & billing</span>
+              </span>
             </button>
           }
         </div>
@@ -38,7 +54,8 @@
 
     <nav class="nav">
       @for (item of navItems(); track item.path) {
-        <a [routerLink]="item.path" routerLinkActive="active" class="nav-item">
+        <a [routerLink]="item.path" routerLinkActive="active" class="nav-item"
+           [attr.data-tour]="'nav-' + item.icon">
           @switch (item.icon) {
             @case ('dashboard') {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
@@ -88,7 +105,7 @@
         </a>
       }
 
-      <button type="button" class="topbar-icon" (click)="openNotifications()" aria-label="Notifications">
+      <button type="button" class="topbar-icon" data-tour="bell" (click)="openNotifications()" aria-label="Notifications">
         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         @if (notifications.unreadCount() > 0) {
           <span class="topbar-badge">{{ notifications.unreadCount() > 99 ? '99+' : notifications.unreadCount() }}</span>
@@ -112,6 +129,9 @@
               <a routerLink="/billing" class="profile-item" (click)="profileOpen.set(false)">
                 Plan & billing
               </a>
+              <button type="button" class="profile-item" (click)="replayTour()">
+                Replay the tour
+              </button>
             }
             <button type="button" class="profile-item danger" (click)="logout()">
               Sign out
@@ -298,4 +318,9 @@
 <!-- ============ Clinic provisioning experience ============ -->
 @if (provisioningClinic(); as name) {
   <app-provisioning-overlay [clinicName]="name" />
+}
+
+<!-- One-time hint after opening an additional clinic: "you are HERE now" -->
+@if (showNewClinicHint()) {
+  <app-onboarding-tour [steps]="newClinicHint" (closed)="showNewClinicHint.set(false)" />
 }

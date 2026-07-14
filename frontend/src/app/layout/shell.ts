@@ -7,7 +7,10 @@ import { BillingService } from '../core/api/billing.service';
 import { NotificationsService } from '../core/api/notifications.service';
 import { AuthService } from '../core/auth/auth.service';
 import { NotificationDto, Role } from '../core/models/api.models';
+import { NEW_CLINIC_HINT, OnboardingTour } from '../shared/ui/onboarding-tour';
 import { ProvisioningOverlay } from '../shared/ui/provisioning-overlay';
+
+const NEW_CLINIC_HINT_KEY = 'klivia.hint.newclinic';
 
 interface NavItem {
   label: string;
@@ -31,7 +34,7 @@ const NAV_ITEMS: NavItem[] = [
 
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, FormsModule, DatePipe, ProvisioningOverlay],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, FormsModule, DatePipe, ProvisioningOverlay, OnboardingTour],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
 })
@@ -66,15 +69,17 @@ export class Shell {
   );
 
   readonly clinicDisplayName = computed(() => this.auth.clinicName() || 'My Clinic');
-  readonly clinicInitials = computed(() =>
-    this.clinicDisplayName()
+  readonly clinicInitials = computed(() => this.clinicInitialsOf(this.clinicDisplayName()));
+
+  clinicInitialsOf(name: string): string {
+    return name
       .split(' ')
       .filter(Boolean)
       .map((word) => word[0])
       .slice(0, 2)
       .join('')
-      .toUpperCase(),
-  );
+      .toUpperCase();
+  }
 
   // ---- clinic switcher (opening NEW clinics is an owner move — Admin only) ----
   readonly switcherOpen = signal(false);
@@ -106,10 +111,20 @@ export class Shell {
     return Math.max(0, Math.ceil(ms / 86_400_000));
   });
 
+  /** One-time coachmark on the switcher right after opening a new clinic. */
+  readonly newClinicHint = NEW_CLINIC_HINT;
+  readonly showNewClinicHint = signal(false);
+
   constructor() {
     this.notifications.startPolling();
     if (this.auth.hasRole('Admin')) {
       this.billing.getSummary().subscribe({ error: () => {} });
+    }
+
+    if (localStorage.getItem(NEW_CLINIC_HINT_KEY)) {
+      localStorage.removeItem(NEW_CLINIC_HINT_KEY);
+      // Let the shell paint first so the spotlight can find the switcher
+      setTimeout(() => this.showNewClinicHint.set(true), 600);
     }
   }
 
@@ -138,7 +153,13 @@ export class Shell {
     this.provisioningClinic.set(name);   // full-screen "building your clinic" experience
 
     this.auth.createClinic(name, this.newClinicIsDoctor).subscribe({
-      next: () => location.assign('/'),  // overlay stays up until the reload lands
+      next: (response) => {
+        // The new clinic shows the "you are here" switcher hint, not the
+        // full 8-step tour (they've seen the product already)
+        localStorage.setItem(`klivia.tour.${response.tenantId}`, 'done');
+        localStorage.setItem(NEW_CLINIC_HINT_KEY, '1');
+        location.assign('/');            // overlay stays up until the reload lands
+      },
       error: (err) => {
         // NEVER fail silently: hide the overlay, reopen the drawer WITH the reason
         this.provisioningClinic.set(null);
@@ -173,6 +194,11 @@ export class Shell {
 
   toggleProfile(): void {
     this.profileOpen.update((open) => !open);
+  }
+
+  replayTour(): void {
+    localStorage.removeItem(`klivia.tour.${this.auth.currentTenantId()}`);
+    location.assign('/dashboard'); // fresh load → dashboard shows the tour again
   }
 
   logout(): void {
