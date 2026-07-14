@@ -31,6 +31,12 @@ export const routes: Routes = [
       import('./features/auth/reset-password').then((m) => m.ResetPassword),
   },
   {
+    // Staff invitations: "Join {clinic}" — also not guest-guarded
+    path: 'accept-invite',
+    loadComponent: () =>
+      import('./features/auth/accept-invite').then((m) => m.AcceptInvite),
+  },
+  {
     path: '',
     canActivate: [authGuard],
     loadComponent: () => import('./layout/shell').then((m) => m.Shell),

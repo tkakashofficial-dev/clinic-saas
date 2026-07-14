@@ -177,7 +177,7 @@ public class StaffService : IStaffService
                 systemUser.FirstName, clinicName, rolesLabel, $"{baseUrl}/login")
             : EmailTemplates.StaffInvite(
                 request.FirstName, clinicName, rolesLabel,
-                $"{baseUrl}/reset-password?token={inviteToken}",
+                $"{baseUrl}/accept-invite?token={inviteToken}",
                 hasTempPassword: !inviteOnly);
 
         _ = _emailSender.SendAsync(

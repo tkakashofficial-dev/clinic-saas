@@ -76,6 +76,48 @@ public class RefreshTokenTests : IDisposable
     }
 
     [Fact]
+    public async Task InviteInfo_ValidInviteToken_ReturnsWhoAndWhere()
+    {
+        // Owner invites a doctor (invite-only) — the emailed token must
+        // resolve to "who is joining which clinic" for the accept page
+        var owner = await RegisterAsync("inviteinfo@clinic.com");
+
+        var emails = new NoOpEmailSender();
+        var staffService = new StaffService(
+            _db.CreateContext(), _db.CurrentUser, emails,
+            Options.Create(new FrontendSettings()));
+        _db.CurrentUser.ActAs(owner.TenantId, owner.TenantUserId);
+
+        await staffService.AddStaffAsync(new Clinic.Application.Features.Staff.DTOs.AddStaffRequest
+        {
+            FirstName = "Invited",
+            LastName = "Doctor",
+            Email = "invited@clinic.com",
+            Password = null,
+            Roles = ["Doctor"],
+        });
+
+        // Extract the raw token from the emailed accept-invite link
+        var body = emails.Sent.Single().Body;
+        var marker = "accept-invite?token=";
+        var start = body.IndexOf(marker, StringComparison.Ordinal) + marker.Length;
+        var token = body[start..body.IndexOfAny(['"', '<', '&'], start)];
+
+        var info = await CreateService().GetInviteInfoAsync(token);
+
+        Assert.Equal("Invited", info.FirstName);
+        Assert.Equal("invited@clinic.com", info.Email);
+        Assert.Contains("Bright Smiles", info.ClinicNames);
+    }
+
+    [Fact]
+    public async Task InviteInfo_GarbageToken_IsRejected()
+    {
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => CreateService().GetInviteInfoAsync("not-a-token"));
+    }
+
+    [Fact]
     public async Task Refresh_GarbageToken_IsRejected()
     {
         await Assert.ThrowsAsync<UnauthorizedAccessException>(

@@ -53,6 +53,13 @@ public class AuthController : ControllerBase
         return Ok(new { message = "If that email is registered, a reset link is on its way." });
     }
 
+    /// <summary>Context for the accept-invite page: who is joining which clinic.</summary>
+    [HttpGet("invite-info")]
+    public async Task<ActionResult<InviteInfoDto>> InviteInfo(
+        [FromQuery] string token,
+        CancellationToken cancellationToken)
+        => Ok(await _authService.GetInviteInfoAsync(token, cancellationToken));
+
     [HttpPost("reset-password")]
     public async Task<IActionResult> ResetPassword(
         [FromBody] ResetPasswordRequest request,

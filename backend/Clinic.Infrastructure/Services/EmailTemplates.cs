@@ -129,9 +129,9 @@ public static class EmailTemplates
               <span style="background:#E9FBF5;color:{TealDark};font-weight:bold;
                            padding:3px 10px;border-radius:999px;font-size:13px">{Safe(roles)}</span>
             </p>
-            <p style="margin:0">Choose your own password to get started:</p>
+            <p style="margin:0">Create your account to get started:</p>
             """,
-            "Set your password",
+            "Create my account",
             setPasswordUrl,
             hasTempPassword
                 ? "This link is valid for 7 days. You can also sign in with the temporary password your admin gave you, and change it later."

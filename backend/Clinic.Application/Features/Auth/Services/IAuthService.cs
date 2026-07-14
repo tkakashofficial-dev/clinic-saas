@@ -21,4 +21,7 @@ public interface IAuthService
 
     /// <summary>Sets a new password from a valid single-use token; revokes all refresh tokens.</summary>
     Task ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Who is joining what — context for the accept-invite page (valid tokens only).</summary>
+    Task<InviteInfoDto> GetInviteInfoAsync(string token, CancellationToken cancellationToken = default);
 }

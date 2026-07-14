@@ -1,0 +1,59 @@
+<div class="auth-page">
+  <aside class="auth-brand">
+    <div class="brand-logo"><span class="mark">✚</span> Klivia</div>
+    <div class="brand-message">
+      <h1>Join <em>{{ clinicLabel() }}</em>.</h1>
+      <p>Your team is already inside — create your account and get to work.</p>
+    </div>
+    <div></div>
+  </aside>
+
+  <main class="auth-form-side">
+    <div class="auth-card">
+      @if (loadingInfo()) {
+        <div class="skeleton-row"></div>
+        <div class="skeleton-row"></div>
+      } @else if (invalidInvite()) {
+        <h2>Invite problem</h2>
+        <p class="sub">{{ invalidInvite() }}</p>
+        <a routerLink="/login" class="btn btn-secondary" style="width:100%">Go to sign in</a>
+      } @else if (invite(); as info) {
+        <h2>Welcome, {{ info.firstName }} 👋</h2>
+        <p class="sub">You've been invited to <strong>{{ clinicLabel() }}</strong>.
+           Create your account to join.</p>
+
+        @if (error()) {
+          <div class="alert-error">{{ error() }}</div>
+        }
+
+        <form [formGroup]="form" (ngSubmit)="submit()">
+          <div class="field">
+            <label>Your email</label>
+            <input type="email" class="input" [value]="info.email" disabled>
+            <span class="muted" style="font-size:12px">This is where your invite was sent — it's your sign-in email.</span>
+          </div>
+
+          <div class="field">
+            <label for="ai-password">Choose a password</label>
+            <input id="ai-password" type="password" class="input" formControlName="password"
+                   placeholder="Min. 8 characters, letters + digits" autocomplete="new-password"
+                   [class.invalid]="form.controls.password.invalid && form.controls.password.touched">
+            @if (form.controls.password.invalid && form.controls.password.touched) {
+              <span class="field-error">At least 8 characters.</span>
+            }
+          </div>
+
+          <div class="field">
+            <label for="ai-confirm">Confirm password</label>
+            <input id="ai-confirm" type="password" class="input" formControlName="confirm"
+                   placeholder="Same password again" autocomplete="new-password">
+          </div>
+
+          <button type="submit" class="btn btn-primary" [disabled]="saving()">
+            {{ saving() ? 'Creating your account…' : 'Create my account' }}
+          </button>
+        </form>
+      }
+    </div>
+  </main>
+</div>

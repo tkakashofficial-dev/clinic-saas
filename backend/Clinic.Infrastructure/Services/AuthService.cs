@@ -216,6 +216,30 @@ public class AuthService : IAuthService
         await _context.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<InviteInfoDto> GetInviteInfoAsync(
+        string token, CancellationToken cancellationToken = default)
+    {
+        var tokenHash = HashToken(token);
+
+        var resetToken = await _context.PasswordResetTokens
+            .AsNoTracking()
+            .Include(t => t.SystemUser)
+            .FirstOrDefaultAsync(t => t.TokenHash == tokenHash, cancellationToken);
+
+        if (resetToken is null || !resetToken.IsValid || !resetToken.SystemUser.IsActive)
+            throw new UnauthorizedAccessException(
+                "This invite link is invalid or has expired. Ask your clinic admin to re-invite you.");
+
+        var memberships = await GetMembershipsAsync(resetToken.SystemUserId, cancellationToken);
+
+        return new InviteInfoDto
+        {
+            FirstName = resetToken.SystemUser.FirstName,
+            Email = resetToken.SystemUser.Email,
+            ClinicNames = memberships.Select(m => m.ClinicName).ToList()
+        };
+    }
+
     /// <summary>
     /// Creates a single-use password token and returns the full frontend link.
     /// Used by forgot-password (short expiry) and staff invites (long expiry).
