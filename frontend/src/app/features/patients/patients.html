@@ -53,8 +53,11 @@
           @for (patient of result()!.items; track patient.id) {
             <tr>
               <td>
-                <div class="cell-main">{{ patient.fullName }}</div>
-                @if (patient.email) { <div class="cell-sub">{{ patient.email }}</div> }
+                <button type="button" class="patient-link" (click)="openHistory(patient)"
+                        title="Open history">
+                  <span class="cell-main">{{ patient.fullName }}</span>
+                  <span class="cell-sub">{{ patientCode(patient) }}</span>
+                </button>
               </td>
               <td class="num">{{ patient.phone }}</td>
               <td>{{ patient.gender }}</td>
@@ -152,6 +155,76 @@
       <button type="submit" form="patient-form" class="btn btn-primary" [disabled]="saving()">
         {{ saving() ? 'Saving…' : editing() ? 'Save changes' : 'Register patient' }}
       </button>
+    </div>
+  </aside>
+}
+
+<!-- ============ Patient history drawer ============ -->
+@if (historyOpen()) {
+  <div class="drawer-backdrop" (click)="historyOpen.set(false)"></div>
+  <aside class="drawer" role="dialog" aria-label="Patient history">
+    <div class="drawer-header">
+      <div>
+        <h2>{{ history()?.patient?.fullName ?? 'Patient' }}</h2>
+        @if (history(); as h) {
+          <p class="cell-sub">{{ patientCode(h.patient) }} · {{ h.patient.gender }}
+            {{ h.patient.age !== null ? '· ' + h.patient.age + ' yrs' : '' }} · {{ h.patient.phone }}</p>
+        }
+      </div>
+      <button type="button" class="btn btn-ghost" (click)="historyOpen.set(false)" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="drawer-body">
+      @if (historyLoading()) {
+        <div class="skeleton-row"></div>
+        <div class="skeleton-row"></div>
+        <div class="skeleton-row"></div>
+      } @else if (history(); as h) {
+        <div class="history-actions">
+          @if (auth.hasRole('Admin', 'Receptionist')) {
+            <button type="button" class="btn btn-secondary" (click)="editFromHistory()">✏️ Edit details</button>
+          }
+          <button type="button" class="btn btn-secondary" (click)="printIntakeForm()" [disabled]="downloadingForm()">
+            🖨️ {{ downloadingForm() ? 'Preparing…' : 'Print intake form' }}
+          </button>
+        </div>
+
+        <h3 class="history-title">Visit history</h3>
+
+        @if (h.consultations.length === 0) {
+          <div class="empty-state">
+            <p>No consultations recorded yet — history builds automatically as doctors complete visits.</p>
+          </div>
+        } @else {
+          @for (visit of h.consultations; track visit.consultationId) {
+            <div class="visit-card">
+              <div class="visit-head">
+                <span class="visit-date">{{ visit.appointmentDate | date: 'd MMM y' }}</span>
+                <span class="muted">{{ visit.doctorName }}</span>
+              </div>
+              <div class="visit-diagnosis">{{ visit.diagnosis }}</div>
+              @if (visit.treatmentNotes) {
+                <div class="muted visit-notes">{{ visit.treatmentNotes }}</div>
+              }
+              @if (visit.bloodPressure || visit.pulseBpm || visit.temperatureCelsius || visit.weightKg) {
+                <div class="vitals-row">
+                  @if (visit.bloodPressure) { <span class="vital-chip">BP {{ visit.bloodPressure }}</span> }
+                  @if (visit.pulseBpm) { <span class="vital-chip">♥ {{ visit.pulseBpm }} bpm</span> }
+                  @if (visit.temperatureCelsius) { <span class="vital-chip">🌡 {{ visit.temperatureCelsius }}°C</span> }
+                  @if (visit.weightKg) { <span class="vital-chip">⚖ {{ visit.weightKg }} kg</span> }
+                </div>
+              }
+              @if (visit.prescriptionId) {
+                <button type="button" class="btn btn-ghost visit-rx" (click)="downloadPrescription(visit.prescriptionId!)">
+                  📄 Prescription PDF
+                </button>
+              }
+            </div>
+          }
+        }
+      }
     </div>
   </aside>
 }

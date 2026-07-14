@@ -33,5 +33,8 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
 
         // Phone unique per tenant — same phone cannot register twice in same clinic
         builder.HasIndex(x => new { x.TenantId, x.Phone }).IsUnique();
+
+        // Patient numbers are per-clinic sequences — DB enforces no duplicates
+        builder.HasIndex(x => new { x.TenantId, x.PatientNumber }).IsUnique();
     }
 }

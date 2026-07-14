@@ -23,4 +23,14 @@ public interface IPatientService
     Task<PatientDto> GetPatientByIdAsync(
         Guid patientId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>The patient's clinical story: every consultation, newest first.</summary>
+    Task<PatientHistoryDto> GetHistoryAsync(
+        Guid patientId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Printable clinic-branded intake form, pre-filled with patient data.</summary>
+    Task<(byte[] Content, string FileName)> GetIntakeFormPdfAsync(
+        Guid patientId,
+        CancellationToken cancellationToken = default);
 }

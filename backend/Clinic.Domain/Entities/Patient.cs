@@ -8,6 +8,10 @@ public class Patient : BaseEntity, IMustHaveTenant
     public Guid TenantId { get; private set; }
     public Guid RegisteredByTenantUserId { get; private set; }
 
+    /// <summary>Human-friendly per-clinic number (P-000486) — real clinics
+    /// file and refer to patients by these, never by GUIDs.</summary>
+    public int PatientNumber { get; private set; }
+
     public string FirstName { get; private set; } = default!;
     public string LastName { get; private set; } = default!;
     public string Phone { get; private set; } = default!;
@@ -46,6 +50,8 @@ public class Patient : BaseEntity, IMustHaveTenant
         Email = email;
         Address = address;
     }
+
+    public void AssignNumber(int patientNumber) => PatientNumber = patientNumber;
 
     /// <summary>Corrects patient details (typos at reception happen daily).</summary>
     public void Update(

@@ -4,9 +4,10 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { parseApiError } from '../../core/api/api-error';
+import { AppointmentsService } from '../../core/api/appointments.service';
 import { PatientsService } from '../../core/api/patients.service';
 import { AuthService } from '../../core/auth/auth.service';
-import { PagedResult, PatientDto } from '../../core/models/api.models';
+import { PagedResult, PatientDto, PatientHistory } from '../../core/models/api.models';
 import { DateField } from '../../shared/ui/date-field';
 import { Segmented } from '../../shared/ui/segmented';
 
@@ -14,6 +15,7 @@ import { Segmented } from '../../shared/ui/segmented';
   selector: 'app-patients',
   imports: [DatePipe, ReactiveFormsModule, Segmented, DateField],
   templateUrl: './patients.html',
+  styleUrl: './patients.scss',
 })
 export class Patients {
   readonly auth = inject(AuthService);
@@ -31,6 +33,68 @@ export class Patients {
   readonly fieldErrors = signal<Record<string, string>>({});
   /** Non-null while editing an existing patient (drawer doubles as edit form). */
   readonly editing = signal<PatientDto | null>(null);
+
+  // ---- patient history drawer ----
+  private readonly appointmentsApi = inject(AppointmentsService);
+  readonly historyOpen = signal(false);
+  readonly historyLoading = signal(false);
+  readonly history = signal<PatientHistory | null>(null);
+  readonly downloadingForm = signal(false);
+
+  openHistory(patient: PatientDto): void {
+    this.historyOpen.set(true);
+    this.historyLoading.set(true);
+    this.history.set(null);
+    this.api.getHistory(patient.id).subscribe({
+      next: (history) => {
+        this.history.set(history);
+        this.historyLoading.set(false);
+      },
+      error: () => this.historyLoading.set(false),
+    });
+  }
+
+  editFromHistory(): void {
+    const patient = this.history()?.patient;
+    if (!patient) return;
+    this.historyOpen.set(false);
+    this.openEdit(patient);
+  }
+
+  printIntakeForm(): void {
+    const patient = this.history()?.patient;
+    if (!patient) return;
+    this.downloadingForm.set(true);
+    this.api.downloadIntakeForm(patient.id).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `intake-P${String(patient.patientNumber).padStart(6, '0')}.pdf`;
+        link.click();
+        URL.revokeObjectURL(url);
+        this.downloadingForm.set(false);
+      },
+      error: () => this.downloadingForm.set(false),
+    });
+  }
+
+  downloadPrescription(prescriptionId: string): void {
+    this.appointmentsApi.downloadPrescriptionPdf(prescriptionId).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'prescription.pdf';
+        link.click();
+        URL.revokeObjectURL(url);
+      },
+    });
+  }
+
+  patientCode(patient: PatientDto): string {
+    return `P-${String(patient.patientNumber).padStart(6, '0')}`;
+  }
 
   private readonly searchInput$ = new Subject<string>();
 

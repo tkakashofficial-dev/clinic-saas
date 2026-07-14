@@ -4,6 +4,7 @@ public class PatientDto
 {
     public Guid Id { get; set; }
     public string FullName { get; set; } = default!;
+    public int PatientNumber { get; set; }
     public string FirstName { get; set; } = default!;
     public string LastName { get; set; } = default!;
     public string Phone { get; set; } = default!;

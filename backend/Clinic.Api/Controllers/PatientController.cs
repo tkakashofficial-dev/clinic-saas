@@ -50,4 +50,21 @@ public class PatientController : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
         => Ok(await _patientService.GetPatientByIdAsync(id, cancellationToken));
+
+    /// <summary>The patient's clinical story — every consultation, newest first.</summary>
+    [HttpGet("{id}/history")]
+    [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Doctor},{RoleNames.Receptionist}")]
+    public async Task<ActionResult<PatientHistoryDto>> GetHistory(
+        Guid id,
+        CancellationToken cancellationToken)
+        => Ok(await _patientService.GetHistoryAsync(id, cancellationToken));
+
+    /// <summary>Printable clinic-branded intake form, pre-filled with patient data.</summary>
+    [HttpGet("{id}/intake-form")]
+    [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Doctor},{RoleNames.Receptionist}")]
+    public async Task<IActionResult> GetIntakeForm(Guid id, CancellationToken cancellationToken)
+    {
+        var (content, fileName) = await _patientService.GetIntakeFormPdfAsync(id, cancellationToken);
+        return File(content, "application/pdf", fileName);
+    }
 }

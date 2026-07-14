@@ -101,6 +101,39 @@ public class PatientServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task RegisterPatient_AssignsSequentialNumbersPerClinic()
+    {
+        var clinicA = await _db.SeedTenantAsync("Clinic A", "a@a.com");
+        var clinicB = await _db.SeedTenantAsync("Clinic B", "b@b.com");
+
+        _db.CurrentUser.ActAs(clinicA.TenantId, clinicA.TenantUserId);
+        var first = await CreateService().RegisterPatientAsync(ValidPatient("One", "+31600000060"));
+        var second = await CreateService().RegisterPatientAsync(ValidPatient("Two", "+31600000061"));
+
+        // Each clinic gets its OWN sequence starting at 1
+        _db.CurrentUser.ActAs(clinicB.TenantId, clinicB.TenantUserId);
+        var otherClinic = await CreateService().RegisterPatientAsync(ValidPatient("Uno", "+31600000062"));
+
+        Assert.Equal(1, first.PatientNumber);
+        Assert.Equal(2, second.PatientNumber);
+        Assert.Equal(1, otherClinic.PatientNumber);
+    }
+
+    [Fact]
+    public async Task IntakeForm_GeneratesBrandedPdf()
+    {
+        var clinic = await _db.SeedTenantAsync("Clinic", "a@a.com");
+        _db.CurrentUser.ActAs(clinic.TenantId, clinic.TenantUserId);
+        var patient = await CreateService().RegisterPatientAsync(ValidPatient("Form", "+31600000070"));
+
+        var (content, fileName) = await CreateService().GetIntakeFormPdfAsync(patient.Id);
+
+        Assert.True(content.Length > 1000);
+        Assert.StartsWith("%PDF", System.Text.Encoding.ASCII.GetString(content[..4]));
+        Assert.Contains("P000001", fileName);
+    }
+
+    [Fact]
     public async Task UpdatePatient_CorrectsDetails()
     {
         var clinic = await _db.SeedTenantAsync("Clinic", "a@a.com");

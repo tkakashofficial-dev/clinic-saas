@@ -42,7 +42,13 @@ public class PatientService : IPatientService
             || !Enum.IsDefined(gender))
             throw new BadRequestException("Invalid gender value.");
 
-        // 3. Create patient
+        // 3. Create patient with the next per-clinic number (unique index
+        //    (TenantId, PatientNumber) is the safety net against races)
+        var nextNumber = await _context.Patients
+            .Where(p => p.TenantId == tenantId)
+            .Select(p => (int?)p.PatientNumber)
+            .MaxAsync(cancellationToken) ?? 0;
+
         var patient = new Patient(
             tenantId,
             tenantUserId,
@@ -53,6 +59,7 @@ public class PatientService : IPatientService
             request.DateOfBirth,
             request.Email,
             request.Address);
+        patient.AssignNumber(nextNumber + 1);
 
         _context.Patients.Add(patient);
 
@@ -141,6 +148,7 @@ public class PatientService : IPatientService
             {
                 Id = p.Id,
                 FullName = p.FirstName + " " + p.LastName,
+                PatientNumber = p.PatientNumber,
                 FirstName = p.FirstName,
                 LastName = p.LastName,
                 Phone = p.Phone,
@@ -170,6 +178,7 @@ public class PatientService : IPatientService
             {
                 Id = p.Id,
                 FullName = p.FirstName + " " + p.LastName,
+                PatientNumber = p.PatientNumber,
                 FirstName = p.FirstName,
                 LastName = p.LastName,
                 Phone = p.Phone,
@@ -191,12 +200,57 @@ public class PatientService : IPatientService
         return patient;
     }
 
+    public async Task<PatientHistoryDto> GetHistoryAsync(
+        Guid patientId,
+        CancellationToken cancellationToken = default)
+    {
+        var patient = await GetPatientByIdAsync(patientId, cancellationToken);
+
+        var consultations = await _context.Consultations
+            .AsNoTracking()
+            .Where(c => c.Appointment.PatientId == patientId)
+            .OrderByDescending(c => c.Appointment.AppointmentDate)
+            .Select(c => new PatientConsultationDto
+            {
+                ConsultationId = c.Id,
+                AppointmentDate = c.Appointment.AppointmentDate,
+                RecordedAt = c.CreatedAt,
+                DoctorName = c.Doctor.SystemUser.FirstName + " " + c.Doctor.SystemUser.LastName,
+                Diagnosis = c.Diagnosis,
+                TreatmentNotes = c.TreatmentNotes,
+                BloodPressure = c.BloodPressure,
+                PulseBpm = c.PulseBpm,
+                TemperatureCelsius = c.TemperatureCelsius,
+                WeightKg = c.WeightKg,
+                PrescriptionId = c.Prescription == null ? null : c.Prescription.Id
+            })
+            .ToListAsync(cancellationToken);
+
+        return new PatientHistoryDto { Patient = patient, Consultations = consultations };
+    }
+
+    public async Task<(byte[] Content, string FileName)> GetIntakeFormPdfAsync(
+        Guid patientId,
+        CancellationToken cancellationToken = default)
+    {
+        var patient = await GetPatientByIdAsync(patientId, cancellationToken);
+
+        var tenant = await _context.Tenants
+            .AsNoTracking()
+            .FirstAsync(t => t.Id == _currentUser.TenantId, cancellationToken);
+
+        var pdf = IntakeFormPdfGenerator.Generate(
+            tenant.Name, tenant.Address, tenant.Phone, patient);
+        return (pdf, $"intake-P{patient.PatientNumber:D6}.pdf");
+    }
+
     private static PatientDto MapToDto(Patient patient, List<string> conditionCodes)
     {
         return new PatientDto
         {
             Id = patient.Id,
             FullName = $"{patient.FirstName} {patient.LastName}",
+            PatientNumber = patient.PatientNumber,
             FirstName = patient.FirstName,
             LastName = patient.LastName,
             Phone = patient.Phone,

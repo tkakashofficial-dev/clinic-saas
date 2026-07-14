@@ -83,6 +83,21 @@ tooth chart) and WhatsApp reminders matter more in sales demos than any report.
 ### Phase 6 — Clinical depth (odontogram, treatment plans, attachments, portal, permission-based custom roles)
 ### Phase 7 — Platform back-office (super admin, subscriptions, multi-branch)
 
+### Clinic forms & templates (validated by a REAL clinic's paper form)
+A Nadapuram dental clinic's actual intake sheet (patient ID JDC000486,
+alerts box, disease checklist, oral exam grid, bilingual consent) proved the
+demand. Phased plan:
+- **v1 (SHIPPED)**: printable clinic-branded intake form PDF, pre-filled with
+  registration data (patient number, name, age, sex, phone, address, date);
+  clinical sections stay blank for the doctor's pen — the paper→digital
+  bridge clinics actually adopt. Human patient numbers (P-000123, per-clinic
+  sequence) shipped with it.
+- **v2**: template picker per clinic (dental/GP/derm variants), toggleable
+  sections, clinic logo, Malayalam consent text.
+- **v3**: full form BUILDER — custom fields, digital filling on tablet,
+  versioned templates, stored submissions. Sellable add-on (eka.care charges
+  ₹9,999/yr for exactly this).
+
 ### Under consideration: Payroll & staff leave
 Verdict (2026-07-02): **Leave/attendance = yes, later** — simple to build
 (leave requests, approvals, a calendar), high stickiness, receptionists love

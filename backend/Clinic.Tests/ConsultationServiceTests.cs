@@ -112,6 +112,24 @@ public class ConsultationServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task PatientHistory_ContainsRecordedConsultation()
+    {
+        var clinic = await _db.SeedTenantAsync("Clinic", "a@a.com");
+        var appointmentId = await SeedAppointmentAsync(clinic.TenantId, clinic.TenantUserId);
+        await CreateService().RecordAsync(appointmentId, RequestWithPrescription());
+
+        await using var context = _db.CreateContext();
+        var patientId = (await context.Appointments.SingleAsync(a => a.Id == appointmentId)).PatientId;
+
+        var patientService = new PatientService(_db.CreateContext(), _db.CurrentUser);
+        var history = await patientService.GetHistoryAsync(patientId);
+
+        Assert.Single(history.Consultations);
+        Assert.Equal("Caries on molar 36", history.Consultations[0].Diagnosis);
+        Assert.NotNull(history.Consultations[0].PrescriptionId);
+    }
+
+    [Fact]
     public async Task PrescriptionPdf_GeneratesNonEmptyPdfBytes()
     {
         var clinic = await _db.SeedTenantAsync("Clinic", "a@a.com");

@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import {
   PagedResult,
   PatientDto,
+  PatientHistory,
   RegisterPatientRequest,
   UpdatePatientRequest,
 } from '../models/api.models';
@@ -30,5 +31,13 @@ export class PatientsService {
 
   update(id: string, request: UpdatePatientRequest): Observable<PatientDto> {
     return this.http.put<PatientDto>(`${this.baseUrl}/${id}`, request);
+  }
+
+  getHistory(id: string): Observable<PatientHistory> {
+    return this.http.get<PatientHistory>(`${this.baseUrl}/${id}/history`);
+  }
+
+  downloadIntakeForm(id: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${id}/intake-form`, { responseType: 'blob' });
   }
 }

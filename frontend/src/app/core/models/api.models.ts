@@ -56,6 +56,8 @@ export interface RegisterRequest {
 export interface PatientDto {
   id: string;
   fullName: string;
+  /** Human-friendly per-clinic number, shown as P-000123. */
+  patientNumber: number;
   firstName: string;
   lastName: string;
   phone: string;
@@ -77,6 +79,25 @@ export interface RegisterPatientRequest {
   gender: string;
   dateOfBirth?: string | null;
   medicalConditionCodes: string[];
+}
+
+export interface PatientHistory {
+  patient: PatientDto;
+  consultations: PatientConsultation[];
+}
+
+export interface PatientConsultation {
+  consultationId: string;
+  appointmentDate: string;
+  recordedAt: string;
+  doctorName: string;
+  diagnosis: string;
+  treatmentNotes: string | null;
+  bloodPressure: string | null;
+  pulseBpm: number | null;
+  temperatureCelsius: number | null;
+  weightKg: number | null;
+  prescriptionId: string | null;
 }
 
 export interface UpdatePatientRequest {
