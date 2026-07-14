@@ -27,17 +27,20 @@ public class AuthService : IAuthService
     private readonly JwtTokenGenerator _jwtTokenGenerator;
     private readonly IEmailSender _emailSender;
     private readonly FrontendSettings _frontend;
+    private readonly PlatformSettings _platform;
 
     public AuthService(
         ClinicDbContext context,
         JwtTokenGenerator jwtTokenGenerator,
         IEmailSender emailSender,
-        IOptions<FrontendSettings> frontendSettings)
+        IOptions<FrontendSettings> frontendSettings,
+        IOptions<PlatformSettings> platformSettings)
     {
         _context = context;
         _jwtTokenGenerator = jwtTokenGenerator;
         _emailSender = emailSender;
         _frontend = frontendSettings.Value;
+        _platform = platformSettings.Value;
     }
 
     public async Task<AuthResponse> RegisterAsync(
@@ -306,7 +309,9 @@ public class AuthService : IAuthService
             .Include(tu => tu.Tenant)
             .Include(tu => tu.Roles)
                 .ThenInclude(r => r.Role)
-            .Where(tu => tu.SystemUserId == systemUser.Id && tu.IsActive)
+            // Suspended clinics (platform action, e.g. non-payment) stop
+            // issuing sessions immediately
+            .Where(tu => tu.SystemUserId == systemUser.Id && tu.IsActive && tu.Tenant.IsActive)
             .OrderBy(tu => tu.CreatedAt)
             .ToListAsync(cancellationToken);
 
@@ -342,7 +347,8 @@ public class AuthService : IAuthService
         return await _context.TenantUsers
             .AsNoTracking()
             .IgnoreQueryFilters([QueryFilters.Tenant])
-            .Where(tu => tu.SystemUserId == systemUserId && tu.IsActive)
+            // Same rule as IssueForUserAsync: suspended clinics never appear
+            .Where(tu => tu.SystemUserId == systemUserId && tu.IsActive && tu.Tenant.IsActive)
             .OrderBy(tu => tu.CreatedAt)
             .Select(tu => new MembershipDto
             {
@@ -389,6 +395,7 @@ public class AuthService : IAuthService
             TenantUserId = tenantUserId,
             ClinicName = clinicName,
             Memberships = memberships,
+            IsPlatformAdmin = PlatformService.IsPlatformAdmin(_platform, email),
             ExpiresAt = expiresAt
         };
     }

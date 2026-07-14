@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, guestGuard, roleGuard } from './core/auth/auth.guards';
+import { authGuard, guestGuard, platformGuard, roleGuard } from './core/auth/auth.guards';
 
 export const routes: Routes = [
   {
@@ -56,6 +56,10 @@ export const routes: Routes = [
           import('./features/appointments/appointments').then((m) => m.Appointments),
       },
       {
+        path: 'inventory',
+        loadComponent: () => import('./features/inventory/inventory').then((m) => m.Inventory),
+      },
+      {
         path: 'reports',
         canActivate: [roleGuard],
         data: { roles: ['Admin'] },
@@ -72,6 +76,12 @@ export const routes: Routes = [
         canActivate: [roleGuard],
         data: { roles: ['Admin'] },
         loadComponent: () => import('./features/billing/billing').then((m) => m.Billing),
+      },
+      {
+        // SaaS owner's back office — hidden for everyone else
+        path: 'platform',
+        canActivate: [platformGuard],
+        loadComponent: () => import('./features/platform/platform').then((m) => m.Platform),
       },
     ],
   },

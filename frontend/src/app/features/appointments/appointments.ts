@@ -5,6 +5,7 @@ import { Subject, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { parseApiError } from '../../core/api/api-error';
 import { AppointmentsService } from '../../core/api/appointments.service';
+import { InventoryService } from '../../core/api/inventory.service';
 import { PatientsService } from '../../core/api/patients.service';
 import { StaffService } from '../../core/api/staff.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -35,7 +36,20 @@ export class Appointments {
   private readonly api = inject(AppointmentsService);
   private readonly patientsApi = inject(PatientsService);
   private readonly staffApi = inject(StaffService);
+  private readonly inventoryApi = inject(InventoryService);
   private readonly fb = inject(FormBuilder);
+
+  /**
+   * Guided prescription entry — Indian clinic conventions:
+   * dose pattern morning-noon-night (1-0-1) and food timing. One tap fills
+   * the field; free typing still works for anything unusual.
+   */
+  readonly freqPresets = ['1-0-0', '1-0-1', '1-1-1', '0-0-1'];
+  readonly instructionPresets = ['After food', 'Before food', 'At bedtime', 'With warm water'];
+
+  /** Medicine-name suggestions from the clinic's own inventory. */
+  readonly medicineSuggestions = signal<string[]>([]);
+  private readonly medicineQuery$ = new Subject<string>();
 
   readonly statusFilters = STATUS_FILTERS;
 
@@ -111,7 +125,25 @@ export class Appointments {
       )
       .subscribe((result) => this.patientResults.set(result.items));
 
+    this.medicineQuery$
+      .pipe(
+        debounceTime(250),
+        distinctUntilChanged(),
+        switchMap((term) => this.inventoryApi.suggestMedicines(term)),
+        takeUntilDestroyed(),
+      )
+      .subscribe((names) => this.medicineSuggestions.set(names));
+
     this.load();
+  }
+
+  onMedicineInput(value: string): void {
+    if (value.trim().length >= 2) this.medicineQuery$.next(value.trim());
+  }
+
+  /** Quick-chip fill for a prescription row (frequency / instructions). */
+  setItemPreset(index: number, control: 'frequency' | 'instructions', value: string): void {
+    this.items.at(index).patchValue({ [control]: value });
   }
 
   // ---------- list ----------

@@ -12,17 +12,21 @@ import { ProvisioningOverlay } from '../shared/ui/provisioning-overlay';
 interface NavItem {
   label: string;
   path: string;
-  icon: 'dashboard' | 'patients' | 'appointments' | 'staff' | 'reports' | 'billing';
+  icon: 'dashboard' | 'patients' | 'appointments' | 'inventory' | 'staff' | 'reports' | 'billing' | 'platform';
   roles: Role[];
+  /** Only the SaaS owner sees this, regardless of clinic roles. */
+  platformOnly?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', path: '/dashboard', icon: 'dashboard', roles: ['Admin', 'Doctor', 'Receptionist'] },
   { label: 'Patients', path: '/patients', icon: 'patients', roles: ['Admin', 'Doctor', 'Receptionist'] },
   { label: 'Appointments', path: '/appointments', icon: 'appointments', roles: ['Admin', 'Doctor', 'Receptionist'] },
+  { label: 'Inventory', path: '/inventory', icon: 'inventory', roles: ['Admin', 'Doctor', 'Receptionist'] },
   { label: 'Reports', path: '/reports', icon: 'reports', roles: ['Admin'] },
   { label: 'Staff', path: '/staff', icon: 'staff', roles: ['Admin'] },
   { label: 'Billing', path: '/billing', icon: 'billing', roles: ['Admin'] },
+  { label: 'Platform', path: '/platform', icon: 'platform', roles: [], platformOnly: true },
 ];
 
 @Component({
@@ -38,7 +42,11 @@ export class Shell {
 
   readonly navItems = computed(() => {
     const roles = this.auth.roles();
-    return NAV_ITEMS.filter((item) => item.roles.some((role) => roles.includes(role)));
+    return NAV_ITEMS.filter((item) =>
+      item.platformOnly
+        ? this.auth.isPlatformAdmin()
+        : item.roles.some((role) => roles.includes(role)),
+    );
   });
 
   readonly initials = computed(() =>

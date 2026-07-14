@@ -26,16 +26,21 @@
   <main class="auth-form-side">
     <div class="auth-card">
 
-      <!-- Step indicator -->
-      <div class="steps-indicator">
-        <span class="step-pill" [class.active]="step() === 1" [class.done]="step() === 2">
-          @if (step() === 2) {
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          } @else { 1 }
-          Your account
-        </span>
+      <!-- Step indicator: numbered dots + labels (the Stripe/Slack pattern) -->
+      <div class="steps-indicator" aria-label="Sign-up progress">
+        <div class="step" [class.active]="step() === 1" [class.done]="step() === 2">
+          <span class="step-dot">
+            @if (step() === 2) {
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            } @else { 1 }
+          </span>
+          <span class="step-label">Your account</span>
+        </div>
         <span class="step-line" [class.done]="step() === 2"></span>
-        <span class="step-pill" [class.active]="step() === 2">2 Your clinic</span>
+        <div class="step" [class.active]="step() === 2">
+          <span class="step-dot">2</span>
+          <span class="step-label">Your clinic</span>
+        </div>
       </div>
 
       @if (error()) {
@@ -87,7 +92,7 @@
           <div class="field">
             <label for="clinicName">Clinic name</label>
             <input id="clinicName" class="input" formControlName="clinicName"
-                   placeholder="Bright Smiles Dental" [class.invalid]="!!errorFor('clinicName')">
+                   placeholder="Smile Dental Care, Kozhikode" [class.invalid]="!!errorFor('clinicName')">
             @if (errorFor('clinicName')) { <span class="field-error">{{ errorFor('clinicName') }}</span> }
           </div>
 

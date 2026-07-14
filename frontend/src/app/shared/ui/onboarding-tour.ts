@@ -10,7 +10,7 @@ const STEPS: TourStep[] = [
   {
     emoji: '👋',
     title: 'Welcome to your clinic!',
-    text: 'Everything is set up. This 30-second tour shows you the four things you’ll do every day — skip it any time.',
+    text: 'Everything is set up. This 30-second tour shows you what you’ll do every day — skip it any time.',
   },
   {
     emoji: '🧑‍⚕️',
@@ -26,6 +26,11 @@ const STEPS: TourStep[] = [
     emoji: '📅',
     title: 'Book, check in, consult',
     text: 'Book an appointment, press Check in when the patient arrives, and the doctor sees them in the waiting room. One tap starts the consultation — diagnosis, vitals and a PDF prescription.',
+  },
+  {
+    emoji: '💊',
+    title: 'Track your pharmacy',
+    text: 'Inventory keeps medicines and supplies counted — low stock rises to the top, expiring items get flagged, and prescriptions suggest medicine names from your own shelf.',
   },
 ];
 

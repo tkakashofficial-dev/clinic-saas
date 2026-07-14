@@ -81,7 +81,12 @@ tooth chart) and WhatsApp reminders matter more in sales demos than any report.
 
 ### Phase 5 — Money features (patient billing/invoices + WhatsApp reminders + Razorpay)
 ### Phase 6 — Clinical depth (odontogram, treatment plans, attachments, portal, permission-based custom roles)
-### Phase 7 — Platform back-office (super admin, subscriptions, multi-branch)
+### Phase 7 — Platform back-office (super admin ✅ SHIPPED v1, subscriptions, multi-branch)
+v1 shipped 2026-07-14: `/platform` console (email-allowlist gated, server-side
+re-check on every call) lists every clinic with plan/trial/staff/patient
+counts; owner can change plans (applied manually after UPI/bank payment —
+Razorpay automates this later) and suspend/re-activate clinics (suspension
+blocks sign-in at token issue; data untouched).
 
 ### Clinic forms & templates (validated by a REAL clinic's paper form)
 A Nadapuram dental clinic's actual intake sheet (patient ID JDC000486,
@@ -92,8 +97,12 @@ demand. Phased plan:
   clinical sections stay blank for the doctor's pen — the paper→digital
   bridge clinics actually adopt. Human patient numbers (P-000123, per-clinic
   sequence) shipped with it.
-- **v2**: template picker per clinic (dental/GP/derm variants), toggleable
-  sections, clinic logo, Malayalam consent text.
+- **v2 (partially SHIPPED 2026-07-14)**: two seeded template designs available
+  to every clinic — **dental** (oral health, ortho, intra/extra oral exam) and
+  **general** (vitals strip, general + systemic examination). Picked per print
+  from the patient history drawer (`?template=` on the API). Editing rights:
+  clinic ADMIN manages templates, doctors use them. Still to come: per-clinic
+  default template, toggleable sections, clinic logo, Malayalam consent text.
 - **v3**: full form BUILDER — custom fields, digital filling on tablet,
   versioned templates, stored submissions. Sellable add-on (eka.care charges
   ₹9,999/yr for exactly this).
@@ -119,3 +128,8 @@ integration or once revenue justifies a dedicated effort.
 | 7 | Roles stay a closed set; NO admin-created free-text roles | `[Authorize]` matches exact strings — user-invented roles would silently get no permissions (or be a security hole). The industry answer for "other roles" (Nurse, Pharmacist, Accountant) is PERMISSION-BASED RBAC: fine-grained permissions, roles = named permission bundles, custom roles as an enterprise feature. Planned Phase 6. | 2026-07-02 |
 | 8 | Multi-clinic owner = multiple tenant memberships + clinic switcher (not an Organization entity yet) | SystemUser↔TenantUser already supports N clinics per person. Login scopes to one clinic; switch-clinic re-issues the token; "New clinic" self-serve provisioning. A true Organization layer (consolidated reporting, shared patients across branches) only makes sense with real multi-branch customers — Phase 7. | 2026-07-02 |
 | 9 | Brand: Klinovo (provisional) | "Clinora" already exists in market. "Klinovo" had zero search collisions (verified 2026-07-02); formal trademark + domain check still required before spending on branding. | 2026-07-02 |
+| 10 | Platform admin = config email allowlist (`Platform:AdminEmails`), NOT a role | Clinic roles are tenant-scoped; the SaaS owner is above tenants. An allowlist in config can't be granted by any in-app action (no privilege-escalation path), and the server re-checks it on every `/api/platform` call — the JWT flag is display-only. | 2026-07-14 |
+| 11 | Payment collection: manual UPI/bank transfer + owner applies plan in `/platform` | Zero gateway fees and zero integration cost while customer count is small; Razorpay checkout automates the same `ChangePlan` path later, so nothing is throwaway. | 2026-07-14 |
+| 12 | Suspension enforced at token issue (login/refresh/switch filter on `Tenant.IsActive`) | One choke point covers every entry path; existing access tokens age out within 60 min. Data is never deleted — a paying-again clinic is one click from restored. | 2026-07-14 |
+| 13 | Inventory v1 = single quantity + adjust (±), no movement ledger yet | Clinics start by wanting "do we have it & when to reorder" — one honest number beats an audit trail nobody fills in. Stock can't go negative (domain rule); a movement ledger + dispense-from-prescription comes with patient billing, where it earns its keep. | 2026-07-14 |
+| 14 | Prescription entry: guided free-text (inventory autocomplete + 1-0-1 / food-timing chips), not a rigid medicine master | Indian dose convention (morning-noon-night) as one-tap chips speeds doctors up without blocking unusual prescriptions; names suggest from the clinic's OWN inventory so spelling matches the shelf. A structured drug database is a later, paid dataset problem. | 2026-07-14 |

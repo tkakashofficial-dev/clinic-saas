@@ -39,7 +39,8 @@ export class Patients {
   readonly historyOpen = signal(false);
   readonly historyLoading = signal(false);
   readonly history = signal<PatientHistory | null>(null);
-  readonly downloadingForm = signal(false);
+  /** Which template is currently downloading ('dental' | 'general'), or null. */
+  readonly downloadingForm = signal<string | null>(null);
 
   openHistory(patient: PatientDto): void {
     this.historyOpen.set(true);
@@ -61,21 +62,21 @@ export class Patients {
     this.openEdit(patient);
   }
 
-  printIntakeForm(): void {
+  printIntakeForm(template: 'dental' | 'general'): void {
     const patient = this.history()?.patient;
     if (!patient) return;
-    this.downloadingForm.set(true);
-    this.api.downloadIntakeForm(patient.id).subscribe({
+    this.downloadingForm.set(template);
+    this.api.downloadIntakeForm(patient.id, template).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `intake-P${String(patient.patientNumber).padStart(6, '0')}.pdf`;
+        link.download = `intake-${template}-P${String(patient.patientNumber).padStart(6, '0')}.pdf`;
         link.click();
         URL.revokeObjectURL(url);
-        this.downloadingForm.set(false);
+        this.downloadingForm.set(null);
       },
-      error: () => this.downloadingForm.set(false),
+      error: () => this.downloadingForm.set(null),
     });
   }
 

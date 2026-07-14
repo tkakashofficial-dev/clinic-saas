@@ -27,6 +27,8 @@ export interface AuthResponse {
   clinicName: string;
   /** Every clinic this user belongs to — powers the clinic switcher. */
   memberships: Membership[];
+  /** SaaS owner (config allowlist) — unlocks the platform console. */
+  isPlatformAdmin?: boolean;
   expiresAt: string;
 }
 
@@ -246,6 +248,50 @@ export interface BillingSummary {
   maxStaff: number;
   doctorCount: number;
   maxDoctors: number;
+}
+
+// ---------- Inventory (pharmacy & stores) ----------
+
+export type InventoryCategory = 'Medicine' | 'Consumable' | 'Equipment';
+
+export interface InventoryItemDto {
+  id: string;
+  name: string;
+  category: InventoryCategory;
+  unit: string;
+  stockQuantity: number;
+  reorderLevel: number;
+  /** At/below reorder level — time to order more. */
+  lowStock: boolean;
+  unitPriceRupees: number | null;
+  expiryDate: string | null;
+  /** Expires within 60 days (or already past). */
+  expiringSoon: boolean;
+}
+
+export interface SaveInventoryItemRequest {
+  name: string;
+  category: InventoryCategory;
+  unit: string;
+  /** Opening stock — only honored on create. */
+  stockQuantity: number;
+  reorderLevel: number;
+  unitPriceRupees?: number | null;
+  expiryDate?: string | null;
+}
+
+// ---------- Platform (SaaS owner console) ----------
+
+export interface PlatformTenant {
+  tenantId: string;
+  name: string;
+  plan: 'Solo' | 'Clinic' | 'Growth';
+  isInTrial: boolean;
+  trialEndsAt: string | null;
+  isActive: boolean;
+  staffCount: number;
+  patientCount: number;
+  createdAt: string;
 }
 
 // ---------- Errors (RFC 7807) ----------

@@ -38,6 +38,8 @@ export class AuthService {
   readonly clinicName = computed(() => this._session()?.clinicName ?? '');
   readonly memberships = computed<Membership[]>(() => this._session()?.memberships ?? []);
   readonly currentTenantId = computed(() => this._session()?.tenantId ?? '');
+  /** SaaS owner — the API re-checks its allowlist on every platform call. */
+  readonly isPlatformAdmin = computed(() => this._session()?.isPlatformAdmin === true);
 
   hasRole(...allowed: Role[]): boolean {
     return this.roles().some((role) => allowed.includes(role));

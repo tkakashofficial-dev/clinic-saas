@@ -1,10 +1,14 @@
-import { Component, forwardRef, input, signal } from '@angular/core';
+import { Component, forwardRef, input, signal, viewChild, ElementRef } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 /**
- * Date-of-birth style input: the user TYPES the date (DD/MM/YYYY) with
- * automatic slash insertion — far faster than paging a calendar back
- * 30 years. Emits ISO (yyyy-MM-dd) or null; shows inline validity.
+ * Hybrid date input — the pattern mature products use:
+ *  · TYPE it: DD/MM/YYYY with automatic slashes (fastest for known dates
+ *    like a date of birth — no paging a calendar back 30 years), OR
+ *  · PICK it: the calendar button opens the browser's native date picker
+ *    (a hidden input[type=date] + showPicker()), which is also what
+ *    mobile users get as wheels/calendar.
+ * Emits ISO (yyyy-MM-dd) or null; shows inline validity.
  */
 @Component({
   selector: 'app-date-field',
@@ -21,12 +25,19 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
         (input)="onInput($any($event.target))"
         (blur)="onBlur()"
         maxlength="10">
-      <svg class="cal-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
-           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="4" width="18" height="18" rx="2"/>
-        <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-        <line x1="3" y1="10" x2="21" y2="10"/>
-      </svg>
+      <button type="button" class="cal-btn" (click)="openPicker()"
+              [disabled]="disabled()" aria-label="Open calendar" tabindex="-1">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+      </button>
+      <!-- Native picker host: invisible, but drives the real calendar UI -->
+      <input #nativePicker type="date" class="native-picker" tabindex="-1"
+             aria-hidden="true" [max]="maxToday() ? today : null"
+             (change)="onNativePick($any($event.target).value)">
     </div>
     @if (invalid()) {
       <span class="field-error">{{ errorText() }}</span>
@@ -36,13 +47,33 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
     .date-field {
       position: relative;
 
-      .input { padding-right: 38px; }
+      .input { padding-right: 40px; width: 100%; }
 
-      .cal-icon {
+      .cal-btn {
         position: absolute;
-        right: 12px; top: 50%;
+        right: 6px; top: 50%;
         transform: translateY(-50%);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px; height: 28px;
+        border: 0;
+        border-radius: 7px;
+        background: none;
         color: var(--color-text-muted);
+        cursor: pointer;
+
+        &:hover { background: var(--color-primary-100); color: var(--color-primary-700); }
+        &:disabled { cursor: default; opacity: 0.5; }
+      }
+
+      .native-picker {
+        position: absolute;
+        right: 6px; top: 50%;
+        width: 28px; height: 28px;
+        transform: translateY(-50%);
+        opacity: 0;
+        border: 0;
         pointer-events: none;
       }
     }
@@ -62,8 +93,39 @@ export class DateField implements ControlValueAccessor {
   readonly invalid = signal(false);
   readonly errorText = signal('');
 
+  readonly today = new Date().toISOString().slice(0, 10);
+
+  private readonly nativePicker = viewChild<ElementRef<HTMLInputElement>>('nativePicker');
+
   private onChange: (value: string | null) => void = () => {};
   private onTouched: () => void = () => {};
+
+  openPicker(): void {
+    const native = this.nativePicker()?.nativeElement;
+    if (!native) return;
+
+    // Open the calendar pre-positioned on the current value (if any)
+    const digits = this.display().replace(/\D/g, '');
+    if (digits.length === 8) {
+      native.value = `${digits.slice(4)}-${digits.slice(2, 4)}-${digits.slice(0, 2)}`;
+    }
+
+    try {
+      native.showPicker(); // Chrome/Edge/Firefox; needs the user gesture we're in
+    } catch {
+      native.focus();      // older Safari fallback — focus opens its UI
+      native.click();
+    }
+  }
+
+  onNativePick(iso: string): void {
+    if (!iso) return;
+    const [year, month, day] = iso.split('-');
+    this.display.set(`${day}/${month}/${year}`);
+    this.invalid.set(false);
+    this.onChange(iso);
+    this.onTouched();
+  }
 
   onInput(inputElement: HTMLInputElement): void {
     // Keep digits only, re-insert slashes at fixed positions

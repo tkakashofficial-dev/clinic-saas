@@ -1,0 +1,42 @@
+// Inventory — global card/table/drawer styles do the heavy lifting.
+
+.toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+
+  .search-input { max-width: 320px; }
+}
+
+.cell-main .chip { margin-left: 8px; }
+
+.adjust-pop {
+  position: absolute;
+  right: 0;
+  top: calc(100% - 6px);
+  z-index: 20;
+  width: 220px;
+  background: #fff;
+  border: 1px solid var(--color-border, #e2ede8);
+  border-radius: 12px;
+  box-shadow: 0 10px 28px rgba(12, 43, 35, 0.16);
+  padding: 12px;
+  text-align: left;
+}
+
+.adjust-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.adjust-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+
+  .btn { flex: 1; padding: 7px 8px; font-size: 12.5px; }
+}
+
+.danger-text { color: #b3261e; }

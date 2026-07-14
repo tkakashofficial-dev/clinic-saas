@@ -17,6 +17,13 @@ export const guestGuard: CanActivateFn = () => {
   return auth.isLoggedIn() ? router.createUrlTree(['/']) : true;
 };
 
+/** Platform console is for the SaaS owner only (server re-verifies too). */
+export const platformGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  return auth.isPlatformAdmin() ? true : router.createUrlTree(['/']);
+};
+
 /** Role-based route protection: route data `{ roles: ['Admin'] }`. */
 export const roleGuard: CanActivateFn = (route) => {
   const auth = inject(AuthService);

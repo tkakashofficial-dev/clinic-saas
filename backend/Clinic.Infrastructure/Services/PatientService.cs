@@ -231,6 +231,7 @@ public class PatientService : IPatientService
 
     public async Task<(byte[] Content, string FileName)> GetIntakeFormPdfAsync(
         Guid patientId,
+        string template = "dental",
         CancellationToken cancellationToken = default)
     {
         var patient = await GetPatientByIdAsync(patientId, cancellationToken);
@@ -240,8 +241,8 @@ public class PatientService : IPatientService
             .FirstAsync(t => t.Id == _currentUser.TenantId, cancellationToken);
 
         var pdf = IntakeFormPdfGenerator.Generate(
-            tenant.Name, tenant.Address, tenant.Phone, patient);
-        return (pdf, $"intake-P{patient.PatientNumber:D6}.pdf");
+            tenant.Name, tenant.Address, tenant.Phone, patient, template);
+        return (pdf, $"intake-{template}-P{patient.PatientNumber:D6}.pdf");
     }
 
     private static PatientDto MapToDto(Patient patient, List<string> conditionCodes)

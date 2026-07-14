@@ -15,5 +15,7 @@ public class AuthResponse
     public string ClinicName { get; set; } = default!;
     /// <summary>Every clinic this user belongs to — for the clinic switcher.</summary>
     public List<MembershipDto> Memberships { get; set; } = new();
+    /// <summary>True for the SaaS owner (config allowlist) — unlocks the platform console.</summary>
+    public bool IsPlatformAdmin { get; set; }
     public DateTime ExpiresAt { get; set; }
 }

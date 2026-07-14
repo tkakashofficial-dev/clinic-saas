@@ -20,7 +20,7 @@ public class AuthServiceTests : IDisposable
             Issuer = "TestIssuer",
             Audience = "TestAudience",
             ExpiresInMinutes = 60
-        })), new NoOpEmailSender(), Options.Create(new FrontendSettings()));
+        })), new NoOpEmailSender(), Options.Create(new FrontendSettings()), Options.Create(new PlatformSettings()));
 
     private static RegisterRequest ValidRegistration(string email = "owner@clinic.com") => new()
     {

@@ -1,0 +1,185 @@
+<header class="page-header">
+  <div>
+    <h1>Inventory</h1>
+    <p class="sub">Pharmacy & clinic supplies — low stock rises to the top</p>
+  </div>
+  @if (canManage) {
+    <button type="button" class="btn btn-primary" (click)="openAdd()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add item
+    </button>
+  }
+</header>
+
+@if (notice()) {
+  <div class="alert-success" style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
+    <span>{{ notice() }}</span>
+    <button type="button" class="btn btn-ghost" style="padding:2px 8px;" (click)="notice.set('')" aria-label="Dismiss">✕</button>
+  </div>
+}
+@if (error()) {
+  <div class="alert-error" style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
+    <span>{{ error() }}</span>
+    <button type="button" class="btn btn-ghost" style="padding:2px 8px;" (click)="error.set('')" aria-label="Dismiss">✕</button>
+  </div>
+}
+
+<div class="toolbar">
+  <input type="text" class="input search-input" placeholder="Search items…"
+         [value]="searchTerm" (input)="onSearch($any($event.target).value)">
+</div>
+
+<section class="card">
+  @if (loading()) {
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
+  } @else if (items().length === 0) {
+    <div class="empty-state">
+      <div class="icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/></svg>
+      </div>
+      <h3>Nothing in stock yet</h3>
+      <p>Add your medicines and consumables — prescriptions will suggest from here.</p>
+      @if (canManage) {
+        <button type="button" class="btn btn-secondary" (click)="openAdd()">Add first item</button>
+      }
+    </div>
+  } @else {
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Category</th>
+            <th>Stock</th>
+            <th>Price</th>
+            <th>Expiry</th>
+            @if (canManage) { <th style="text-align:right"></th> }
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of items(); track item.id) {
+            <tr>
+              <td class="cell-main">
+                {{ item.name }}
+                @if (item.lowStock) {
+                  <span class="chip chip-cancelled" title="At or below the reorder level ({{ item.reorderLevel }} {{ item.unit }})">Low stock</span>
+                }
+                @if (item.expiringSoon) {
+                  <span class="chip chip-scheduled" title="Expires within 60 days">Expiring</span>
+                }
+              </td>
+              <td class="muted">{{ item.category }}</td>
+              <td>
+                <strong>{{ item.stockQuantity }}</strong>
+                <span class="muted"> {{ item.unit }}</span>
+              </td>
+              <td class="muted">
+                @if (item.unitPriceRupees !== null) { ₹{{ item.unitPriceRupees | number: '1.0-2' }} } @else { — }
+              </td>
+              <td class="muted">
+                @if (item.expiryDate) { {{ item.expiryDate | date: 'MMM y' }} } @else { — }
+              </td>
+              @if (canManage) {
+                <td style="text-align:right; position:relative;">
+                  <button type="button" class="btn btn-ghost" (click)="toggleAdjust(item)">± Stock</button>
+                  <button type="button" class="btn btn-ghost" (click)="openEdit(item)">Edit</button>
+
+                  @if (adjustFor() === item.id) {
+                    <div class="adjust-pop">
+                      <label class="adjust-label" for="adj-{{ item.id }}">Quantity ({{ item.unit }})</label>
+                      <input id="adj-{{ item.id }}" type="number" min="1" class="input"
+                             [(ngModel)]="adjustQty" [ngModelOptions]="{ standalone: true }">
+                      <div class="adjust-actions">
+                        <button type="button" class="btn btn-secondary" [disabled]="adjusting()"
+                                (click)="applyAdjust(item, -1)">− Stock out</button>
+                        <button type="button" class="btn btn-primary" [disabled]="adjusting()"
+                                (click)="applyAdjust(item, 1)">＋ Stock in</button>
+                      </div>
+                    </div>
+                  }
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>
+
+<!-- ============ Add / edit drawer ============ -->
+@if (drawerOpen()) {
+  <div class="drawer-backdrop" (click)="drawerOpen.set(false)"></div>
+  <aside class="drawer" role="dialog" aria-label="Inventory item">
+    <div class="drawer-header">
+      <h2>{{ editing() ? 'Edit item' : 'Add item' }}</h2>
+      <button type="button" class="btn btn-ghost" (click)="drawerOpen.set(false)" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="save()" class="drawer-body" id="inventory-form">
+      @if (formError()) {
+        <div class="alert-error">{{ formError() }}</div>
+      }
+
+      <div class="field">
+        <label for="i-name">Item name *</label>
+        <input id="i-name" class="input" formControlName="name"
+               placeholder="Amoxicillin 500mg" [class.invalid]="!!errorFor('name')">
+        @if (errorFor('name')) { <span class="field-error">{{ errorFor('name') }}</span> }
+      </div>
+
+      <div class="field">
+        <label>Category *</label>
+        <app-segmented [options]="categoryOptions" formControlName="category" />
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label for="i-unit">Unit *</label>
+          <input id="i-unit" class="input" formControlName="unit" placeholder="strip / bottle / box">
+        </div>
+        <div class="field">
+          <label for="i-price">Price per unit (₹)</label>
+          <input id="i-price" type="number" min="0" step="0.01" class="input" formControlName="unitPriceRupees">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label for="i-stock">{{ editing() ? 'Current stock' : 'Opening stock *' }}</label>
+          <input id="i-stock" type="number" min="0" class="input" formControlName="stockQuantity"
+                 [attr.disabled]="editing() ? '' : null"
+                 [class.invalid]="!!errorFor('stockQuantity')">
+          @if (editing()) {
+            <span class="muted" style="font-size:12px;">Use ± Stock in the list to move stock — keeps counts honest.</span>
+          }
+        </div>
+        <div class="field">
+          <label for="i-reorder">Reorder level *</label>
+          <input id="i-reorder" type="number" min="0" class="input" formControlName="reorderLevel"
+                 [class.invalid]="!!errorFor('reorderLevel')">
+          <span class="muted" style="font-size:12px;">"Low stock" shows at or below this.</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Expiry date</label>
+        <app-date-field formControlName="expiryDate" placeholder="DD/MM/YYYY" />
+      </div>
+    </form>
+
+    <div class="drawer-footer">
+      <button type="button" class="btn btn-secondary" (click)="drawerOpen.set(false)">Cancel</button>
+      @if (editing() && auth.hasRole('Admin')) {
+        <button type="button" class="btn btn-secondary danger-text" (click)="remove(editing()!)">Remove</button>
+      }
+      <button type="submit" form="inventory-form" class="btn btn-primary" [disabled]="saving()">
+        {{ saving() ? 'Saving…' : editing() ? 'Save changes' : 'Add item' }}
+      </button>
+    </div>
+  </aside>
+}

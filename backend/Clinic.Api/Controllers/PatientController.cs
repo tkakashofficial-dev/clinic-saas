@@ -59,12 +59,17 @@ public class PatientController : ControllerBase
         CancellationToken cancellationToken)
         => Ok(await _patientService.GetHistoryAsync(id, cancellationToken));
 
-    /// <summary>Printable clinic-branded intake form, pre-filled with patient data.</summary>
+    /// <summary>Printable clinic-branded intake form, pre-filled with patient data.
+    /// ?template=dental|general picks one of the seeded designs.</summary>
     [HttpGet("{id}/intake-form")]
     [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Doctor},{RoleNames.Receptionist}")]
-    public async Task<IActionResult> GetIntakeForm(Guid id, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetIntakeForm(
+        Guid id, [FromQuery] string template = "dental", CancellationToken cancellationToken = default)
     {
-        var (content, fileName) = await _patientService.GetIntakeFormPdfAsync(id, cancellationToken);
+        if (template is not ("dental" or "general"))
+            return BadRequest(new { message = "Unknown template. Available: dental, general." });
+
+        var (content, fileName) = await _patientService.GetIntakeFormPdfAsync(id, template, cancellationToken);
         return File(content, "application/pdf", fileName);
     }
 }

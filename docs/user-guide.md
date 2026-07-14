@@ -44,14 +44,36 @@ One person can hold several roles — a doctor-owner is Admin **and** Doctor.
 1. Your **dashboard** shows *your* day: your queue and who's waiting
 2. Open **Appointments** → your waiting patient → **Consult**
 3. Type the **diagnosis**, treatment notes, and vitals (BP, pulse, temp, weight)
-4. Tick **Add a prescription** → add medicines → **Save & complete**
+4. Tick **Add a prescription** → medicine names are suggested from your own
+   **Inventory**; one-tap chips fill the Indian dose pattern (1-0-1) and food
+   timing (After food) → **Save & complete**
 5. The prescription is ready as a **branded PDF** — print it or share it
+
+### Pharmacy & stores (Reception / Admin)
+- **Inventory** — add medicines, consumables and equipment with a reorder level
+- Dispense or receive stock with **± Stock** — counts can never go below zero
+- **Low stock** and **Expiring** items float to the top automatically
+- Doctors see stock too, so they never prescribe what you don't have
+
+### Printing intake forms (any role)
+- Open a patient → **🦷 Dental intake form** or **🩺 General intake form** —
+  a 2-page clinic-branded PDF, pre-filled with the patient's details, clinical
+  sections left blank for the doctor's pen. The clinic Admin decides which
+  template the clinic uses; doctors just print and fill.
 
 ### Running the clinic (Admin)
 - **Reports** — patients, busiest days, doctor performance; **Download PDF** to print or send to a partner
 - **Staff** — add doctors/receptionists; roles combine (a partner who practices = Admin + Doctor)
 - **Plan & billing** — see usage vs. your plan's limits; upgrade in one click
 - **Multiple clinics?** Click your clinic's name (top of sidebar) → *＋ New clinic* — each clinic is completely separate
+
+### Running the PLATFORM (Klivia owner only)
+Sign in with a platform-admin email (configured on the server) and a
+**Platform** item appears in the sidebar:
+- Every clinic with its plan, trial state, staff & patient counts
+- **Change plan** after a manual UPI/bank payment lands (Razorpay later)
+- **Suspend** a clinic that stopped paying — sign-in is blocked for its whole
+  team within the hour, nothing is deleted; **Re-activate** restores it
 
 ## Notifications & reminders 🔔
 

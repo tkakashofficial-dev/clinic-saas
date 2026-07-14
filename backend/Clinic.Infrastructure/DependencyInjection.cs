@@ -39,7 +39,9 @@ public static class DependencyInjection
 
         services.Configure<EmailSettings>(configuration.GetSection("Email"));
         services.Configure<FrontendSettings>(configuration.GetSection("Frontend"));
+        services.Configure<PlatformSettings>(configuration.GetSection("Platform"));
         services.AddScoped<IEmailSender, SmtpEmailSender>();
+        services.AddScoped<Clinic.Application.Features.Platform.Services.IPlatformService, PlatformService>();
 
         services.AddScoped<JwtTokenGenerator>();
         services.AddScoped<IAuthService, AuthService>();
@@ -50,6 +52,7 @@ public static class DependencyInjection
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IReportsService, ReportsService>();
         services.AddScoped<Clinic.Application.Features.Billing.Services.IBillingService, BillingService>();
+        services.AddScoped<Clinic.Application.Features.Inventory.Services.IInventoryService, InventoryService>();
         return services;
     }
 }

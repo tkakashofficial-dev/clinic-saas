@@ -1,0 +1,123 @@
+<header class="page-header">
+  <div>
+    <h1>Platform</h1>
+    <p class="sub">Every clinic on Klivia — plans, trials and usage</p>
+  </div>
+</header>
+
+@if (notice()) {
+  <div class="alert-success" style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
+    <span>{{ notice() }}</span>
+    <button type="button" class="btn btn-ghost" style="padding:2px 8px;" (click)="notice.set('')" aria-label="Dismiss">✕</button>
+  </div>
+}
+@if (error()) {
+  <div class="alert-error">{{ error() }}</div>
+}
+
+<!-- Business-at-a-glance strip -->
+<div class="stat-strip">
+  <div class="stat-card">
+    <span class="stat-value">{{ totalClinics() }}</span>
+    <span class="stat-label">Clinics</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value">{{ activeClinics() }}</span>
+    <span class="stat-label">Active</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-value">{{ trialClinics() }}</span>
+    <span class="stat-label">On trial</span>
+  </div>
+  <div class="stat-card highlight">
+    <span class="stat-value">{{ paidClinics() }}</span>
+    <span class="stat-label">Paying</span>
+  </div>
+</div>
+
+<p class="muted payment-note">
+  💡 Payments are collected manually for now (UPI / bank transfer). Once the money
+  lands, set the clinic's plan here. Razorpay checkout comes later.
+</p>
+
+<section class="card">
+  @if (loading()) {
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
+  } @else if (tenants().length === 0) {
+    <div class="empty-state">
+      <h3>No clinics yet</h3>
+      <p>New sign-ups will appear here.</p>
+    </div>
+  } @else {
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Clinic</th>
+            <th>Plan</th>
+            <th>Status</th>
+            <th>Staff</th>
+            <th>Patients</th>
+            <th>Joined</th>
+            <th style="text-align:right"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (tenant of tenants(); track tenant.tenantId) {
+            <tr [class.row-suspended]="!tenant.isActive">
+              <td class="cell-main">{{ tenant.name }}</td>
+              <td>
+                <div class="plan-cell">
+                  <button type="button" class="filter-chip"
+                          [disabled]="busy() === tenant.tenantId"
+                          (click)="togglePlanMenu(tenant)"
+                          title="Change plan (after payment is confirmed)">
+                    {{ tenant.plan }} ▾
+                  </button>
+                  @if (planMenuFor() === tenant.tenantId) {
+                    <div class="plan-menu">
+                      @for (plan of plans; track plan) {
+                        <button type="button" class="plan-option"
+                                [class.current]="plan === tenant.plan"
+                                (click)="changePlan(tenant, plan)">
+                          {{ plan }}
+                          @if (plan === tenant.plan) { <span>✓</span> }
+                        </button>
+                      }
+                    </div>
+                  }
+                  @if (tenant.isInTrial) {
+                    <span class="chip chip-scheduled" title="Trial — full Clinic features until {{ tenant.trialEndsAt | date: 'd MMM y' }}">
+                      Trial
+                    </span>
+                  }
+                </div>
+              </td>
+              <td>
+                <span class="chip" [class.chip-completed]="tenant.isActive" [class.chip-cancelled]="!tenant.isActive">
+                  {{ tenant.isActive ? 'Active' : 'Suspended' }}
+                </span>
+              </td>
+              <td>{{ tenant.staffCount }}</td>
+              <td>{{ tenant.patientCount }}</td>
+              <td class="muted">{{ tenant.createdAt | date: 'd MMM y' }}</td>
+              <td style="text-align:right">
+                <button type="button" class="btn btn-ghost"
+                        [class.danger-text]="tenant.isActive"
+                        [disabled]="busy() === tenant.tenantId"
+                        (click)="toggleActive(tenant)"
+                        [title]="tenant.isActive
+                          ? 'Blocks sign-in for everyone at this clinic. Data is kept.'
+                          : 'Restores sign-in for this clinic.'">
+                  {{ busy() === tenant.tenantId ? 'Saving…' : tenant.isActive ? 'Suspend' : 'Re-activate' }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

@@ -29,6 +29,8 @@ public class PrescriptionPdfItem
 /// <summary>
 /// Renders prescriptions with QuestPDF using the product's design tokens
 /// (see docs/design/design-system.md) so the printout matches the brand.
+/// A prescription is the artifact patients carry to the pharmacy and keep at
+/// home — it IS the clinic's business card, so it must look premium.
 /// </summary>
 public static class PrescriptionPdfGenerator
 {
@@ -42,8 +44,10 @@ public static class PrescriptionPdfGenerator
     // Brand tokens from the design system
     private const string Ink = "#0C2B23";
     private const string Teal = "#008465";
+    private const string TealSoft = "#E7F5F0";
     private const string Border = "#E2EDE8";
     private const string Muted = "#5B6F68";
+    private const string Zebra = "#F7FBF9";
 
     public static byte[] Generate(PrescriptionPdfData data)
     {
@@ -52,64 +56,70 @@ public static class PrescriptionPdfGenerator
             container.Page(page =>
             {
                 page.Size(PageSizes.A4);
-                page.Margin(40);
+                page.Margin(0);
                 page.DefaultTextStyle(t => t.FontSize(10).FontColor(Ink));
 
-                page.Header().Column(header =>
+                // Full-bleed ink header band — the "premium letterhead" moment
+                page.Header().Background(Ink).PaddingHorizontal(40).PaddingVertical(22).Row(row =>
                 {
-                    header.Item().Row(row =>
+                    row.RelativeItem().Column(col =>
                     {
-                        row.RelativeItem().Column(col =>
+                        col.Item().Row(brand =>
                         {
-                            col.Item().Text(data.ClinicName)
-                                .FontSize(20).SemiBold().FontColor(Ink);
-                            col.Item().Text("Prescription")
-                                .FontSize(11).FontColor(Teal).SemiBold();
+                            brand.AutoItem().Width(22).Height(22).Background(Teal)
+                                .AlignCenter().AlignMiddle()
+                                .Text("+").FontSize(15).SemiBold().FontColor(Colors.White);
+                            brand.AutoItem().PaddingLeft(8).AlignMiddle()
+                                .Text(data.ClinicName).FontSize(18).SemiBold().FontColor(Colors.White);
                         });
-                        row.ConstantItem(160).AlignRight().Column(col =>
-                        {
-                            col.Item().Text($"Date: {data.IssuedAt:dd MMM yyyy}").FontColor(Muted);
-                            col.Item().Text($"Doctor: {data.DoctorName}").FontColor(Muted);
-                        });
+                        col.Item().PaddingTop(4).Text("MEDICAL PRESCRIPTION")
+                            .FontSize(8).SemiBold().FontColor("#7FC8B4").LetterSpacing(0.2f);
                     });
-                    header.Item().PaddingTop(12).LineHorizontal(2).LineColor(Teal);
+                    row.ConstantItem(170).AlignRight().AlignMiddle().Column(col =>
+                    {
+                        col.Item().AlignRight().Text(data.DoctorName)
+                            .FontSize(11).SemiBold().FontColor(Colors.White);
+                        col.Item().AlignRight().Text($"{data.IssuedAt:dd MMM yyyy}")
+                            .FontSize(9).FontColor("#9DBAB1");
+                    });
                 });
 
-                page.Content().PaddingVertical(16).Column(content =>
+                page.Content().PaddingHorizontal(40).PaddingVertical(20).Column(content =>
                 {
-                    // Patient block
-                    content.Item().Background("#F4FAF7").Padding(12).Row(row =>
+                    // Patient chips row
+                    content.Item().Row(row =>
                     {
-                        row.RelativeItem().Column(col =>
+                        void Chip(RowDescriptor r, string label, string value, bool wide = false)
                         {
-                            col.Item().Text("PATIENT").FontSize(8).FontColor(Muted).SemiBold();
-                            col.Item().Text(data.PatientName).FontSize(12).SemiBold();
-                        });
-                        row.RelativeItem().Column(col =>
-                        {
-                            col.Item().Text("PHONE").FontSize(8).FontColor(Muted).SemiBold();
-                            col.Item().Text(data.PatientPhone);
-                        });
-                        if (data.PatientDateOfBirth.HasValue)
-                        {
-                            row.RelativeItem().Column(col =>
-                            {
-                                col.Item().Text("DATE OF BIRTH").FontSize(8).FontColor(Muted).SemiBold();
-                                col.Item().Text($"{data.PatientDateOfBirth:dd MMM yyyy}");
-                            });
+                            var item = wide ? r.RelativeItem(2) : r.RelativeItem();
+                            item.PaddingRight(8).Element(e => e
+                                .Background(TealSoft).Padding(10).Column(col =>
+                                {
+                                    col.Item().Text(label).FontSize(7.5f).SemiBold().FontColor(Teal);
+                                    col.Item().PaddingTop(2).Text(value).FontSize(10.5f).SemiBold();
+                                }));
                         }
+
+                        Chip(row, "PATIENT", data.PatientName, wide: true);
+                        Chip(row, "PHONE", data.PatientPhone);
+                        Chip(row, "DATE OF BIRTH",
+                            data.PatientDateOfBirth.HasValue
+                                ? $"{data.PatientDateOfBirth:dd MMM yyyy}" : "—");
                     });
 
-                    // Diagnosis
-                    content.Item().PaddingTop(16).Text("Diagnosis")
-                        .FontSize(11).SemiBold().FontColor(Teal);
-                    content.Item().PaddingTop(4).Text(data.Diagnosis);
+                    // ℞ + diagnosis
+                    content.Item().PaddingTop(18).Row(row =>
+                    {
+                        row.ConstantItem(34).Text("℞").FontSize(26).SemiBold().FontColor(Teal);
+                        row.RelativeItem().PaddingTop(4).Column(col =>
+                        {
+                            col.Item().Text("DIAGNOSIS").FontSize(7.5f).SemiBold().FontColor(Muted);
+                            col.Item().PaddingTop(2).Text(data.Diagnosis).FontSize(11.5f).SemiBold();
+                        });
+                    });
 
-                    // Medicines table
-                    content.Item().PaddingTop(16).Text("Medicines")
-                        .FontSize(11).SemiBold().FontColor(Teal);
-
-                    content.Item().PaddingTop(6).Table(table =>
+                    // Medicines table — teal header band, zebra rows
+                    content.Item().PaddingTop(14).Table(table =>
                     {
                         table.ColumnsDefinition(columns =>
                         {
@@ -123,50 +133,61 @@ public static class PrescriptionPdfGenerator
 
                         table.Header(h =>
                         {
-                            foreach (var title in new[] { "#", "Medicine", "Dosage", "Frequency", "Duration", "Instructions" })
-                                h.Cell().BorderBottom(1).BorderColor(Ink).PaddingVertical(4)
-                                    .Text(title).FontSize(8).SemiBold().FontColor(Muted);
+                            foreach (var title in new[] { "#", "MEDICINE", "DOSAGE", "FREQUENCY", "DURATION", "INSTRUCTIONS" })
+                                h.Cell().Background(Teal).PaddingVertical(7).PaddingHorizontal(6)
+                                    .Text(title).FontSize(7.5f).SemiBold().FontColor(Colors.White);
                         });
 
-                        var index = 1;
+                        var index = 0;
                         foreach (var item in data.Items)
                         {
-                            table.Cell().BorderBottom(1).BorderColor(Border).PaddingVertical(6)
-                                .Text(index++.ToString()).FontColor(Muted);
-                            table.Cell().BorderBottom(1).BorderColor(Border).PaddingVertical(6)
-                                .Text(item.MedicineName).SemiBold();
-                            table.Cell().BorderBottom(1).BorderColor(Border).PaddingVertical(6)
-                                .Text(item.Dosage ?? "—");
-                            table.Cell().BorderBottom(1).BorderColor(Border).PaddingVertical(6)
-                                .Text(item.Frequency ?? "—");
-                            table.Cell().BorderBottom(1).BorderColor(Border).PaddingVertical(6)
-                                .Text(item.DurationDays.HasValue ? $"{item.DurationDays} days" : "—");
-                            table.Cell().BorderBottom(1).BorderColor(Border).PaddingVertical(6)
-                                .Text(item.Instructions ?? "—");
+                            var bg = index % 2 == 1 ? Zebra : "#FFFFFF";
+                            index++;
+
+                            IContainer Cell() => table.Cell().Background(bg)
+                                .BorderBottom(1).BorderColor(Border)
+                                .PaddingVertical(8).PaddingHorizontal(6);
+
+                            Cell().Text(index.ToString()).FontColor(Muted);
+                            Cell().Text(item.MedicineName).SemiBold();
+                            Cell().Text(item.Dosage ?? "—");
+                            Cell().Text(item.Frequency ?? "—");
+                            Cell().Text(item.DurationDays.HasValue ? $"{item.DurationDays} days" : "—");
+                            Cell().Text(item.Instructions ?? "—").FontSize(9).FontColor(Muted);
                         }
                     });
 
                     if (!string.IsNullOrWhiteSpace(data.Notes))
                     {
-                        content.Item().PaddingTop(16).Text("Notes")
-                            .FontSize(11).SemiBold().FontColor(Teal);
-                        content.Item().PaddingTop(4).Text(data.Notes!);
+                        content.Item().PaddingTop(14)
+                            .BorderLeft(3).BorderColor(Teal).Background(TealSoft)
+                            .Padding(10).Column(col =>
+                            {
+                                col.Item().Text("DOCTOR'S NOTES").FontSize(7.5f).SemiBold().FontColor(Teal);
+                                col.Item().PaddingTop(3).Text(data.Notes!).FontSize(9.5f).LineHeight(1.4f);
+                            });
                     }
 
                     // Signature
-                    content.Item().PaddingTop(48).AlignRight().Column(col =>
+                    content.Item().PaddingTop(44).AlignRight().Column(col =>
                     {
                         col.Item().Width(180).LineHorizontal(1).LineColor(Ink);
                         col.Item().PaddingTop(4).AlignRight()
-                            .Text($"{data.DoctorName}").SemiBold();
+                            .Text(data.DoctorName).SemiBold();
                         col.Item().AlignRight()
-                            .Text("Signature").FontSize(8).FontColor(Muted);
+                            .Text("Signature & Stamp").FontSize(8).FontColor(Muted);
                     });
                 });
 
-                page.Footer().AlignCenter()
-                    .Text($"{data.ClinicName} — generated {DateTime.UtcNow:dd MMM yyyy HH:mm} UTC")
-                    .FontSize(8).FontColor(Muted);
+                // Footer band mirrors the header — closes the frame
+                page.Footer().Background(Ink).PaddingHorizontal(40).PaddingVertical(10).Row(row =>
+                {
+                    row.RelativeItem().Text(data.ClinicName)
+                        .FontSize(8).SemiBold().FontColor(Colors.White);
+                    row.RelativeItem().AlignRight()
+                        .Text($"Generated {DateTime.UtcNow:dd MMM yyyy} · powered by Klivia")
+                        .FontSize(8).FontColor("#9DBAB1");
+                });
             });
         }).GeneratePdf();
     }

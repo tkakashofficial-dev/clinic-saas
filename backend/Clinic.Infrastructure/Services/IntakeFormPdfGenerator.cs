@@ -6,12 +6,16 @@ using QuestPDF.Infrastructure;
 namespace Clinic.Infrastructure.Services;
 
 /// <summary>
-/// Printable patient intake form — modeled on the paper forms Kerala dental
-/// clinics use today (clinic header, patient block, chief complaint, disease
-/// checklist, histories, oral examination, findings table, informed consent).
+/// Printable patient intake form — modeled on the paper forms Kerala clinics
+/// use today (clinic header, patient block, chief complaint, disease
+/// checklist, histories, examination, findings table, informed consent).
 /// The registration data is PRE-FILLED; clinical sections stay blank for the
 /// doctor's pen. This is the paper→digital bridge clinics actually adopt.
-/// v2: per-clinic template selection · v3: full form builder (paid add-on).
+///
+/// Two seeded templates ship with every clinic:
+///   "dental"  — oral health status, ortho findings, intra/extra oral exam
+///   "general" — vitals strip, general + systemic examination
+/// v3: full form builder (paid add-on) lets Admins design their own.
 /// </summary>
 public static class IntakeFormPdfGenerator
 {
@@ -36,12 +40,25 @@ public static class IntakeFormPdfGenerator
     private static readonly string[] OralHealthLines =
         ["Calculus", "Stains", "Oral Hygiene", "Gingival health", "Periodontal health"];
 
-    private static readonly string[] ExamLines =
+    private static readonly string[] DentalExamLines =
         ["Face / Neck", "Lips / Cheeks", "Palate / Pharynx", "Tongue", "Floor / Frenum"];
 
+    private static readonly string[] GeneralExamLines =
+        ["Pallor / Icterus", "Cyanosis / Clubbing", "Lymph nodes", "Edema", "Built / Nutrition"];
+
+    private static readonly string[] SystemicExamLines =
+        ["CVS", "Respiratory", "Abdomen", "CNS", "Musculoskeletal"];
+
+    private static readonly string[] VitalsFields =
+        ["BP", "Pulse", "Temp", "SpO₂", "Weight", "Height"];
+
+    /// <param name="template">"dental" (default) or "general" — which seeded layout to print.</param>
     public static byte[] Generate(
-        string clinicName, string? clinicAddress, string? clinicPhone, PatientDto patient)
+        string clinicName, string? clinicAddress, string? clinicPhone, PatientDto patient,
+        string template = "dental")
     {
+        var isDental = !string.Equals(template, "general", StringComparison.OrdinalIgnoreCase);
+
         return Document.Create(container =>
         {
             // ---------- Page 1: patient info + clinical intake ----------
@@ -60,6 +77,9 @@ public static class IntakeFormPdfGenerator
                             col.Item().Text(clinicAddress).FontSize(8.5f).FontColor(Muted);
                         if (!string.IsNullOrWhiteSpace(clinicPhone))
                             col.Item().Text($"☎ {clinicPhone}").FontSize(8.5f).FontColor(Muted);
+                        col.Item().PaddingTop(2)
+                            .Text(isDental ? "Dental intake form" : "General intake form")
+                            .FontSize(8).SemiBold().FontColor(Teal);
                     });
                     row.ConstantItem(170).Column(col =>
                     {
@@ -91,6 +111,24 @@ public static class IntakeFormPdfGenerator
 
                     content.Item().PaddingTop(10).AlignCenter()
                         .Text("To be filled by the Doctor").FontSize(8.5f).SemiBold().FontColor(Muted);
+
+                    // General template: a vitals strip is the first thing a
+                    // physician records; dental clinics rarely chart these
+                    if (!isDental)
+                    {
+                        content.Item().PaddingTop(8).Border(1).BorderColor(Border).Padding(8).Row(r =>
+                        {
+                            foreach (var vital in VitalsFields)
+                            {
+                                r.RelativeItem().Row(line =>
+                                {
+                                    line.AutoItem().Text($"{vital}: ").FontSize(8.5f).SemiBold();
+                                    line.RelativeItem().PaddingTop(9).PaddingRight(6)
+                                        .LineHorizontal(0.7f).LineColor(Muted);
+                                });
+                            }
+                        });
+                    }
 
                     // Chief complaint
                     LabeledBox(content, "Chief Complaint", 44);
@@ -124,7 +162,8 @@ public static class IntakeFormPdfGenerator
                         {
                             c.Item().Text("Medical history").FontSize(8.5f).SemiBold();
                             c.Item().Height(52);
-                            c.Item().Text("Dental history").FontSize(8.5f).SemiBold();
+                            c.Item().Text(isDental ? "Dental history" : "Surgical / Family history")
+                                .FontSize(8.5f).SemiBold();
                             c.Item().Height(52);
                         });
                         r.ConstantItem(8);
@@ -135,18 +174,33 @@ public static class IntakeFormPdfGenerator
                         });
                     });
 
-                    // Oral health status + examinations
+                    // Examination row — the section that differs per specialty
                     content.Item().PaddingTop(8).Row(r =>
                     {
-                        r.RelativeItem().Border(1).BorderColor(Border).Padding(8).Column(c =>
+                        if (isDental)
                         {
-                            c.Item().Text("Ortho Findings (if any)").FontSize(8.5f).SemiBold();
-                            c.Item().Height(96);
-                        });
-                        r.ConstantItem(8);
-                        DottedSection(r.RelativeItem(), "Oral Health Status", OralHealthLines);
-                        r.ConstantItem(8);
-                        DottedSection(r.RelativeItem(), "Extra / Intra Oral Examination", ExamLines);
+                            r.RelativeItem().Border(1).BorderColor(Border).Padding(8).Column(c =>
+                            {
+                                c.Item().Text("Ortho Findings (if any)").FontSize(8.5f).SemiBold();
+                                c.Item().Height(96);
+                            });
+                            r.ConstantItem(8);
+                            DottedSection(r.RelativeItem(), "Oral Health Status", OralHealthLines);
+                            r.ConstantItem(8);
+                            DottedSection(r.RelativeItem(), "Extra / Intra Oral Examination", DentalExamLines);
+                        }
+                        else
+                        {
+                            r.RelativeItem().Border(1).BorderColor(Border).Padding(8).Column(c =>
+                            {
+                                c.Item().Text("Local Examination").FontSize(8.5f).SemiBold();
+                                c.Item().Height(96);
+                            });
+                            r.ConstantItem(8);
+                            DottedSection(r.RelativeItem(), "General Examination", GeneralExamLines);
+                            r.ConstantItem(8);
+                            DottedSection(r.RelativeItem(), "Systemic Examination", SystemicExamLines);
+                        }
                     });
                 });
 
@@ -165,7 +219,9 @@ public static class IntakeFormPdfGenerator
                 page.Content().Column(content =>
                 {
                     LabeledBox(content, "Investigations", 70);
-                    LabeledBox(content, "Previous Dental Treatment (if any, please specify)", 56);
+                    LabeledBox(content, isDental
+                        ? "Previous Dental Treatment (if any, please specify)"
+                        : "Previous Treatment / Hospitalisation (if any, please specify)", 56);
 
                     // Findings / treatment table
                     content.Item().PaddingTop(10).Table(table =>
@@ -197,7 +253,7 @@ public static class IntakeFormPdfGenerator
                         .Text("PATIENT TREATMENT INFORMED CONSENT").FontSize(10.5f).SemiBold();
                     content.Item().PaddingTop(6).Text(
                         "I have been fully informed of the nature of the procedures involved in the treatment " +
-                        "of my dental conditions, the procedures to be utilized, the risks and benefits of the " +
+                        $"of my {(isDental ? "dental" : "medical")} conditions, the procedures to be utilized, the risks and benefits of the " +
                         "treatment, the anesthesia selected, and the necessity of follow-up and self-care. The " +
                         "treatments have been decided in consultation with me after analysing the risks, " +
                         "benefits and the costs involved.").FontSize(8.5f).LineHeight(1.5f);

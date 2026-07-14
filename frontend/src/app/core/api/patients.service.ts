@@ -37,7 +37,11 @@ export class PatientsService {
     return this.http.get<PatientHistory>(`${this.baseUrl}/${id}/history`);
   }
 
-  downloadIntakeForm(id: string): Observable<Blob> {
-    return this.http.get(`${this.baseUrl}/${id}/intake-form`, { responseType: 'blob' });
+  /** template: 'dental' | 'general' — the two seeded intake-form designs. */
+  downloadIntakeForm(id: string, template: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${id}/intake-form`, {
+      params: { template },
+      responseType: 'blob',
+    });
   }
 }

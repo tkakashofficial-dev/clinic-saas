@@ -270,18 +270,40 @@
                 }
               </div>
               <div class="field">
-                <input class="input" formControlName="medicineName" placeholder="Medicine name (e.g. Amoxicillin)">
+                <input class="input" formControlName="medicineName"
+                       placeholder="Medicine name (e.g. Amoxicillin)"
+                       list="medicine-suggestions"
+                       (input)="onMedicineInput($any($event.target).value)">
               </div>
               <div class="form-row">
                 <input class="input" formControlName="dosage" placeholder="Dosage (500 mg)">
-                <input class="input" formControlName="frequency" placeholder="Frequency (3x daily)">
+                <input class="input" formControlName="frequency" placeholder="Frequency (1-0-1)">
+              </div>
+              <div class="rx-chips">
+                @for (preset of freqPresets; track preset) {
+                  <button type="button" class="rx-chip"
+                          (click)="setItemPreset($index, 'frequency', preset)"
+                          title="morning-noon-night">{{ preset }}</button>
+                }
               </div>
               <div class="form-row">
                 <input class="input" type="number" min="1" formControlName="durationDays" placeholder="Days">
-                <input class="input" formControlName="instructions" placeholder="Instructions (after meals)">
+                <input class="input" formControlName="instructions" placeholder="Instructions (after food)">
+              </div>
+              <div class="rx-chips">
+                @for (preset of instructionPresets; track preset) {
+                  <button type="button" class="rx-chip"
+                          (click)="setItemPreset($index, 'instructions', preset)">{{ preset }}</button>
+                }
               </div>
             </div>
           }
+          <!-- One shared datalist: suggestions come from THIS clinic's inventory -->
+          <datalist id="medicine-suggestions">
+            @for (name of medicineSuggestions(); track name) {
+              <option [value]="name"></option>
+            }
+          </datalist>
           <button type="button" class="btn btn-secondary" (click)="addItem()">+ Add medicine</button>
 
           <div class="field" style="margin-top: 12px;">

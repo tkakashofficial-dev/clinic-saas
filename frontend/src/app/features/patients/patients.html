@@ -107,13 +107,13 @@
       <div class="form-row">
         <div class="field">
           <label for="p-first">First name *</label>
-          <input id="p-first" class="input" formControlName="firstName" placeholder="John"
+          <input id="p-first" class="input" formControlName="firstName" placeholder="Rahul"
                  [class.invalid]="!!errorFor('firstName')">
           @if (errorFor('firstName')) { <span class="field-error">{{ errorFor('firstName') }}</span> }
         </div>
         <div class="field">
           <label for="p-last">Last name *</label>
-          <input id="p-last" class="input" formControlName="lastName" placeholder="Doe"
+          <input id="p-last" class="input" formControlName="lastName" placeholder="Nair"
                  [class.invalid]="!!errorFor('lastName')">
           @if (errorFor('lastName')) { <span class="field-error">{{ errorFor('lastName') }}</span> }
         </div>
@@ -121,7 +121,7 @@
 
       <div class="field">
         <label for="p-phone">Phone *</label>
-        <input id="p-phone" class="input" formControlName="phone" placeholder="+31 6 12345678"
+        <input id="p-phone" class="input" formControlName="phone" placeholder="+91 98765 43210"
                [class.invalid]="!!errorFor('phone')">
         @if (errorFor('phone')) { <span class="field-error">{{ errorFor('phone') }}</span> }
       </div>
@@ -139,14 +139,14 @@
 
       <div class="field">
         <label for="p-email">Email</label>
-        <input id="p-email" type="email" class="input" formControlName="email" placeholder="john@example.com"
+        <input id="p-email" type="email" class="input" formControlName="email" placeholder="rahul.nair@gmail.com"
                [class.invalid]="!!errorFor('email')">
         @if (errorFor('email')) { <span class="field-error">{{ errorFor('email') }}</span> }
       </div>
 
       <div class="field">
         <label for="p-address">Address</label>
-        <textarea id="p-address" class="input" formControlName="address" placeholder="Street, city"></textarea>
+        <textarea id="p-address" class="input" formControlName="address" placeholder="House / street, town, district"></textarea>
       </div>
     </form>
 
@@ -186,8 +186,15 @@
           @if (auth.hasRole('Admin', 'Receptionist')) {
             <button type="button" class="btn btn-secondary" (click)="editFromHistory()">✏️ Edit details</button>
           }
-          <button type="button" class="btn btn-secondary" (click)="printIntakeForm()" [disabled]="downloadingForm()">
-            🖨️ {{ downloadingForm() ? 'Preparing…' : 'Print intake form' }}
+          <button type="button" class="btn btn-secondary" (click)="printIntakeForm('dental')"
+                  [disabled]="downloadingForm() !== null"
+                  title="Pre-filled intake form with oral examination sections">
+            🦷 {{ downloadingForm() === 'dental' ? 'Preparing…' : 'Dental intake form' }}
+          </button>
+          <button type="button" class="btn btn-secondary" (click)="printIntakeForm('general')"
+                  [disabled]="downloadingForm() !== null"
+                  title="Pre-filled intake form with vitals and systemic examination">
+            🩺 {{ downloadingForm() === 'general' ? 'Preparing…' : 'General intake form' }}
           </button>
         </div>
 

@@ -29,8 +29,10 @@ public interface IPatientService
         Guid patientId,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Printable clinic-branded intake form, pre-filled with patient data.</summary>
+    /// <summary>Printable clinic-branded intake form, pre-filled with patient data.
+    /// Template: "dental" or "general" — seeded designs, Admin picks per print.</summary>
     Task<(byte[] Content, string FileName)> GetIntakeFormPdfAsync(
         Guid patientId,
+        string template = "dental",
         CancellationToken cancellationToken = default);
 }

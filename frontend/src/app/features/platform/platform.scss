@@ -1,0 +1,91 @@
+// Platform console — reuses global card/table/chip styles; only the
+// owner-specific bits live here.
+
+.stat-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.stat-card {
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e2ede8);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  &.highlight {
+    background: var(--teal-050, #e7f5f0);
+    border-color: var(--teal-500, #008465);
+  }
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 650;
+  color: var(--ink-900, #0c2b23);
+}
+
+.stat-label {
+  font-size: 12.5px;
+  color: var(--ink-500, #5b6f68);
+}
+
+.payment-note {
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.plan-cell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.plan-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 20;
+  min-width: 130px;
+  background: #fff;
+  border: 1px solid var(--border, #e2ede8);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(12, 43, 35, 0.14);
+  padding: 4px;
+}
+
+.plan-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  background: none;
+  border-radius: 7px;
+  font-size: 13.5px;
+  cursor: pointer;
+  color: var(--ink-900, #0c2b23);
+
+  &:hover {
+    background: var(--teal-050, #e7f5f0);
+  }
+
+  &.current {
+    font-weight: 600;
+    color: var(--teal-600, #008465);
+  }
+}
+
+.row-suspended {
+  opacity: 0.55;
+}
+
+.danger-text {
+  color: #b3261e;
+}
