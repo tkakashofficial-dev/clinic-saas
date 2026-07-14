@@ -3,6 +3,7 @@ using Clinic.Application.Features.Staff.DTOs;
 using Clinic.Domain.Constants;
 using Clinic.Infrastructure.Services;
 using Clinic.Tests.TestInfrastructure;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace Clinic.Tests;
@@ -67,6 +68,26 @@ public class StaffServiceTests : IDisposable
 
         await Assert.ThrowsAsync<BadRequestException>(
             () => CreateService().AddStaffAsync(ValidStaff("norole@clinic.com")));
+    }
+
+    [Fact]
+    public async Task AddStaff_WithoutPassword_CreatesInviteOnlyAccount()
+    {
+        // Invite-only: no temp password; the account works only via the
+        // emailed set-your-password link
+        var clinic = await _db.SeedTenantAsync("Clinic", "a@a.com");
+        _db.CurrentUser.ActAs(clinic.TenantId, clinic.TenantUserId);
+
+        var request = ValidStaff("invited@clinic.com", "Doctor");
+        request.Password = null;
+
+        var staff = await CreateService().AddStaffAsync(request);
+        Assert.NotEqual(Guid.Empty, staff.Id);
+
+        await using var context = _db.CreateContext();
+        var inviteTokens = await context.PasswordResetTokens
+            .CountAsync(t => t.SystemUserId == staff.SystemUserId && t.UsedAt == null);
+        Assert.Equal(1, inviteTokens); // the set-your-password invite exists
     }
 
     [Fact]

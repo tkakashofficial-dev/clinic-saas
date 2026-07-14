@@ -21,11 +21,12 @@ public class AddStaffRequestValidator : AbstractValidator<AddStaffRequest>
             .EmailAddress().WithMessage("Enter a valid email address.")
             .MaximumLength(256);
 
+        // Password is optional (invite-only flow) — but when given, it must be strong
         RuleFor(x => x.Password)
-            .NotEmpty().WithMessage("Password is required.")
             .MinimumLength(8).WithMessage("Password must be at least 8 characters.")
             .Matches("[a-zA-Z]").WithMessage("Password must contain a letter.")
-            .Matches("[0-9]").WithMessage("Password must contain a digit.");
+            .Matches("[0-9]").WithMessage("Password must contain a digit.")
+            .When(x => !string.IsNullOrWhiteSpace(x.Password));
 
         RuleFor(x => x.Roles)
             .NotEmpty().WithMessage("At least one role is required.");

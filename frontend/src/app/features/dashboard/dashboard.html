@@ -157,3 +157,7 @@
     </div>
   }
 </section>
+
+@if (showTour()) {
+  <app-onboarding-tour (closed)="dismissTour()" />
+}

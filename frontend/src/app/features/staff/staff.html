@@ -112,11 +112,31 @@
       </div>
 
       <div class="field">
-        <label for="s-password">Temporary password *</label>
-        <input id="s-password" type="password" class="input" formControlName="password"
-               placeholder="They can use this to sign in" [class.invalid]="!!errorFor('password')">
-        @if (errorFor('password')) { <span class="field-error">{{ errorFor('password') }}</span> }
+        <label>How should they get access? *</label>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="filter-chip" [class.active]="inviteMode()"
+                  (click)="setInviteMode(true)">📧 Invite by email</button>
+          <button type="button" class="filter-chip" [class.active]="!inviteMode()"
+                  (click)="setInviteMode(false)">🔑 Set temporary password</button>
+        </div>
+        @if (inviteMode()) {
+          <span class="muted" style="font-size:12.5px; margin-top:6px;">
+            They'll receive an email with a link to choose their own password (valid 7 days).
+          </span>
+        }
       </div>
+
+      @if (!inviteMode()) {
+        <div class="field">
+          <label for="s-password">Temporary password *</label>
+          <input id="s-password" type="password" class="input" formControlName="password"
+                 placeholder="They can use this to sign in" [class.invalid]="!!errorFor('password')">
+          @if (errorFor('password')) { <span class="field-error">{{ errorFor('password') }}</span> }
+          <span class="muted" style="font-size:12.5px; margin-top:4px;">
+            Tell them the password in person — they also get an email to set their own.
+          </span>
+        </div>
+      }
     </form>
 
     <div class="drawer-footer">

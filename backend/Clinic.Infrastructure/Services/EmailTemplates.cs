@@ -118,7 +118,8 @@ public static class EmailTemplates
             "You're on a 14-day free trial with full features — no payment details needed.");
 
     public static string StaffInvite(
-        string firstName, string clinicName, string roles, string setPasswordUrl) =>
+        string firstName, string clinicName, string roles, string setPasswordUrl,
+        bool hasTempPassword) =>
         Branded(
             $"You've been added to {Safe(clinicName)} 👋",
             $"""
@@ -132,7 +133,9 @@ public static class EmailTemplates
             """,
             "Set your password",
             setPasswordUrl,
-            "This link is valid for 7 days. You can also sign in with the temporary password your admin gave you, and change it later.");
+            hasTempPassword
+                ? "This link is valid for 7 days. You can also sign in with the temporary password your admin gave you, and change it later."
+                : "This link is valid for 7 days. If it expires, ask your clinic admin to re-invite you.");
 
     public static string PasswordReset(string firstName, string resetUrl, int validMinutes) =>
         Branded(

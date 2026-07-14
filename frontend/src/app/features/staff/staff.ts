@@ -29,8 +29,27 @@ export class Staff {
     firstName: ['', Validators.required],
     lastName: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(8)]],
+    password: [''], // only required in temp-password mode (see setInviteMode)
   });
+
+  /**
+   * Two onboarding methods, because clinics differ:
+   * - Invite by email (default): staff set their own password via the link
+   * - Temporary password: for staff who don't use email — admin hands it over
+   */
+  readonly inviteMode = signal(true);
+
+  setInviteMode(invite: boolean): void {
+    this.inviteMode.set(invite);
+    const password = this.form.controls.password;
+    if (invite) {
+      password.clearValidators();
+      password.setValue('');
+    } else {
+      password.setValidators([Validators.required, Validators.minLength(8)]);
+    }
+    password.updateValueAndValidity();
+  }
 
   // Roles combine: a partner who practices = Admin + Doctor
   readonly allRoles = ['Doctor', 'Receptionist', 'Admin'];
@@ -60,8 +79,10 @@ export class Staff {
   openDrawer(): void {
     this.form.reset();
     this.selectedRoles.set(['Doctor']);
+    this.setInviteMode(true);
     this.formError.set('');
     this.fieldErrors.set({});
+    this.upgradeNeeded.set(false);
     this.drawerOpen.set(true);
   }
 
@@ -83,7 +104,12 @@ export class Staff {
     this.formError.set('');
     this.fieldErrors.set({});
 
-    this.api.add({ ...this.form.getRawValue(), roles: this.selectedRoles() }).subscribe({
+    const value = this.form.getRawValue();
+    this.api.add({
+      ...value,
+      password: this.inviteMode() ? '' : value.password, // empty = invite-only
+      roles: this.selectedRoles(),
+    }).subscribe({
       next: () => {
         this.saving.set(false);
         this.drawerOpen.set(false);

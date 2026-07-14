@@ -8,6 +8,7 @@ import { ReportsService } from '../../core/api/reports.service';
 import { StaffService } from '../../core/api/staff.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { AppointmentDto, PracticeOverview } from '../../core/models/api.models';
+import { OnboardingTour } from '../../shared/ui/onboarding-tour';
 
 /**
  * The dashboard adapts to WHO is looking at it:
@@ -17,7 +18,7 @@ import { AppointmentDto, PracticeOverview } from '../../core/models/api.models';
  */
 @Component({
   selector: 'app-dashboard',
-  imports: [DatePipe, RouterLink],
+  imports: [DatePipe, RouterLink, OnboardingTour],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })
@@ -95,6 +96,9 @@ export class Dashboard {
     }
   });
 
+  /** First-visit tour — shown once per clinic (flag in localStorage), Admins only. */
+  readonly showTour = signal(false);
+
   constructor() {
     this.load();
 
@@ -104,6 +108,16 @@ export class Dashboard {
         next: (overview) => this.overview.set(overview),
       });
     }
+
+    const tourKey = `klivia.tour.${this.auth.currentTenantId()}`;
+    if (this.auth.hasRole('Admin') && !localStorage.getItem(tourKey)) {
+      this.showTour.set(true);
+    }
+  }
+
+  dismissTour(): void {
+    localStorage.setItem(`klivia.tour.${this.auth.currentTenantId()}`, 'done');
+    this.showTour.set(false);
   }
 
   load(): void {

@@ -4,7 +4,7 @@
 
     <div class="brand-message">
       <h1>Set up your clinic in <em>two minutes</em>.</h1>
-      <p>Create your workspace, invite your team, and run your practice from one calm dashboard.</p>
+      <p>Create your account, name your clinic, and run your practice from one calm dashboard.</p>
     </div>
 
     <div class="brand-points">
@@ -14,7 +14,7 @@
       </span>
       <span>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        Add doctors & receptionists right after
+        Invite doctors & receptionists by email
       </span>
       <span>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -25,73 +25,88 @@
 
   <main class="auth-form-side">
     <div class="auth-card">
-      <h2>Register your clinic</h2>
-      <p class="sub">One-time setup — after this you just sign in.</p>
+
+      <!-- Step indicator -->
+      <div class="steps-indicator">
+        <span class="step-pill" [class.active]="step() === 1" [class.done]="step() === 2">
+          @if (step() === 2) {
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          } @else { 1 }
+          Your account
+        </span>
+        <span class="step-line" [class.done]="step() === 2"></span>
+        <span class="step-pill" [class.active]="step() === 2">2 Your clinic</span>
+      </div>
 
       @if (error()) {
         <div class="alert-error">{{ error() }}</div>
       }
 
       <form [formGroup]="form" (ngSubmit)="submit()">
-        <div class="field">
-          <label for="clinicName">Clinic name</label>
-          <input id="clinicName" class="input" formControlName="clinicName"
-                 placeholder="Bright Smiles Dental" [class.invalid]="!!errorFor('clinicName')">
-          @if (errorFor('clinicName')) {
-            <span class="field-error">{{ errorFor('clinicName') }}</span>
-          }
-        </div>
+        @if (step() === 1) {
+          <h2>Create your account</h2>
+          <p class="sub">This is how you'll sign in — your clinic comes next.</p>
 
-        <div class="form-row">
-          <div class="field">
-            <label for="firstName">First name</label>
-            <input id="firstName" class="input" formControlName="firstName"
-                   placeholder="Aisha" [class.invalid]="!!errorFor('firstName')">
-            @if (errorFor('firstName')) {
-              <span class="field-error">{{ errorFor('firstName') }}</span>
-            }
+          <div class="form-row">
+            <div class="field">
+              <label for="firstName">First name</label>
+              <input id="firstName" class="input" formControlName="firstName"
+                     placeholder="Aisha" [class.invalid]="!!errorFor('firstName')">
+              @if (errorFor('firstName')) { <span class="field-error">{{ errorFor('firstName') }}</span> }
+            </div>
+            <div class="field">
+              <label for="lastName">Last name</label>
+              <input id="lastName" class="input" formControlName="lastName"
+                     placeholder="Rahman" [class.invalid]="!!errorFor('lastName')">
+              @if (errorFor('lastName')) { <span class="field-error">{{ errorFor('lastName') }}</span> }
+            </div>
           </div>
+
           <div class="field">
-            <label for="lastName">Last name</label>
-            <input id="lastName" class="input" formControlName="lastName"
-                   placeholder="Rahman" [class.invalid]="!!errorFor('lastName')">
-            @if (errorFor('lastName')) {
-              <span class="field-error">{{ errorFor('lastName') }}</span>
-            }
+            <label for="email">Work email</label>
+            <input id="email" type="email" class="input" formControlName="email"
+                   placeholder="you@clinic.com" [class.invalid]="!!errorFor('email')" autocomplete="email">
+            @if (errorFor('email')) { <span class="field-error">{{ errorFor('email') }}</span> }
           </div>
-        </div>
 
-        <div class="field">
-          <label for="email">Work email</label>
-          <input id="email" type="email" class="input" formControlName="email"
-                 placeholder="you@clinic.com" [class.invalid]="!!errorFor('email')" autocomplete="email">
-          @if (errorFor('email')) {
-            <span class="field-error">{{ errorFor('email') }}</span>
-          }
-        </div>
+          <div class="field">
+            <label for="password">Password</label>
+            <input id="password" type="password" class="input" formControlName="password"
+                   placeholder="Min. 8 characters, letters + digits"
+                   [class.invalid]="!!errorFor('password')" autocomplete="new-password">
+            @if (errorFor('password')) { <span class="field-error">{{ errorFor('password') }}</span> }
+          </div>
 
-        <div class="field">
-          <label for="password">Password</label>
-          <input id="password" type="password" class="input" formControlName="password"
-                 placeholder="Min. 8 characters, letters + digits"
-                 [class.invalid]="!!errorFor('password')" autocomplete="new-password">
-          @if (errorFor('password')) {
-            <span class="field-error">{{ errorFor('password') }}</span>
-          }
-        </div>
+          <button type="button" class="btn btn-primary" (click)="continueToClinic()">
+            Continue →
+          </button>
+        } @else {
+          <h2>Name your clinic</h2>
+          <p class="sub">You can open more clinics and invite your team after this.</p>
 
-        <label class="doctor-toggle">
-          <input type="checkbox" formControlName="ownerIsDoctor">
-          <span>
-            <strong>I'm a practicing doctor at this clinic</strong>
-            <small>You'll appear in the doctors list so patients can be booked to you.
-            Untick this if you own the clinic but don't treat patients.</small>
-          </span>
-        </label>
+          <div class="field">
+            <label for="clinicName">Clinic name</label>
+            <input id="clinicName" class="input" formControlName="clinicName"
+                   placeholder="Bright Smiles Dental" [class.invalid]="!!errorFor('clinicName')">
+            @if (errorFor('clinicName')) { <span class="field-error">{{ errorFor('clinicName') }}</span> }
+          </div>
 
-        <button type="submit" class="btn btn-primary" [disabled]="loading()">
-          {{ loading() ? 'Creating your clinic…' : 'Register clinic' }}
-        </button>
+          <label class="doctor-toggle">
+            <input type="checkbox" formControlName="ownerIsDoctor">
+            <span>
+              <strong>I'm a practicing doctor at this clinic</strong>
+              <small>You'll appear in the doctors list so patients can be booked to you.
+              Untick this if you own the clinic but don't treat patients.</small>
+            </span>
+          </label>
+
+          <div class="wizard-actions">
+            <button type="button" class="btn btn-secondary" (click)="back()">← Back</button>
+            <button type="submit" class="btn btn-primary" [disabled]="loading()">
+              {{ loading() ? 'Creating your clinic…' : 'Create my clinic' }}
+            </button>
+          </div>
+        }
       </form>
 
       <p class="switch">

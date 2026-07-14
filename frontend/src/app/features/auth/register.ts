@@ -21,6 +21,26 @@ export class Register {
   /** Non-empty while the clinic is being provisioned — drives the overlay. */
   readonly provisioningName = signal('');
 
+  /**
+   * Two calm steps instead of one wall of fields:
+   * 1. YOU (account) → 2. YOUR CLINIC. One API call at the end.
+   */
+  readonly step = signal<1 | 2>(1);
+
+  continueToClinic(): void {
+    const account = ['firstName', 'lastName', 'email', 'password'] as const;
+    const allValid = account.every((name) => {
+      const control = this.form.controls[name];
+      control.markAsTouched();
+      return control.valid;
+    });
+    if (allValid) this.step.set(2);
+  }
+
+  back(): void {
+    this.step.set(1);
+  }
+
   readonly form = this.fb.nonNullable.group({
     clinicName: ['', Validators.required],
     firstName: ['', Validators.required],

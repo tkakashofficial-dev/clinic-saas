@@ -89,8 +89,12 @@ public class StaffService : IStaffService
         if (emailExists)
             throw new ConflictException("Email is already registered.");
 
-        // 2. Create SystemUser
-        var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+        // 2. Create SystemUser. Invite-only (no password given): hash an
+        //    unguessable random secret — the account is unusable until the
+        //    staff member sets their own password via the emailed link.
+        var inviteOnly = string.IsNullOrWhiteSpace(request.Password);
+        var passwordHash = BCrypt.Net.BCrypt.HashPassword(
+            inviteOnly ? SecurityTokens.CreateUrlSafe() : request.Password!);
         var systemUser = new SystemUser(
             request.Email,
             passwordHash,
@@ -147,7 +151,8 @@ public class StaffService : IStaffService
                 request.FirstName,
                 clinicName,
                 string.Join(" & ", roleNames),
-                inviteLink),
+                inviteLink,
+                hasTempPassword: !inviteOnly),
             CancellationToken.None);
 
         return new StaffDto
