@@ -56,6 +56,9 @@ public class PlatformServiceTests : IDisposable
         Assert.Equal(0, smile.PatientCount);
         Assert.True(smile.IsActive);
         Assert.Equal(clinicA.TenantId, smile.TenantId);
+        // Payment collection needs a person to call — the founding admin
+        Assert.Equal("a@clinic.com", smile.OwnerEmail);
+        Assert.Equal("Test Admin", smile.OwnerName);
     }
 
     [Fact]

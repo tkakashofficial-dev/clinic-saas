@@ -63,8 +63,8 @@
       <div class="card card-pad plan-card" [class.popular]="plan.popular" [class.current]="isCurrent(plan)">
         @if (plan.popular && !isCurrent(plan)) { <span class="pop-badge">Most popular</span> }
         <h3>{{ plan.key }}</h3>
-        <div class="plan-price">{{ monthlyEquivalentLabel(plan.yearlyPrice) }}<span>/month</span></div>
-        <div class="plan-subprice">Billed yearly at {{ priceLabel(plan.yearlyPrice) }}</div>
+        <div class="plan-price">{{ priceLabel(plan.monthlyPrice) }}<span>/month</span></div>
+        <div class="plan-subprice">or {{ priceLabel(plan.yearlyPrice) }}/year — 2 months free</div>
         <div class="plan-scale">{{ plan.scale }}</div>
         <ul class="plan-list">
           @for (feature of plan.features; track feature) {

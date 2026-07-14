@@ -57,6 +57,24 @@ public class PlatformService : IPlatformService
             .Select(g => new { g.Key, Count = g.Count() })
             .ToDictionaryAsync(g => g.Key, g => g.Count, cancellationToken);
 
+        // Payment collection is a phone call today — surface WHO to call:
+        // the clinic's first (oldest) member is its founding Admin
+        var owners = (await _context.TenantUsers
+            .IgnoreQueryFilters([QueryFilters.Tenant])
+            .AsNoTracking()
+            .GroupBy(tu => tu.TenantId)
+            .Select(g => g
+                .OrderBy(tu => tu.CreatedAt)   // oldest member = founding Admin
+                .Select(tu => new
+                {
+                    tu.TenantId,
+                    OwnerName = tu.SystemUser.FirstName + " " + tu.SystemUser.LastName,
+                    tu.SystemUser.Email
+                })
+                .First())
+            .ToListAsync(cancellationToken))
+            .ToDictionary(x => x.TenantId);
+
         return tenants.Select(t => new PlatformTenantDto
         {
             TenantId = t.Id,
@@ -67,6 +85,9 @@ public class PlatformService : IPlatformService
             IsActive = t.IsActive,
             StaffCount = staffCounts.GetValueOrDefault(t.Id),
             PatientCount = patientCounts.GetValueOrDefault(t.Id),
+            OwnerName = owners.TryGetValue(t.Id, out var owner) ? owner.OwnerName : null,
+            OwnerEmail = owners.TryGetValue(t.Id, out var contact) ? contact.Email : null,
+            ClinicPhone = t.Phone,
             CreatedAt = t.CreatedAt
         }).ToList();
     }

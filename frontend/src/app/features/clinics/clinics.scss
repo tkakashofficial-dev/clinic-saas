@@ -1,0 +1,68 @@
+.clinics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.clinic-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 20px;
+
+  &.current { border-color: var(--color-primary-400); }
+
+  .btn { margin-top: auto; }
+}
+
+.clinic-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.clinic-card-avatar {
+  width: 46px; height: 46px;
+  border-radius: 13px;
+  background: var(--color-primary-500);
+  color: #06362B;
+  font: 700 16px var(--font-heading);
+  display: flex; align-items: center; justify-content: center;
+  text-transform: uppercase;
+}
+
+.clinic-card-name {
+  font-size: 16px;
+  font-weight: 750;
+}
+
+.clinic-card-sub {
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+  margin-bottom: 10px;
+}
+
+.add-card {
+  border-style: dashed;
+  border-width: 1.5px;
+  border-color: var(--color-primary-400);
+  background: var(--color-bg);
+  cursor: pointer;
+  text-align: left;
+  transition: all .15s ease;
+
+  &:hover {
+    background: var(--color-primary-50);
+    border-color: var(--color-primary-500);
+  }
+
+  .add-icon {
+    width: 46px; height: 46px;
+    border-radius: 13px;
+    background: var(--color-primary-100);
+    color: var(--color-primary-700);
+    display: flex; align-items: center; justify-content: center;
+  }
+}

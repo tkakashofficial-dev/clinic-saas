@@ -62,11 +62,11 @@ export class Landing {
   }));
 
   priceOf(plan: PlanPricing): string {
-    return formatInr(plan.yearlyPrice);
+    return formatInr(plan.monthlyPrice);
   }
 
-  monthlyEquivalentOf(plan: PlanPricing): string {
-    return formatInr(monthlyEquivalent(plan.yearlyPrice));
+  yearlyOf(plan: PlanPricing): string {
+    return formatInr(plan.yearlyPrice);
   }
 
   readonly faqs = [

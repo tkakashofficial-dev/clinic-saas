@@ -16,11 +16,33 @@
 }
 
 /* History drawer */
+/* Whole row is a target — no hunting for the invisible click zone */
+.patient-row {
+  cursor: pointer;
+  transition: background .12s ease;
+
+  &:hover { background: var(--color-primary-50); }
+}
+
 .history-actions {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.intake-hint {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--color-text-muted);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-primary-400);
+  border-radius: 10px;
+  padding: 10px 12px;
   margin-bottom: 20px;
+
+  strong { color: var(--color-text); font-weight: 650; }
 }
 
 .history-title {

@@ -48,6 +48,9 @@
               </span>
             </button>
           }
+          <a routerLink="/clinics" class="switcher-manage" (click)="switcherOpen.set(false)">
+            Manage all clinics →
+          </a>
         </div>
       }
     </div>
@@ -243,7 +246,15 @@
 
     <div class="drawer-body">
       @if (newClinicError()) {
-        <div class="alert-error">{{ newClinicError() }}</div>
+        <div class="alert-error">
+          {{ newClinicError() }}
+          @if (newClinicUpgradeNeeded()) {
+            <a routerLink="/billing" class="btn btn-primary"
+               style="margin-top:10px; width:100%;" (click)="newClinicOpen.set(false)">
+              See the Growth plan →
+            </a>
+          }
+        </div>
       }
       <p class="muted" style="margin-bottom:16px">
         You'll be the Admin of the new clinic. Its patients, staff and appointments

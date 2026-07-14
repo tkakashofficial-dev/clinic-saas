@@ -82,6 +82,27 @@
   }
 }
 
+.contact-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+
+  .contact-name { font-weight: 600; font-size: 13px; }
+
+  .contact-line {
+    font-size: 12px;
+    color: var(--ink-500, #5b6f68);
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 210px;
+
+    &:hover { color: var(--teal-600, #008465); text-decoration: underline; }
+  }
+}
+
 .row-suspended {
   opacity: 0.55;
 }

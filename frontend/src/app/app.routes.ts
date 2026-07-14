@@ -60,6 +60,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/inventory/inventory').then((m) => m.Inventory),
       },
       {
+        // "My clinics" — structure view of every membership + open new
+        path: 'clinics',
+        loadComponent: () => import('./features/clinics/clinics').then((m) => m.Clinics),
+      },
+      {
         path: 'reports',
         canActivate: [roleGuard],
         data: { roles: ['Admin'] },

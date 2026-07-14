@@ -36,8 +36,10 @@
 </div>
 
 <p class="muted payment-note">
-  💡 Payments are collected manually for now (UPI / bank transfer). Once the money
-  lands, set the clinic's plan here. Razorpay checkout comes later.
+  💡 Collecting payment: call or WhatsApp the owner (contact below) → they pay by
+  <strong>UPI, bank transfer or cash</strong> → once it lands, set their plan here.
+  Suspend stops sign-in for non-payment; nothing is deleted. Razorpay checkout
+  automates this later.
 </p>
 
 <section class="card">
@@ -56,6 +58,7 @@
         <thead>
           <tr>
             <th>Clinic</th>
+            <th>Owner / contact</th>
             <th>Plan</th>
             <th>Status</th>
             <th>Staff</th>
@@ -68,6 +71,20 @@
           @for (tenant of tenants(); track tenant.tenantId) {
             <tr [class.row-suspended]="!tenant.isActive">
               <td class="cell-main">{{ tenant.name }}</td>
+              <td>
+                <div class="contact-cell">
+                  @if (tenant.ownerName) { <span class="contact-name">{{ tenant.ownerName }}</span> }
+                  @if (tenant.clinicPhone) {
+                    <a class="contact-line" href="tel:{{ tenant.clinicPhone }}" title="Call to collect payment">
+                      📞 {{ tenant.clinicPhone }}
+                    </a>
+                  }
+                  @if (tenant.ownerEmail) {
+                    <a class="contact-line" href="mailto:{{ tenant.ownerEmail }}">✉️ {{ tenant.ownerEmail }}</a>
+                  }
+                  @if (!tenant.ownerEmail && !tenant.clinicPhone) { <span class="muted">—</span> }
+                </div>
+              </td>
               <td>
                 <div class="plan-cell">
                   <button type="button" class="filter-chip"

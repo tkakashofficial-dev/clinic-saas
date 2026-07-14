@@ -206,6 +206,7 @@
     <div class="drawer-footer">
       <button type="button" class="btn btn-secondary" (click)="closeDrawers()">Cancel</button>
       <button type="submit" form="book-form" class="btn btn-primary" [disabled]="saving()">
+        @if (saving()) { <span class="inline-spinner" aria-hidden="true"></span> }
         {{ saving() ? 'Booking…' : 'Book appointment' }}
       </button>
     </div>
@@ -324,6 +325,7 @@
     <div class="drawer-footer">
       <button type="button" class="btn btn-secondary" (click)="closeDrawers()">Cancel</button>
       <button type="submit" form="consult-form" class="btn btn-primary" [disabled]="saving()">
+        @if (saving()) { <span class="inline-spinner" aria-hidden="true"></span> }
         {{ saving() ? 'Saving…' : 'Save & complete appointment' }}
       </button>
     </div>

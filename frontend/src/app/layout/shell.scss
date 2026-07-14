@@ -169,6 +169,19 @@
   }
 }
 
+.switcher-manage {
+  display: block;
+  text-align: center;
+  font: 600 12px var(--font-body);
+  color: var(--color-text-muted);
+  padding: 8px;
+  border-top: 1px solid var(--color-border);
+  margin-top: 4px;
+  text-decoration: none;
+
+  &:hover { color: var(--color-primary-700); text-decoration: none; }
+}
+
 .doctor-check {
   display: flex;
   align-items: center;

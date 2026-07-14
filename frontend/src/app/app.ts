@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { LoadingService } from './core/api/loading.service';
 
 @Component({
   selector: 'app-root',
@@ -7,4 +8,7 @@ import { RouterOutlet } from '@angular/router';
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
-export class App {}
+export class App {
+  /** Drives the global top progress bar — the app never LOOKS frozen. */
+  readonly loading = inject(LoadingService);
+}

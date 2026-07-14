@@ -86,6 +86,8 @@ export class Shell {
   readonly newClinicOpen = signal(false);
   readonly creating = signal(false);
   readonly newClinicError = signal('');
+  /** 402 from the API: multi-clinic needs Growth — show the upgrade path. */
+  readonly newClinicUpgradeNeeded = signal(false);
   /** Non-null while a clinic is being provisioned — drives the overlay. */
   readonly provisioningClinic = signal<string | null>(null);
   newClinicName = '';
@@ -139,6 +141,7 @@ export class Shell {
     this.newClinicName = '';
     this.newClinicIsDoctor = true;
     this.newClinicError.set('');
+    this.newClinicUpgradeNeeded.set(false);
     this.switcherOpen.set(false);
     this.newClinicOpen.set(true);
   }
@@ -162,9 +165,11 @@ export class Shell {
       },
       error: (err) => {
         // NEVER fail silently: hide the overlay, reopen the drawer WITH the reason
+        const parsed = parseApiError(err);
         this.provisioningClinic.set(null);
         this.creating.set(false);
-        this.newClinicError.set(parseApiError(err).message);
+        this.newClinicError.set(parsed.message);
+        this.newClinicUpgradeNeeded.set(parsed.status === 402);
         this.newClinicOpen.set(true);
       },
     });

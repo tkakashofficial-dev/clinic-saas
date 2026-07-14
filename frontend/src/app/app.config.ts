@@ -3,6 +3,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { PreloadAllModules, provideRouter, withPreloading, withViewTransitions } from '@angular/router';
 
 import { routes } from './app.routes';
+import { loadingInterceptor } from './core/api/loading.service';
 import { authInterceptor } from './core/auth/auth.interceptor';
 
 export const appConfig: ApplicationConfig = {
@@ -16,6 +17,6 @@ export const appConfig: ApplicationConfig = {
       // Native browser View Transitions: pages morph instead of blink
       withViewTransitions(),
     ),
-    provideHttpClient(withInterceptors([authInterceptor])),
+    provideHttpClient(withInterceptors([authInterceptor, loadingInterceptor])),
   ],
 };

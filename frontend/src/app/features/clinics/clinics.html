@@ -1,0 +1,93 @@
+<header class="page-header">
+  <div>
+    <h1>My clinics</h1>
+    <p class="sub">Every clinic under your login — separate patients, staff & billing</p>
+  </div>
+</header>
+
+<div class="clinics-grid">
+  @for (membership of auth.memberships(); track membership.tenantId) {
+    <div class="clinic-card card"
+         [class.current]="membership.tenantId === auth.currentTenantId()">
+      <div class="clinic-card-head">
+        <span class="clinic-card-avatar">{{ initialsOf(membership.clinicName) }}</span>
+        @if (membership.tenantId === auth.currentTenantId()) {
+          <span class="chip chip-completed">You're here</span>
+        }
+      </div>
+      <h3 class="clinic-card-name">{{ membership.clinicName }}</h3>
+      <p class="clinic-card-sub">Own patients, appointments, inventory & team</p>
+      @if (membership.tenantId !== auth.currentTenantId()) {
+        <button type="button" class="btn btn-secondary"
+                [disabled]="switchingTo() !== null"
+                (click)="switchTo(membership.tenantId)">
+          {{ switchingTo() === membership.tenantId ? 'Opening…' : 'Open this clinic →' }}
+        </button>
+      } @else {
+        <a routerLink="/dashboard" class="btn btn-ghost">Go to dashboard</a>
+      }
+    </div>
+  }
+
+  @if (canCreate()) {
+    <button type="button" class="clinic-card card add-card" (click)="openCreate()">
+      <span class="add-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </span>
+      <h3 class="clinic-card-name">Open a new clinic</h3>
+      <p class="clinic-card-sub">A second branch or a brand-new practice · Growth plan</p>
+    </button>
+  }
+</div>
+
+<!-- ============ Create drawer ============ -->
+@if (createOpen()) {
+  <div class="drawer-backdrop" (click)="createOpen.set(false)"></div>
+  <aside class="drawer" role="dialog" aria-label="Open a new clinic">
+    <div class="drawer-header">
+      <h2>Open a new clinic</h2>
+      <button type="button" class="btn btn-ghost" (click)="createOpen.set(false)" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="drawer-body">
+      @if (error()) {
+        <div class="alert-error">
+          {{ error() }}
+          @if (upgradeNeeded()) {
+            <a routerLink="/billing" class="btn btn-primary"
+               style="margin-top:10px; width:100%;" (click)="createOpen.set(false)">
+              See the Growth plan →
+            </a>
+          }
+        </div>
+      }
+      <p class="muted" style="margin-bottom:16px">
+        You'll be the Admin of the new clinic. Its patients, staff and appointments
+        are completely separate from this one.
+      </p>
+      <div class="field">
+        <label for="cl-name">Clinic name *</label>
+        <input id="cl-name" class="input" [(ngModel)]="newName"
+               placeholder="Smile Dental — Ernakulam Branch">
+      </div>
+      <label class="doctor-check" style="display:flex; align-items:center; gap:8px; font-size:13.5px; cursor:pointer;">
+        <input type="checkbox" [(ngModel)]="newIsDoctor">
+        I practice as a doctor at this clinic too
+      </label>
+    </div>
+
+    <div class="drawer-footer">
+      <button type="button" class="btn btn-secondary" (click)="createOpen.set(false)">Cancel</button>
+      <button type="button" class="btn btn-primary" [disabled]="creating() || !newName.trim()"
+              (click)="create()">
+        {{ creating() ? 'Opening…' : 'Open clinic' }}
+      </button>
+    </div>
+  </aside>
+}
+
+@if (provisioningClinic(); as name) {
+  <app-provisioning-overlay [clinicName]="name" />
+}

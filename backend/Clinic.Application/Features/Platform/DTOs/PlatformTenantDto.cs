@@ -11,6 +11,10 @@ public class PlatformTenantDto
     public bool IsActive { get; set; }
     public int StaffCount { get; set; }
     public int PatientCount { get; set; }
+    /// <summary>Who to call/WhatsApp when payment is due — the first Admin.</summary>
+    public string? OwnerName { get; set; }
+    public string? OwnerEmail { get; set; }
+    public string? ClinicPhone { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 

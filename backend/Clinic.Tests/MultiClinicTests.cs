@@ -1,6 +1,8 @@
+using Clinic.Application.Common.Exceptions;
 using Clinic.Application.Features.Auth.DTOs;
 using Clinic.Infrastructure.Services;
 using Clinic.Tests.TestInfrastructure;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace Clinic.Tests;
@@ -32,10 +34,21 @@ public class MultiClinicTests : IDisposable
             OwnerIsDoctor = true
         });
 
+    /// <summary>Multi-clinic is Growth-only — tests that open a second clinic
+    /// must first upgrade (also ends the trial, like a real paying customer).</summary>
+    private async Task UpgradeToGrowthAsync(Guid tenantId)
+    {
+        await using var context = _db.CreateContext();
+        var tenant = await context.Tenants.FirstAsync(t => t.Id == tenantId);
+        tenant.ChangePlan(Clinic.Domain.Enums.PlanType.Growth);
+        await context.SaveChangesAsync();
+    }
+
     [Fact]
     public async Task CreateClinic_AddsSecondMembership_AndLandsInNewClinic()
     {
         var first = await RegisterAsync("owner1@clinics.com");
+        await UpgradeToGrowthAsync(first.TenantId);
 
         var second = await CreateService().CreateClinicAsync(
             GetSystemUserId(first), new CreateClinicRequest { Name = "Second Clinic", OwnerIsDoctor = false });
@@ -47,6 +60,19 @@ public class MultiClinicTests : IDisposable
     }
 
     [Fact]
+    public async Task CreateClinic_WithoutGrowthPlan_IsRefusedWithUpgradeMessage()
+    {
+        // Trial and Clinic tiers get ONE clinic — the second one sells Growth
+        var first = await RegisterAsync("owner-cheap@clinics.com");
+
+        var ex = await Assert.ThrowsAsync<PlanLimitException>(
+            () => CreateService().CreateClinicAsync(
+                GetSystemUserId(first), new CreateClinicRequest { Name = "Branch Two" }));
+
+        Assert.Contains("Growth", ex.Message);
+    }
+
+    [Fact]
     public async Task CreateClinic_WhileSignedIntoAnotherClinic_Succeeds()
     {
         // REGRESSION (user-reported 500): in production the caller's token is
@@ -54,6 +80,7 @@ public class MultiClinicTests : IDisposable
         // TenantUser/Roles tripped the cross-tenant write guard. Reproduce
         // that by acting as the signed-in user — not anonymously.
         var first = await RegisterAsync("owner5@clinics.com");
+        await UpgradeToGrowthAsync(first.TenantId);
         _db.CurrentUser.ActAs(first.TenantId, first.TenantUserId, GetSystemUserId(first));
 
         var second = await CreateService().CreateClinicAsync(
@@ -88,6 +115,7 @@ public class MultiClinicTests : IDisposable
     public async Task SwitchClinic_BetweenOwnClinics_Works()
     {
         var first = await RegisterAsync("owner2@clinics.com");
+        await UpgradeToGrowthAsync(first.TenantId);
         var systemUserId = GetSystemUserId(first);
         await CreateService().CreateClinicAsync(
             systemUserId, new CreateClinicRequest { Name = "Second Clinic" });
@@ -121,6 +149,7 @@ public class MultiClinicTests : IDisposable
     public async Task Login_MultiClinicOwner_ReturnsAllMemberships()
     {
         var first = await RegisterAsync("owner4@clinics.com");
+        await UpgradeToGrowthAsync(first.TenantId);
         await CreateService().CreateClinicAsync(
             GetSystemUserId(first), new CreateClinicRequest { Name = "Second Clinic" });
 

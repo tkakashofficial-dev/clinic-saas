@@ -117,14 +117,12 @@
     <div class="container">
       <h2 class="section-title">Simple pricing. <span>Premium product.</span></h2>
       <p class="section-sub">
-        Monthly pricing is shown for easy comparison, but it is calculated from
-        your yearly per-tenant target. No per-patient fees, no setup costs,
-        no data monetisation - ever.
+        Every feature on every plan — you pay for team size, never for modules.
+        No per-patient fees, no setup costs, no data monetisation - ever.
       </p>
 
       <div class="billing-toggle">
-        <span class="filter-chip active">Annual billing</span>
-        <span class="filter-chip static-chip">Built for predictable per-tenant revenue</span>
+        <span class="filter-chip active">💚 Pay yearly — 2 months free</span>
       </div>
 
       <div class="pricing-grid">
@@ -135,9 +133,11 @@
             <p class="plan-scale">{{ plan.scale }}</p>
             <p class="plan-tagline">{{ plan.tagline }}</p>
             <div class="price">
-              <span class="amount">{{ monthlyEquivalentOf(plan) }}</span>
+              <span class="amount">{{ priceOf(plan) }}</span>
               <span class="period">/ month</span>
-              <div class="yearly-total">Billed yearly at {{ priceOf(plan) }}</div>
+              <div class="yearly-total">
+                or {{ yearlyOf(plan) }}/year — <strong>2 months free</strong>
+              </div>
             </div>
             <ul class="plan-features">
               @for (feature of plan.features; track feature) {

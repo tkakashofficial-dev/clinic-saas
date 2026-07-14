@@ -4,6 +4,7 @@ using Clinic.Application.Features.Auth.DTOs;
 using Clinic.Application.Features.Auth.Services;
 using Clinic.Domain.Constants;
 using Clinic.Domain.Entities;
+using Clinic.Domain.Enums;
 using Clinic.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -133,6 +134,21 @@ public class AuthService : IAuthService
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Id == systemUserId && u.IsActive, cancellationToken)
             ?? throw new UnauthorizedAccessException("User not found.");
+
+        // Multi-clinic is the Growth plan's headline feature: a SECOND clinic
+        // requires at least one of the caller's clinics to be on Growth.
+        // (The first clinic — registration — never passes through here.)
+        var ownedPlans = await _context.TenantUsers
+            .AsNoTracking()
+            .IgnoreQueryFilters([QueryFilters.Tenant])
+            .Where(tu => tu.SystemUserId == systemUserId && tu.IsActive && tu.Tenant.IsActive)
+            .Select(tu => tu.Tenant)
+            .ToListAsync(cancellationToken);
+
+        if (ownedPlans.Count > 0 && !ownedPlans.Any(t => t.EffectivePlan == PlanType.Growth))
+            throw new PlanLimitException(
+                "Opening a second clinic is a Growth plan feature. Upgrade any of " +
+                "your clinics to Growth to manage multiple clinics under one login.");
 
         var (tenant, tenantUser, ownerRoles) =
             ProvisionClinic(systemUser.Id, request.Name, request.OwnerIsDoctor);

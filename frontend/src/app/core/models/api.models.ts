@@ -291,6 +291,10 @@ export interface PlatformTenant {
   isActive: boolean;
   staffCount: number;
   patientCount: number;
+  /** Who to call/WhatsApp for payment — the founding Admin. */
+  ownerName: string | null;
+  ownerEmail: string | null;
+  clinicPhone: string | null;
   createdAt: string;
 }
 
