@@ -137,6 +137,10 @@ public class AuthService : IAuthService
         var (tenant, tenantUser, ownerRoles) =
             ProvisionClinic(systemUser.Id, request.Name, request.OwnerIsDoctor);
 
+        // Caller's token is scoped to their CURRENT clinic; whitelist the
+        // brand-new tenant id or the cross-tenant write guard rejects this
+        _context.AllowProvisioningFor(tenant.Id);
+
         var refreshToken = IssueRefreshToken(systemUser.Id);
         await _context.SaveChangesAsync(cancellationToken);
 

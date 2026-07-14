@@ -122,6 +122,17 @@ public class ClinicDbContext : DbContext
     }
 
     /// <summary>
+    /// The one legit cross-tenant write: an Admin opening a NEW clinic must
+    /// insert that clinic's first TenantUser/Roles while their token is still
+    /// scoped to the old clinic. AllowProvisioningFor whitelists exactly that
+    /// new tenant id, for this request only (the context is request-scoped) —
+    /// writes into any EXISTING other tenant stay blocked.
+    /// </summary>
+    private Guid? _provisioningTenantId;
+
+    public void AllowProvisioningFor(Guid newTenantId) => _provisioningTenantId = newTenantId;
+
+    /// <summary>
     /// Write-side tenant protection:
     /// - New entities without a TenantId get the current tenant stamped automatically.
     /// - Writing an entity that belongs to a DIFFERENT tenant than the caller is blocked.
@@ -147,7 +158,9 @@ public class ClinicDbContext : DbContext
 
                 tenantProperty.CurrentValue = CurrentTenantId;
             }
-            else if (CurrentTenantId != Guid.Empty && entityTenantId != CurrentTenantId)
+            else if (CurrentTenantId != Guid.Empty
+                     && entityTenantId != CurrentTenantId
+                     && entityTenantId != _provisioningTenantId)
             {
                 throw new InvalidOperationException(
                     $"Cross-tenant write blocked: '{entry.Metadata.ClrType.Name}' belongs to " +

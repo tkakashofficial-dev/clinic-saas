@@ -47,6 +47,44 @@ public class MultiClinicTests : IDisposable
     }
 
     [Fact]
+    public async Task CreateClinic_WhileSignedIntoAnotherClinic_Succeeds()
+    {
+        // REGRESSION (user-reported 500): in production the caller's token is
+        // scoped to their CURRENT clinic, so provisioning the new clinic's
+        // TenantUser/Roles tripped the cross-tenant write guard. Reproduce
+        // that by acting as the signed-in user — not anonymously.
+        var first = await RegisterAsync("owner5@clinics.com");
+        _db.CurrentUser.ActAs(first.TenantId, first.TenantUserId, GetSystemUserId(first));
+
+        var second = await CreateService().CreateClinicAsync(
+            GetSystemUserId(first), new CreateClinicRequest { Name = "Branch Two", OwnerIsDoctor = true });
+
+        Assert.Equal("Branch Two", second.ClinicName);
+        Assert.Equal(2, second.Memberships.Count);
+    }
+
+    [Fact]
+    public async Task CrossTenantWrite_IntoExistingForeignClinic_StaysBlocked()
+    {
+        // The provisioning whitelist must NOT weaken the guard for tenants
+        // that already exist: clinic A writing into clinic B still throws.
+        var mine = await RegisterAsync("owner6@clinics.com");
+        var theirs = await CreateService().RegisterAsync(new RegisterRequest
+        {
+            FirstName = "Other", LastName = "Owner", Email = "other6@clinics.com",
+            Password = "Str0ng-Pass-123", ClinicName = "Their Clinic"
+        });
+        _db.CurrentUser.ActAs(mine.TenantId, mine.TenantUserId, GetSystemUserId(mine));
+
+        await using var context = _db.CreateContext();
+        context.InventoryItems.Add(new Clinic.Domain.Entities.InventoryItem(
+            theirs.TenantId, "Smuggled item", Clinic.Domain.Enums.InventoryCategory.Medicine,
+            "piece", 1, 0));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => context.SaveChangesAsync());
+    }
+
+    [Fact]
     public async Task SwitchClinic_BetweenOwnClinics_Works()
     {
         var first = await RegisterAsync("owner2@clinics.com");
