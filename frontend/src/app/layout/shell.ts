@@ -49,6 +49,12 @@ export class Shell {
     );
   });
 
+  // Phones get a thumb-friendly bottom tab bar: first four destinations
+  // as tabs, the rest behind "More" (the iOS/Android convention)
+  readonly mobileNavItems = computed(() => this.navItems().slice(0, 4));
+  readonly moreNavItems = computed(() => this.navItems().slice(4));
+  readonly moreOpen = signal(false);
+
   readonly initials = computed(() =>
     this.auth
       .fullName()

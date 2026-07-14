@@ -48,6 +48,28 @@
 </div>
 
 @if (overview(); as data) {
+  <!-- 30-day pulse: the numbers an owner checks between patients -->
+  <div class="kpi-row">
+    <div class="kpi">
+      <span class="kpi-value">{{ data.newPatientsLast30Days }}</span>
+      <span class="kpi-label">New patients · 30d</span>
+    </div>
+    <div class="kpi">
+      <span class="kpi-value">{{ data.completedLast30Days }}</span>
+      <span class="kpi-label">Visits completed · 30d</span>
+    </div>
+    <div class="kpi">
+      <span class="kpi-value">{{ data.cancelledLast30Days }}</span>
+      <span class="kpi-label">Cancellations · 30d</span>
+    </div>
+    @if (completionRate() !== null) {
+      <div class="kpi kpi-rate" [class.good]="completionRate()! >= 80">
+        <span class="kpi-value">{{ completionRate() }}%</span>
+        <span class="kpi-label">Completion rate</span>
+      </div>
+    }
+  </div>
+
   <div class="charts-row">
     <section class="card card-pad chart-block">
       <div class="chart-head">
@@ -95,6 +117,26 @@
         </div>
       }
     </section>
+
+    @if (data.perDoctorLast30Days.length > 0) {
+      <section class="card card-pad chart-block">
+        <div class="chart-head"><h2>Doctors — 30 days</h2></div>
+        <div class="doctor-bars">
+          @for (doctor of data.perDoctorLast30Days; track doctor.doctorName) {
+            <div class="doctor-row" [title]="doctor.completed + ' of ' + doctor.total + ' completed'">
+              <span class="doctor-name">{{ doctor.doctorName }}</span>
+              <div class="doctor-track">
+                <div class="doctor-total" [style.width]="doctorBarWidth(doctor.total)">
+                  <div class="doctor-completed" [style.width]="doctorFillWidth(doctor.completed, doctor.total)"></div>
+                </div>
+              </div>
+              <span class="doctor-count num">{{ doctor.completed }}/{{ doctor.total }}</span>
+            </div>
+          }
+        </div>
+        <p class="doctor-legend"><span class="dot filled"></span> completed <span class="dot hollow"></span> booked</p>
+      </section>
+    }
   </div>
 }
 

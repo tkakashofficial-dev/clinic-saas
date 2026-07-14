@@ -1,17 +1,18 @@
-import { Component, forwardRef, input, signal, viewChild, ElementRef } from '@angular/core';
+import { Component, forwardRef, input, signal } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { CalendarPop } from './calendar-pop';
 
 /**
  * Hybrid date input — the pattern mature products use:
  *  · TYPE it: DD/MM/YYYY with automatic slashes (fastest for known dates
- *    like a date of birth — no paging a calendar back 30 years), OR
- *  · PICK it: the calendar button opens the browser's native date picker
- *    (a hidden input[type=date] + showPicker()), which is also what
- *    mobile users get as wheels/calendar.
+ *    like a date of birth), OR
+ *  · PICK it: the calendar button opens Klivia's own branded calendar
+ *    (year → month → day fast path, teal design — not the browser default).
  * Emits ISO (yyyy-MM-dd) or null; shows inline validity.
  */
 @Component({
   selector: 'app-date-field',
+  imports: [CalendarPop],
   template: `
     <div class="date-field">
       <input
@@ -25,8 +26,9 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
         (input)="onInput($any($event.target))"
         (blur)="onBlur()"
         maxlength="10">
-      <button type="button" class="cal-btn" (click)="openPicker()"
-              [disabled]="disabled()" aria-label="Open calendar" tabindex="-1">
+      <button type="button" class="cal-btn" (click)="pickerOpen.set(!pickerOpen())"
+              [disabled]="disabled()" [class.open]="pickerOpen()"
+              aria-label="Open calendar" tabindex="-1">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="4" width="18" height="18" rx="2"/>
@@ -34,10 +36,15 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
           <line x1="3" y1="10" x2="21" y2="10"/>
         </svg>
       </button>
-      <!-- Native picker host: invisible, but drives the real calendar UI -->
-      <input #nativePicker type="date" class="native-picker" tabindex="-1"
-             aria-hidden="true" [max]="maxToday() ? today : null"
-             (change)="onNativePick($any($event.target).value)">
+
+      @if (pickerOpen()) {
+        <app-calendar-pop
+          [value]="isoValue()"
+          [maxToday]="maxToday()"
+          (picked)="onCalendarPick($event)"
+          (cleared)="onCalendarClear()"
+          (closed)="pickerOpen.set(false)" />
+      }
     </div>
     @if (invalid()) {
       <span class="field-error">{{ errorText() }}</span>
@@ -51,7 +58,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
       .cal-btn {
         position: absolute;
-        right: 6px; top: 50%;
+        right: 6px; top: 19px;
         transform: translateY(-50%);
         display: inline-flex;
         align-items: center;
@@ -63,18 +70,8 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
         color: var(--color-text-muted);
         cursor: pointer;
 
-        &:hover { background: var(--color-primary-100); color: var(--color-primary-700); }
+        &:hover, &.open { background: var(--color-primary-100); color: var(--color-primary-700); }
         &:disabled { cursor: default; opacity: 0.5; }
-      }
-
-      .native-picker {
-        position: absolute;
-        right: 6px; top: 50%;
-        width: 28px; height: 28px;
-        transform: translateY(-50%);
-        opacity: 0;
-        border: 0;
-        pointer-events: none;
       }
     }
     .field-error { margin-top: 6px; display: inline-flex; }
@@ -92,38 +89,28 @@ export class DateField implements ControlValueAccessor {
   readonly disabled = signal(false);
   readonly invalid = signal(false);
   readonly errorText = signal('');
+  readonly pickerOpen = signal(false);
 
-  readonly today = new Date().toISOString().slice(0, 10);
-
-  private readonly nativePicker = viewChild<ElementRef<HTMLInputElement>>('nativePicker');
+  /** Current value as ISO — hands the calendar its starting month. */
+  readonly isoValue = signal<string | null>(null);
 
   private onChange: (value: string | null) => void = () => {};
   private onTouched: () => void = () => {};
 
-  openPicker(): void {
-    const native = this.nativePicker()?.nativeElement;
-    if (!native) return;
-
-    // Open the calendar pre-positioned on the current value (if any)
-    const digits = this.display().replace(/\D/g, '');
-    if (digits.length === 8) {
-      native.value = `${digits.slice(4)}-${digits.slice(2, 4)}-${digits.slice(0, 2)}`;
-    }
-
-    try {
-      native.showPicker(); // Chrome/Edge/Firefox; needs the user gesture we're in
-    } catch {
-      native.focus();      // older Safari fallback — focus opens its UI
-      native.click();
-    }
-  }
-
-  onNativePick(iso: string): void {
-    if (!iso) return;
+  onCalendarPick(iso: string): void {
     const [year, month, day] = iso.split('-');
     this.display.set(`${day}/${month}/${year}`);
+    this.isoValue.set(iso);
     this.invalid.set(false);
     this.onChange(iso);
+    this.onTouched();
+  }
+
+  onCalendarClear(): void {
+    this.display.set('');
+    this.isoValue.set(null);
+    this.invalid.set(false);
+    this.onChange(null);
     this.onTouched();
   }
 
@@ -146,6 +133,7 @@ export class DateField implements ControlValueAccessor {
 
   private validateAndEmit(digits: string, strict: boolean): void {
     this.invalid.set(false);
+    this.isoValue.set(null);
 
     if (digits.length === 0) {
       this.onChange(null);
@@ -188,16 +176,19 @@ export class DateField implements ControlValueAccessor {
     }
 
     const iso = `${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+    this.isoValue.set(iso);
     this.onChange(iso);
   }
 
   writeValue(value: string | null): void {
     if (!value) {
       this.display.set('');
+      this.isoValue.set(null);
       return;
     }
     const [year, month, day] = value.split('-');
     this.display.set(`${day}/${month}/${year}`);
+    this.isoValue.set(value);
   }
   registerOnChange(fn: (value: string | null) => void): void {
     this.onChange = fn;

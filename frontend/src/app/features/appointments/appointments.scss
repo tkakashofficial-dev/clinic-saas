@@ -6,7 +6,7 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-input);
-  overflow: hidden;
+  /* no overflow:hidden — the calendar popover hangs below this bar */
 }
 
 .date-arrow {
@@ -17,7 +17,12 @@
   padding: 0 10px;
   cursor: pointer;
 
+  &:first-child { border-radius: var(--radius-input) 0 0 var(--radius-input); }
   &:hover { background: var(--color-primary-50); color: var(--color-primary-700); }
+}
+
+.date-nav > .date-arrow:nth-of-type(2) {
+  border-radius: 0 var(--radius-input) var(--radius-input) 0;
 }
 
 .date-display {
@@ -33,13 +38,6 @@
 
   svg { color: var(--color-primary-600); }
   &:hover { background: var(--color-primary-50); }
-}
-
-.date-hidden {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  pointer-events: none;
 }
 
 .actions-col { text-align: right; }

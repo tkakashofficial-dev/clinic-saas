@@ -107,13 +107,13 @@
       <div class="form-row">
         <div class="field">
           <label for="p-first">First name *</label>
-          <input id="p-first" class="input" formControlName="firstName" placeholder="Rahul"
+          <input id="p-first" class="input" formControlName="firstName" placeholder="Muhammed"
                  [class.invalid]="!!errorFor('firstName')">
           @if (errorFor('firstName')) { <span class="field-error">{{ errorFor('firstName') }}</span> }
         </div>
         <div class="field">
           <label for="p-last">Last name *</label>
-          <input id="p-last" class="input" formControlName="lastName" placeholder="Nair"
+          <input id="p-last" class="input" formControlName="lastName" placeholder="Ashraf"
                  [class.invalid]="!!errorFor('lastName')">
           @if (errorFor('lastName')) { <span class="field-error">{{ errorFor('lastName') }}</span> }
         </div>
@@ -139,7 +139,7 @@
 
       <div class="field">
         <label for="p-email">Email</label>
-        <input id="p-email" type="email" class="input" formControlName="email" placeholder="rahul.nair@gmail.com"
+        <input id="p-email" type="email" class="input" formControlName="email" placeholder="muhammed.ashraf@gmail.com"
                [class.invalid]="!!errorFor('email')">
         @if (errorFor('email')) { <span class="field-error">{{ errorFor('email') }}</span> }
       </div>

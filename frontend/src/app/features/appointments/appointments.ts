@@ -16,6 +16,8 @@ import {
   PatientDto,
   StaffDto,
 } from '../../core/models/api.models';
+import { CalendarPop } from '../../shared/ui/calendar-pop';
+import { DateField } from '../../shared/ui/date-field';
 import { Select, SelectOption } from '../../shared/ui/select';
 
 const STATUS_FILTERS = ['All', 'Scheduled', 'CheckedIn', 'InProgress', 'Completed', 'Cancelled'] as const;
@@ -27,7 +29,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 @Component({
   selector: 'app-appointments',
-  imports: [DatePipe, ReactiveFormsModule, Select],
+  imports: [DatePipe, ReactiveFormsModule, Select, CalendarPop, DateField],
   templateUrl: './appointments.html',
   styleUrl: './appointments.scss',
 })
@@ -57,6 +59,8 @@ export class Appointments {
   readonly loading = signal(true);
   readonly result = signal<PagedResult<AppointmentDto> | null>(null);
   readonly date = signal(todayIso());
+  /** Branded calendar popover on the day navigator. */
+  readonly calOpen = signal(false);
   readonly status = signal<(typeof STATUS_FILTERS)[number]>('All');
   readonly onlyMine = signal(this.auth.hasRole('Doctor'));
   readonly page = signal(1);
@@ -188,10 +192,6 @@ export class Appointments {
 
   isToday(): boolean {
     return this.date() === todayIso();
-  }
-
-  openDatePicker(input: HTMLInputElement): void {
-    input.showPicker?.();
   }
 
   setStatus(value: (typeof STATUS_FILTERS)[number]): void {

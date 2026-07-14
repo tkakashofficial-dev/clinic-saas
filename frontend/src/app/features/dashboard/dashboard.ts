@@ -76,6 +76,26 @@ export class Dashboard {
       return segment;
     });
   });
+  // ---- doctor performance bars (30 days) ----
+  readonly maxDoctorTotal = computed(() =>
+    Math.max(1, ...(this.overview()?.perDoctorLast30Days.map((d) => d.total) ?? [1])),
+  );
+
+  readonly completionRate = computed(() => {
+    const data = this.overview();
+    if (!data) return null;
+    const closed = data.completedLast30Days + data.cancelledLast30Days;
+    return closed === 0 ? null : Math.round((data.completedLast30Days / closed) * 100);
+  });
+
+  doctorBarWidth(total: number): string {
+    return `${Math.round((total / this.maxDoctorTotal()) * 100)}%`;
+  }
+
+  doctorFillWidth(completed: number, total: number): string {
+    return total === 0 ? '0%' : `${Math.round((completed / total) * 100)}%`;
+  }
+
   readonly totalPatients = signal(0);
   readonly todayCount = signal(0);
   readonly waitingCount = signal(0);

@@ -1,14 +1,30 @@
 import { Component, OnDestroy, OnInit, computed, input, signal } from '@angular/core';
 
 /**
- * Full-screen "your clinic is being built" experience. Clinic provisioning
- * can take up to ~60s on a cold server — this turns dead waiting time into
- * a moment that feels like something important is happening (because it is).
+ * Full-screen "your clinic is being built" experience — light, calm, alive.
+ * A paper plane glides diagonally while real progress happens behind it.
+ * Steps advance quickly and HOLD on the last one until the server responds
+ * (the parent removes the overlay the moment the request finishes) — so a
+ * fast server means a fast finish; only a cold start makes it linger.
  */
 @Component({
   selector: 'app-provisioning-overlay',
   template: `
     <div class="prov-backdrop" role="status" aria-live="polite">
+      <!-- Paper plane on a diagonal glide, dotted trail behind it -->
+      <div class="prov-sky" aria-hidden="true">
+        <div class="prov-plane">
+          <svg width="42" height="42" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 2 11 13"/>
+            <path d="M22 2 15 22l-4-9-9-4z"/>
+          </svg>
+        </div>
+        <span class="trail t1"></span>
+        <span class="trail t2"></span>
+        <span class="trail t3"></span>
+      </div>
+
       <div class="prov-card">
         <div class="prov-avatar">{{ initials() }}</div>
         <h2 class="prov-title">Setting up<br>{{ clinicName() }}</h2>
@@ -31,7 +47,7 @@ import { Component, OnDestroy, OnInit, computed, input, signal } from '@angular/
         </div>
 
         <div class="prov-bar"><div class="prov-bar-fill"></div></div>
-        <p class="prov-hint">This can take up to a minute — please don't close the page.</p>
+        <p class="prov-hint">Almost there — please keep this page open.</p>
       </div>
     </div>
   `,
@@ -40,13 +56,53 @@ import { Component, OnDestroy, OnInit, computed, input, signal } from '@angular/
       position: fixed; inset: 0; z-index: 100;
       display: flex; align-items: center; justify-content: center;
       background:
-        radial-gradient(900px 500px at 50% -10%, rgb(0 189 143 / .22), transparent 60%),
-        var(--color-ink-900);
+        radial-gradient(900px 520px at 50% -10%, rgb(0 189 143 / .14), transparent 60%),
+        var(--color-bg);
       animation: provFade .3s ease;
+      overflow: hidden;
     }
     @keyframes provFade { from { opacity: 0; } }
 
-    .prov-card { text-align: center; max-width: 380px; padding: 24px; }
+    /* ---- the plane ---- */
+    .prov-sky { position: absolute; inset: 0; pointer-events: none; }
+
+    .prov-plane {
+      position: absolute;
+      left: -60px; bottom: 18%;
+      color: var(--color-primary-600);
+      animation: provGlide 3.4s cubic-bezier(.45, .1, .5, .9) infinite;
+      filter: drop-shadow(0 6px 14px rgb(0 132 101 / .25));
+    }
+    @keyframes provGlide {
+      0%   { transform: translate(0, 0) rotate(12deg); opacity: 0; }
+      12%  { opacity: 1; }
+      82%  { opacity: 1; }
+      100% { transform: translate(calc(100vw + 120px), -46vh) rotate(4deg); opacity: 0; }
+    }
+
+    .trail {
+      position: absolute;
+      left: -60px; bottom: 18%;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--color-primary-300);
+      animation: provGlide 3.4s cubic-bezier(.45, .1, .5, .9) infinite;
+    }
+    .t1 { animation-delay: .12s; opacity: .5; scale: .8; }
+    .t2 { animation-delay: .24s; opacity: .35; scale: .6; }
+    .t3 { animation-delay: .36s; opacity: .2; scale: .45; }
+
+    /* ---- the card ---- */
+    .prov-card {
+      position: relative;
+      text-align: center;
+      max-width: 400px;
+      padding: 34px 30px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 22px;
+      box-shadow: 0 24px 60px rgb(12 43 35 / .14);
+    }
 
     .prov-avatar {
       width: 64px; height: 64px;
@@ -59,50 +115,51 @@ import { Component, OnDestroy, OnInit, computed, input, signal } from '@angular/
       animation: provPulse 1.6s ease-in-out infinite;
     }
     @keyframes provPulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgb(0 189 143 / .45); }
-      50% { box-shadow: 0 0 0 16px rgb(0 189 143 / 0); }
+      0%, 100% { box-shadow: 0 0 0 0 rgb(0 189 143 / .35); }
+      50% { box-shadow: 0 0 0 14px rgb(0 189 143 / 0); }
     }
 
     .prov-title {
-      color: var(--color-text-invert);
+      color: var(--color-text);
       font-size: 22px; font-weight: 800;
-      margin-bottom: 26px;
+      margin-bottom: 24px;
       overflow-wrap: anywhere;
     }
 
     .prov-steps {
       display: flex; flex-direction: column; gap: 12px;
       text-align: left;
-      margin: 0 auto 26px;
+      margin: 0 auto 24px;
       width: fit-content;
     }
 
     .prov-step {
       display: flex; align-items: center; gap: 12px;
       font-size: 14px;
-      color: rgb(244 250 247 / .38);
-      transition: color .3s ease;
+      color: var(--color-text-muted);
+      opacity: .55;
+      transition: color .3s ease, opacity .3s ease;
 
-      &.active { color: var(--color-text-invert); }
-      &.done { color: var(--color-primary-300); }
+      &.active { color: var(--color-text); opacity: 1; }
+      &.done { color: var(--color-primary-700); opacity: 1; }
     }
 
     .prov-marker {
       width: 20px; height: 20px; flex: none;
       border-radius: 50%;
-      border: 1.5px solid rgb(244 250 247 / .25);
+      border: 1.5px solid var(--color-border);
       display: flex; align-items: center; justify-content: center;
-      color: var(--color-primary-300);
+      color: var(--color-primary-600);
 
-      .done & { border-color: var(--color-primary-400); background: rgb(0 189 143 / .15); }
+      .done & { border-color: var(--color-primary-400); background: var(--color-primary-100); }
       .active & { border-color: var(--color-primary-400); }
     }
 
     .prov-spinner {
       width: 9px; height: 9px;
       border-radius: 50%;
-      border: 2px solid rgb(0 189 143 / .3);
-      border-top-color: var(--color-primary-400);
+      border: 2px solid rgb(0 189 143 / .25);
+      border-top-color: var(--color-primary-600);
       animation: provSpin .7s linear infinite;
     }
     @keyframes provSpin { to { transform: rotate(360deg); } }
@@ -110,9 +167,9 @@ import { Component, OnDestroy, OnInit, computed, input, signal } from '@angular/
     .prov-bar {
       height: 4px;
       border-radius: 999px;
-      background: rgb(244 250 247 / .12);
+      background: var(--color-primary-100);
       overflow: hidden;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
 
     .prov-bar-fill {
@@ -127,7 +184,7 @@ import { Component, OnDestroy, OnInit, computed, input, signal } from '@angular/
       100% { transform: translateX(350%); }
     }
 
-    .prov-hint { color: rgb(244 250 247 / .45); font-size: 12.5px; }
+    .prov-hint { color: var(--color-text-muted); font-size: 12.5px; }
   `,
 })
 export class ProvisioningOverlay implements OnInit, OnDestroy {
@@ -154,11 +211,11 @@ export class ProvisioningOverlay implements OnInit, OnDestroy {
   );
 
   ngOnInit(): void {
-    // Pacing is theatrical: steps advance on a timer and hold on the last one
-    // until the real request finishes (parent removes the overlay).
+    // No artificial waiting: steps tick quickly and hold on the last one —
+    // the PARENT removes this overlay the instant the server responds.
     this.timer = setInterval(() => {
       this.activeStep.update((step) => Math.min(step + 1, this.steps.length - 1));
-    }, 1100);
+    }, 700);
   }
 
   ngOnDestroy(): void {
