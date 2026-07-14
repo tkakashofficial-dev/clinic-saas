@@ -137,6 +137,29 @@ public static class EmailTemplates
                 ? "This link is valid for 7 days. You can also sign in with the temporary password your admin gave you, and change it later."
                 : "This link is valid for 7 days. If it expires, ask your clinic admin to re-invite you.");
 
+    /// <summary>Existing Klivia user attached to an additional clinic —
+    /// their password stays the same; they just gain a clinic in the switcher.</summary>
+    public static string AddedToClinic(
+        string firstName, string clinicName, string roles, string loginUrl) =>
+        Branded(
+            $"{Safe(clinicName)} added you to their team 🏥",
+            $"""
+            <p style="margin:0 0 14px">Hi {Safe(firstName)},</p>
+            <p style="margin:0 0 14px">
+              Your Klivia account now also has access to
+              <strong>{Safe(clinicName)}</strong> as
+              <span style="background:#E9FBF5;color:{TealDark};font-weight:bold;
+                           padding:3px 10px;border-radius:999px;font-size:13px">{Safe(roles)}</span>
+            </p>
+            <p style="margin:0">
+              Sign in with your <strong>existing password</strong>, then use the
+              clinic switcher (top of the sidebar) to move between your clinics.
+            </p>
+            """,
+            "Sign in",
+            loginUrl,
+            "Didn't expect this? Contact the clinic's admin — your account and password are unchanged.");
+
     public static string PasswordReset(string firstName, string resetUrl, int validMinutes) =>
         Branded(
             "Reset your password",

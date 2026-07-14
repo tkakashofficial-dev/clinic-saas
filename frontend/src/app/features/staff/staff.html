@@ -9,6 +9,13 @@
   </button>
 </header>
 
+@if (notice()) {
+  <div class="alert-success" style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
+    <span>{{ notice() }}</span>
+    <button type="button" class="btn btn-ghost" style="padding:2px 8px;" (click)="notice.set('')" aria-label="Dismiss">✕</button>
+  </div>
+}
+
 <section class="card">
   @if (loading()) {
     <div class="skeleton-row"></div>
@@ -122,6 +129,7 @@
         @if (inviteMode()) {
           <span class="muted" style="font-size:12.5px; margin-top:6px;">
             They'll receive an email with a link to choose their own password (valid 7 days).
+            Already using Klivia at another clinic? We'll simply add your clinic to their account.
           </span>
         }
       </div>

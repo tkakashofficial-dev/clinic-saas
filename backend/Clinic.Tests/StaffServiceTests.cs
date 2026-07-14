@@ -91,7 +91,7 @@ public class StaffServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task AddStaff_DuplicateEmail_ThrowsConflict()
+    public async Task AddStaff_SameEmailSameClinic_ThrowsConflict()
     {
         var clinic = await _db.SeedTenantAsync("Clinic", "a@a.com");
         _db.CurrentUser.ActAs(clinic.TenantId, clinic.TenantUserId);
@@ -100,6 +100,40 @@ public class StaffServiceTests : IDisposable
 
         await Assert.ThrowsAsync<ConflictException>(
             () => CreateService().AddStaffAsync(ValidStaff("same@clinic.com", "Doctor")));
+    }
+
+    [Fact]
+    public async Task AddStaff_DoctorFromAnotherClinic_AttachesMembership_PasswordUntouched()
+    {
+        // The visiting-doctor case: one account, two clinics
+        var clinicA = await _db.SeedTenantAsync("Clinic A", "visiting@doctor.com");
+        var clinicB = await _db.SeedTenantAsync("Clinic B", "ownerb@clinic.com");
+
+        string hashBefore;
+        await using (var context = _db.CreateContext())
+            hashBefore = (await context.SystemUsers.FirstAsync(
+                u => u.Email == "visiting@doctor.com")).PasswordHash;
+
+        // Clinic B's admin adds the doctor who already works at clinic A —
+        // the temp password typed by B's admin MUST be ignored
+        _db.CurrentUser.ActAs(clinicB.TenantId, clinicB.TenantUserId);
+        var staff = await CreateService().AddStaffAsync(
+            ValidStaff("visiting@doctor.com", "Doctor"));
+
+        Assert.True(staff.ExistingAccount);
+
+        await using var verify = _db.CreateContext();
+        var user = await verify.SystemUsers.FirstAsync(u => u.Email == "visiting@doctor.com");
+        Assert.Equal(hashBefore, user.PasswordHash); // B's admin has no power over it
+
+        var memberships = await verify.TenantUsers
+            .IgnoreQueryFilters()
+            .CountAsync(tu => tu.SystemUserId == user.Id);
+        Assert.Equal(2, memberships); // clinic A + clinic B
+
+        var inviteTokens = await verify.PasswordResetTokens
+            .CountAsync(t => t.SystemUserId == user.Id);
+        Assert.Equal(0, inviteTokens); // no set-password link for existing accounts
     }
 
     public void Dispose() => _db.Dispose();

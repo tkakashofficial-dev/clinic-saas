@@ -24,6 +24,8 @@ export class Staff {
   readonly fieldErrors = signal<Record<string, string>>({});
   /** True when the API said 402: plan limit reached — show the upgrade path. */
   readonly upgradeNeeded = signal(false);
+  /** Success message after adding — explains the visiting-doctor case. */
+  readonly notice = signal('');
 
   readonly form = this.fb.nonNullable.group({
     firstName: ['', Validators.required],
@@ -110,9 +112,16 @@ export class Staff {
       password: this.inviteMode() ? '' : value.password, // empty = invite-only
       roles: this.selectedRoles(),
     }).subscribe({
-      next: () => {
+      next: (staff) => {
         this.saving.set(false);
         this.drawerOpen.set(false);
+        this.notice.set(
+          staff.existingAccount
+            ? `${staff.fullName} already uses Klivia at another clinic — your clinic was added to their account. They sign in with their existing password and switch clinics from the sidebar.`
+            : this.inviteMode()
+              ? `Invitation sent to ${staff.email} — they'll set their own password from the email.`
+              : `${staff.fullName} added. They can sign in with the temporary password (and also got an email to set their own).`,
+        );
         this.load();
       },
       error: (err) => {

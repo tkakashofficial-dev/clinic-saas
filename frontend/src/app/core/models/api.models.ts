@@ -115,6 +115,8 @@ export interface StaffDto {
   email: string;
   roles: string[];
   isActive: boolean;
+  /** Person already had a Klivia account — this clinic was attached to it. */
+  existingAccount: boolean;
   createdAt: string;
 }
 

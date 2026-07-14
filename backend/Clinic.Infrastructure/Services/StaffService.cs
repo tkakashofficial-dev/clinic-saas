@@ -82,26 +82,47 @@ public class StaffService : IStaffService
                     $"{PlanLimits.MaxDoctors(effectivePlan)} doctors. Upgrade your plan to add more.");
         }
 
-        // 1. Check email not already taken globally
-        var emailExists = await _context.SystemUsers
-            .AnyAsync(u => u.Email == request.Email, cancellationToken);
+        // 1. Does this person already have a Klivia account (e.g. a visiting
+        //    doctor who works at another clinic)? Then we ATTACH a membership —
+        //    we never create a duplicate account and, critically, we never
+        //    touch their password: this clinic's admin must have no power over
+        //    an account that belongs to another clinic's staff member.
+        var existingUser = await _context.SystemUsers
+            .FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken);
 
-        if (emailExists)
-            throw new ConflictException("Email is already registered.");
-
-        // 2. Create SystemUser. Invite-only (no password given): hash an
-        //    unguessable random secret — the account is unusable until the
-        //    staff member sets their own password via the emailed link.
+        var isExistingAccount = existingUser is not null;
         var inviteOnly = string.IsNullOrWhiteSpace(request.Password);
-        var passwordHash = BCrypt.Net.BCrypt.HashPassword(
-            inviteOnly ? SecurityTokens.CreateUrlSafe() : request.Password!);
-        var systemUser = new SystemUser(
-            request.Email,
-            passwordHash,
-            request.FirstName,
-            request.LastName);
 
-        _context.SystemUsers.Add(systemUser);
+        SystemUser systemUser;
+        if (existingUser is not null)
+        {
+            if (!existingUser.IsActive)
+                throw new ConflictException("This account has been deactivated.");
+
+            var alreadyMember = await _context.TenantUsers
+                .IgnoreQueryFilters([QueryFilters.Tenant])
+                .AnyAsync(tu => tu.SystemUserId == existingUser.Id && tu.TenantId == tenantId,
+                    cancellationToken);
+            if (alreadyMember)
+                throw new ConflictException("This person is already a member of this clinic.");
+
+            systemUser = existingUser; // password and profile stay untouched
+        }
+        else
+        {
+            // 2. New person: create the account. Invite-only (no password
+            //    given): hash an unguessable random secret — the account is
+            //    unusable until they set their own password via the email link.
+            var passwordHash = BCrypt.Net.BCrypt.HashPassword(
+                inviteOnly ? SecurityTokens.CreateUrlSafe() : request.Password!);
+            systemUser = new SystemUser(
+                request.Email,
+                passwordHash,
+                request.FirstName,
+                request.LastName);
+
+            _context.SystemUsers.Add(systemUser);
+        }
 
         // 3. Create TenantUser — link to this clinic
         var tenantUser = new TenantUser(tenantId, systemUser.Id);
@@ -124,45 +145,57 @@ public class StaffService : IStaffService
             _context.TenantUserRoles.Add(new TenantUserRole(tenantUser.Id, role.Id));
         }
 
-        // 5. Invite link: staff should choose their OWN password on first
-        //    login — the admin's temporary one keeps working meanwhile
-        var inviteToken = SecurityTokens.CreateUrlSafe();
-        _context.PasswordResetTokens.Add(new PasswordResetToken(
-            systemUser.Id,
-            SecurityTokens.Sha256Hex(inviteToken),
-            DateTime.UtcNow.AddDays(7)));
+        // 5. Set-password link — ONLY for brand-new accounts. Existing users
+        //    keep their own password; this admin gets no way to change it.
+        string? inviteToken = null;
+        if (!isExistingAccount)
+        {
+            inviteToken = SecurityTokens.CreateUrlSafe();
+            _context.PasswordResetTokens.Add(new PasswordResetToken(
+                systemUser.Id,
+                SecurityTokens.Sha256Hex(inviteToken),
+                DateTime.UtcNow.AddDays(7)));
+        }
 
         // 6. Save everything and release the serializable transaction
         await _context.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
-        // 7. Invite email is intentionally fire-and-forget so staff creation
-        //    does not feel slow when mail delivery is delayed.
+        // 7. Email is intentionally fire-and-forget so staff creation does
+        //    not feel slow when mail delivery is delayed. Existing accounts
+        //    get "this clinic was added — use the switcher"; new accounts get
+        //    the set-your-password invite.
         var clinicName = await _context.Tenants
             .Where(t => t.Id == tenantId)
             .Select(t => t.Name)
             .FirstAsync(cancellationToken);
-        var inviteLink = $"{_frontend.BaseUrl.TrimEnd('/')}/reset-password?token={inviteToken}";
+        var rolesLabel = string.Join(" & ", roleNames);
+        var baseUrl = _frontend.BaseUrl.TrimEnd('/');
+
+        var emailBody = isExistingAccount
+            ? EmailTemplates.AddedToClinic(
+                systemUser.FirstName, clinicName, rolesLabel, $"{baseUrl}/login")
+            : EmailTemplates.StaffInvite(
+                request.FirstName, clinicName, rolesLabel,
+                $"{baseUrl}/reset-password?token={inviteToken}",
+                hasTempPassword: !inviteOnly);
 
         _ = _emailSender.SendAsync(
             request.Email,
             $"You've been added to {clinicName}",
-            EmailTemplates.StaffInvite(
-                request.FirstName,
-                clinicName,
-                string.Join(" & ", roleNames),
-                inviteLink,
-                hasTempPassword: !inviteOnly),
+            emailBody,
             CancellationToken.None);
 
         return new StaffDto
         {
             Id = tenantUser.Id,
             SystemUserId = systemUser.Id,
-            FullName = $"{request.FirstName} {request.LastName}",
+            // For existing accounts, keep THEIR real name (admin's typed name is ignored)
+            FullName = $"{systemUser.FirstName} {systemUser.LastName}",
             Email = request.Email,
             Roles = roleNames,
             IsActive = true,
+            ExistingAccount = isExistingAccount,
             CreatedAt = tenantUser.CreatedAt
         };
     }
