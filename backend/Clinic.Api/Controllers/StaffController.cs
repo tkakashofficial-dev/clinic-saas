@@ -26,6 +26,15 @@ public class StaffController : ControllerBase
         CancellationToken cancellationToken)
         => Ok(await _staffService.AddStaffAsync(request, cancellationToken));
 
+    /// <summary>Lost or expired invite? Send a fresh 7-day link.</summary>
+    [HttpPost("{id}/resend-invite")]
+    [Authorize(Roles = RoleNames.Admin)]
+    public async Task<IActionResult> ResendInvite(Guid id, CancellationToken cancellationToken)
+    {
+        await _staffService.ResendInviteAsync(id, cancellationToken);
+        return NoContent();
+    }
+
     // All staff can READ the team list (reception needs doctors to book
     // appointments); only Admin can modify it
     [HttpGet]

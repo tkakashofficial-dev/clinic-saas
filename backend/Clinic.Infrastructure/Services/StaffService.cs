@@ -200,6 +200,44 @@ public class StaffService : IStaffService
         };
     }
 
+    public async Task ResendInviteAsync(
+        Guid tenantUserId,
+        CancellationToken cancellationToken = default)
+    {
+        // Tenant filter scopes this: admins can only re-invite their own staff
+        var tenantUser = await _context.TenantUsers
+            .Include(tu => tu.SystemUser)
+            .Include(tu => tu.Roles).ThenInclude(r => r.Role)
+            .FirstOrDefaultAsync(tu => tu.Id == tenantUserId, cancellationToken)
+            ?? throw new NotFoundException("Staff member not found.");
+
+        if (!tenantUser.IsActive || !tenantUser.SystemUser.IsActive)
+            throw new ConflictException("This staff member is deactivated.");
+
+        var inviteToken = SecurityTokens.CreateUrlSafe();
+        _context.PasswordResetTokens.Add(new PasswordResetToken(
+            tenantUser.SystemUserId,
+            SecurityTokens.Sha256Hex(inviteToken),
+            DateTime.UtcNow.AddDays(7)));
+        await _context.SaveChangesAsync(cancellationToken);
+
+        var clinicName = await _context.Tenants
+            .Where(t => t.Id == _currentUser.TenantId)
+            .Select(t => t.Name)
+            .FirstAsync(cancellationToken);
+
+        _ = _emailSender.SendAsync(
+            tenantUser.SystemUser.Email,
+            $"Your invite to {clinicName}",
+            EmailTemplates.StaffInvite(
+                tenantUser.SystemUser.FirstName,
+                clinicName,
+                string.Join(" & ", tenantUser.Roles.Select(r => r.Role.Name)),
+                $"{_frontend.BaseUrl.TrimEnd('/')}/accept-invite?token={inviteToken}",
+                hasTempPassword: false),
+            CancellationToken.None);
+    }
+
     public async Task<PagedResult<StaffDto>> GetAllStaffAsync(
         PageRequest page,
         CancellationToken cancellationToken = default)

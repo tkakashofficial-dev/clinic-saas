@@ -18,6 +18,9 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
           [class.active]="value() === option"
           [disabled]="disabled()"
           (click)="pick(option)">
+          @if (value() === option) {
+            <svg class="check" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          }
           {{ option }}
         </button>
       }
@@ -34,6 +37,10 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
     }
     .segment {
       flex: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
       border: none;
       background: transparent;
       font: 500 13.5px var(--font-body);
@@ -43,14 +50,17 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
       cursor: pointer;
       transition: all .15s ease;
 
-      &:hover:not(.active):not(:disabled) { color: var(--color-text); }
+      &:hover:not(.active):not(:disabled) { color: var(--color-text); background: rgb(12 43 35 / .04); }
 
+      /* Selected state must be UNMISSABLE — white-on-white was invisible
+         inside drawers. Filled ink + check mark: zero ambiguity. */
       &.active {
-        background: var(--color-surface);
-        color: var(--color-primary-700);
+        background: var(--color-ink-900);
+        color: var(--color-text-invert);
         font-weight: 600;
-        box-shadow: 0 1px 3px rgb(12 43 35 / 0.12);
       }
+
+      .check { flex: none; color: var(--color-primary-300); }
 
       &:disabled { opacity: .5; cursor: not-allowed; }
     }

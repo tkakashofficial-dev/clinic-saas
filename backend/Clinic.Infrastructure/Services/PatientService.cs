@@ -76,6 +76,44 @@ public class PatientService : IPatientService
         return MapToDto(patient, request.MedicalConditionCodes);
     }
 
+    public async Task<PatientDto> UpdatePatientAsync(
+        Guid patientId,
+        UpdatePatientRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var tenantId = _currentUser.TenantId;
+
+        // Tracked load — we're updating (tenant filter scopes this too)
+        var patient = await _context.Patients
+            .FirstOrDefaultAsync(p => p.Id == patientId && p.TenantId == tenantId, cancellationToken)
+            ?? throw new NotFoundException("Patient not found.");
+
+        // Phone must stay unique per clinic — excluding this patient themselves
+        var phoneTaken = await _context.Patients
+            .AnyAsync(p => p.TenantId == tenantId
+                && p.Phone == request.Phone
+                && p.Id != patientId, cancellationToken);
+        if (phoneTaken)
+            throw new ConflictException("Another patient already has this phone number.");
+
+        if (!Enum.TryParse<Gender>(request.Gender, true, out var gender)
+            || !Enum.IsDefined(gender))
+            throw new BadRequestException("Invalid gender value.");
+
+        patient.Update(
+            request.FirstName,
+            request.LastName,
+            request.Phone,
+            gender,
+            request.DateOfBirth,
+            request.Email,
+            request.Address);
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return await GetPatientByIdAsync(patientId, cancellationToken);
+    }
+
     public async Task<PagedResult<PatientDto>> GetAllPatientsAsync(
         string? search,
         PageRequest page,
@@ -103,6 +141,8 @@ public class PatientService : IPatientService
             {
                 Id = p.Id,
                 FullName = p.FirstName + " " + p.LastName,
+                FirstName = p.FirstName,
+                LastName = p.LastName,
                 Phone = p.Phone,
                 Email = p.Email,
                 Address = p.Address,
@@ -130,6 +170,8 @@ public class PatientService : IPatientService
             {
                 Id = p.Id,
                 FullName = p.FirstName + " " + p.LastName,
+                FirstName = p.FirstName,
+                LastName = p.LastName,
                 Phone = p.Phone,
                 Email = p.Email,
                 Address = p.Address,
@@ -155,6 +197,8 @@ public class PatientService : IPatientService
         {
             Id = patient.Id,
             FullName = $"{patient.FirstName} {patient.LastName}",
+            FirstName = patient.FirstName,
+            LastName = patient.LastName,
             Phone = patient.Phone,
             Email = patient.Email,
             Address = patient.Address,

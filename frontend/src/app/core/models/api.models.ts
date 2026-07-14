@@ -56,6 +56,8 @@ export interface RegisterRequest {
 export interface PatientDto {
   id: string;
   fullName: string;
+  firstName: string;
+  lastName: string;
   phone: string;
   email: string | null;
   address: string | null;
@@ -75,6 +77,16 @@ export interface RegisterPatientRequest {
   gender: string;
   dateOfBirth?: string | null;
   medicalConditionCodes: string[];
+}
+
+export interface UpdatePatientRequest {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email?: string | null;
+  address?: string | null;
+  gender: string;
+  dateOfBirth?: string | null;
 }
 
 // ---------- Appointments ----------

@@ -134,6 +134,14 @@ export class Staff {
     });
   }
 
+  resendInvite(member: StaffDto): void {
+    this.api.resendInvite(member.id).subscribe({
+      next: () => this.notice.set(
+        `A fresh invite (valid 7 days) was emailed to ${member.email}.`),
+      error: (err) => this.notice.set(parseApiError(err).message),
+    });
+  }
+
   errorFor(control: string): string {
     const c = this.form.get(control);
     if (c?.invalid && c.touched) {

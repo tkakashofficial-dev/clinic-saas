@@ -26,6 +26,14 @@ public class PatientController : ControllerBase
         CancellationToken cancellationToken)
         => Ok(await _patientService.RegisterPatientAsync(request, cancellationToken));
 
+    [HttpPut("{id}")]
+    [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Receptionist}")]
+    public async Task<ActionResult<PatientDto>> UpdatePatient(
+        Guid id,
+        [FromBody] UpdatePatientRequest request,
+        CancellationToken cancellationToken)
+        => Ok(await _patientService.UpdatePatientAsync(id, request, cancellationToken));
+
     [HttpGet]
     [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Doctor},{RoleNames.Receptionist}")]
     public async Task<ActionResult<PagedResult<PatientDto>>> GetAllPatients(

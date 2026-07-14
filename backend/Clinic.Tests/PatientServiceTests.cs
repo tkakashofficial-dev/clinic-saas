@@ -101,6 +101,69 @@ public class PatientServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task UpdatePatient_CorrectsDetails()
+    {
+        var clinic = await _db.SeedTenantAsync("Clinic", "a@a.com");
+        _db.CurrentUser.ActAs(clinic.TenantId, clinic.TenantUserId);
+
+        var created = await CreateService().RegisterPatientAsync(
+            ValidPatient("Jhon", "+31600000030")); // reception typo!
+
+        var updated = await CreateService().UpdatePatientAsync(created.Id,
+            new UpdatePatientRequest
+            {
+                FirstName = "John",
+                LastName = "Doe",
+                Phone = "+31600000031",
+                Gender = "Male",
+                DateOfBirth = new DateOnly(1985, 3, 15),
+            });
+
+        Assert.Equal("John", updated.FirstName);
+        Assert.Equal("+31600000031", updated.Phone);
+    }
+
+    [Fact]
+    public async Task UpdatePatient_PhoneOfAnotherPatient_ThrowsConflict()
+    {
+        var clinic = await _db.SeedTenantAsync("Clinic", "a@a.com");
+        _db.CurrentUser.ActAs(clinic.TenantId, clinic.TenantUserId);
+
+        await CreateService().RegisterPatientAsync(ValidPatient("Alice", "+31600000040"));
+        var bob = await CreateService().RegisterPatientAsync(ValidPatient("Bob", "+31600000041"));
+
+        // Bob cannot take Alice's number — but keeping his own must be fine
+        await Assert.ThrowsAsync<ConflictException>(
+            () => CreateService().UpdatePatientAsync(bob.Id, new UpdatePatientRequest
+            {
+                FirstName = "Bob", LastName = "Doe", Phone = "+31600000040", Gender = "Male",
+            }));
+
+        var keepOwn = await CreateService().UpdatePatientAsync(bob.Id, new UpdatePatientRequest
+        {
+            FirstName = "Robert", LastName = "Doe", Phone = "+31600000041", Gender = "Male",
+        });
+        Assert.Equal("Robert", keepOwn.FirstName);
+    }
+
+    [Fact]
+    public async Task UpdatePatient_FromAnotherTenant_ThrowsNotFound()
+    {
+        var clinicA = await _db.SeedTenantAsync("Clinic A", "a@a.com");
+        var clinicB = await _db.SeedTenantAsync("Clinic B", "b@b.com");
+
+        _db.CurrentUser.ActAs(clinicA.TenantId, clinicA.TenantUserId);
+        var patient = await CreateService().RegisterPatientAsync(ValidPatient(phone: "+31600000050"));
+
+        _db.CurrentUser.ActAs(clinicB.TenantId, clinicB.TenantUserId);
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => CreateService().UpdatePatientAsync(patient.Id, new UpdatePatientRequest
+            {
+                FirstName = "Hacked", LastName = "Name", Phone = "+31600000050", Gender = "Male",
+            }));
+    }
+
+    [Fact]
     public async Task GetPatientById_FromAnotherTenant_ThrowsNotFound()
     {
         var clinicA = await _db.SeedTenantAsync("Clinic A", "a@a.com");

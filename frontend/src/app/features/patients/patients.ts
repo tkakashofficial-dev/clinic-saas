@@ -29,6 +29,8 @@ export class Patients {
   readonly saving = signal(false);
   readonly formError = signal('');
   readonly fieldErrors = signal<Record<string, string>>({});
+  /** Non-null while editing an existing patient (drawer doubles as edit form). */
+  readonly editing = signal<PatientDto | null>(null);
 
   private readonly searchInput$ = new Subject<string>();
 
@@ -77,7 +79,24 @@ export class Patients {
   }
 
   openDrawer(): void {
+    this.editing.set(null);
     this.form.reset({ gender: 'Male' });
+    this.formError.set('');
+    this.fieldErrors.set({});
+    this.drawerOpen.set(true);
+  }
+
+  openEdit(patient: PatientDto): void {
+    this.editing.set(patient);
+    this.form.reset({
+      firstName: patient.firstName,
+      lastName: patient.lastName,
+      phone: patient.phone,
+      email: patient.email ?? '',
+      address: patient.address ?? '',
+      gender: patient.gender,
+      dateOfBirth: patient.dateOfBirth ?? '',
+    });
     this.formError.set('');
     this.fieldErrors.set({});
     this.drawerOpen.set(true);
@@ -98,17 +117,22 @@ export class Patients {
     this.fieldErrors.set({});
 
     const value = this.form.getRawValue();
-    this.api
-      .register({
-        firstName: value.firstName,
-        lastName: value.lastName,
-        phone: value.phone,
-        email: value.email || null,
-        address: value.address || null,
-        gender: value.gender,
-        dateOfBirth: value.dateOfBirth || null,
-        medicalConditionCodes: [],
-      })
+    const payload = {
+      firstName: value.firstName,
+      lastName: value.lastName,
+      phone: value.phone,
+      email: value.email || null,
+      address: value.address || null,
+      gender: value.gender,
+      dateOfBirth: value.dateOfBirth || null,
+    };
+
+    const editing = this.editing();
+    const request = editing
+      ? this.api.update(editing.id, payload)
+      : this.api.register({ ...payload, medicalConditionCodes: [] });
+
+    request
       .subscribe({
         next: () => {
           this.saving.set(false);

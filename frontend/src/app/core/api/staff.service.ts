@@ -17,4 +17,8 @@ export class StaffService {
   add(request: AddStaffRequest): Observable<StaffDto> {
     return this.http.post<StaffDto>(this.baseUrl, request);
   }
+
+  resendInvite(tenantUserId: string): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/${tenantUserId}/resend-invite`, {});
+  }
 }

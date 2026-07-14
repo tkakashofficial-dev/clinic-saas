@@ -9,6 +9,12 @@ public interface IPatientService
         RegisterPatientRequest request,
         CancellationToken cancellationToken = default);
 
+    /// <summary>Corrects patient details — reception typos are a daily reality.</summary>
+    Task<PatientDto> UpdatePatientAsync(
+        Guid patientId,
+        UpdatePatientRequest request,
+        CancellationToken cancellationToken = default);
+
     Task<PagedResult<PatientDto>> GetAllPatientsAsync(
         string? search,
         PageRequest page,

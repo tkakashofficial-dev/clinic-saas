@@ -46,4 +46,23 @@ public class Patient : BaseEntity, IMustHaveTenant
         Email = email;
         Address = address;
     }
+
+    /// <summary>Corrects patient details (typos at reception happen daily).</summary>
+    public void Update(
+        string firstName,
+        string lastName,
+        string phone,
+        Gender gender,
+        DateOnly? dateOfBirth,
+        string? email,
+        string? address)
+    {
+        FirstName = firstName ?? throw new ArgumentNullException(nameof(firstName));
+        LastName = lastName ?? throw new ArgumentNullException(nameof(lastName));
+        Phone = phone ?? throw new ArgumentNullException(nameof(phone));
+        Gender = gender;
+        DateOfBirth = dateOfBirth;
+        Email = email;
+        Address = address;
+    }
 }

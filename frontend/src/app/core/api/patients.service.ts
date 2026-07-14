@@ -2,7 +2,12 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { PagedResult, PatientDto, RegisterPatientRequest } from '../models/api.models';
+import {
+  PagedResult,
+  PatientDto,
+  RegisterPatientRequest,
+  UpdatePatientRequest,
+} from '../models/api.models';
 
 @Injectable({ providedIn: 'root' })
 export class PatientsService {
@@ -21,5 +26,9 @@ export class PatientsService {
 
   register(request: RegisterPatientRequest): Observable<PatientDto> {
     return this.http.post<PatientDto>(this.baseUrl, request);
+  }
+
+  update(id: string, request: UpdatePatientRequest): Observable<PatientDto> {
+    return this.http.put<PatientDto>(`${this.baseUrl}/${id}`, request);
   }
 }
