@@ -22,7 +22,9 @@ public class PlatformServiceTests : IDisposable
 
     private PlatformService CreatePlatformService() =>
         new(_db.CreateContext(), _db.CurrentUser, _emails,
-            Options.Create(new PlatformSettings { AdminEmails = [OwnerEmail] }));
+            Options.Create(new PlatformSettings { AdminEmails = [OwnerEmail] }),
+            Options.Create(new EmailSettings { User = "test@clinic.com", Password = "x" }),
+            Options.Create(new BrevoSettings()));
 
     private AuthService CreateAuthService(string? platformAdmin = OwnerEmail) =>
         new(_db.CreateContext(), new JwtTokenGenerator(Options.Create(new JwtSettings

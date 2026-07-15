@@ -23,17 +23,23 @@ public class PlatformService : IPlatformService
     private readonly ICurrentUserService _currentUser;
     private readonly IEmailSender _emailSender;
     private readonly PlatformSettings _settings;
+    private readonly EmailSettings _smtp;
+    private readonly BrevoSettings _brevo;
 
     public PlatformService(
         ClinicDbContext context,
         ICurrentUserService currentUser,
         IEmailSender emailSender,
-        IOptions<PlatformSettings> settings)
+        IOptions<PlatformSettings> settings,
+        IOptions<EmailSettings> smtpSettings,
+        IOptions<BrevoSettings> brevoSettings)
     {
         _context = context;
         _currentUser = currentUser;
         _emailSender = emailSender;
         _settings = settings.Value;
+        _smtp = smtpSettings.Value;
+        _brevo = brevoSettings.Value;
     }
 
     public async Task<List<PlatformTenantDto>> GetTenantsAsync(
@@ -324,15 +330,31 @@ public class PlatformService : IPlatformService
                 "this same pipeline.</p>"),
             cancellationToken);
 
-        return new PlatformEmailTestResult
+        // Name the exact situation — a generic failure line just sends the
+        // owner hunting through logs for what we already know here
+        var provider = _brevo.IsConfigured ? "Brevo (HTTPS API)"
+            : _smtp.IsConfigured ? "Gmail SMTP"
+            : null;
+
+        var detail = (sent, provider) switch
         {
-            Sent = sent,
-            To = to,
-            Detail = sent
-                ? $"Handed to the mail server — check {to} (and its spam folder)."
-                : "Not sent: SMTP is unconfigured or the server rejected it — " +
-                  "check Email__User / Email__Password env vars and the server logs."
+            (true, _) => $"Sent via {provider} — check {to}'s inbox (and spam folder).",
+            (false, null) =>
+                "No email provider is configured on this server. Recommended: set " +
+                "Brevo__ApiKey + Brevo__FromEmail (brevo.com, free). Alternative: " +
+                "Email__User + Email__Password for Gmail SMTP.",
+            (false, "Brevo (HTTPS API)") =>
+                $"Brevo rejected the send. Most common causes: '{_brevo.FromEmail}' is " +
+                "not verified as a sender in Brevo (Settings → Senders), or the API key " +
+                "is wrong. The server logs contain Brevo's exact reason.",
+            _ =>
+                $"Gmail SMTP failed for '{_smtp.User}'. Most common cause: the app " +
+                "password expired or was revoked — regenerate at " +
+                "myaccount.google.com/apppasswords and update Email__Password, or " +
+                "switch to Brevo (more reliable from cloud servers).",
         };
+
+        return new PlatformEmailTestResult { Sent = sent, To = to, Detail = detail };
     }
 
     /// <summary>Platform access = configured emails only. Roles don't apply here:
