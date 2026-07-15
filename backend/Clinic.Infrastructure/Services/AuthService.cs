@@ -203,12 +203,16 @@ public class AuthService : IAuthService
         var resetLink = await CreatePasswordLinkAsync(
             systemUser.Id, TimeSpan.FromMinutes(ResetTokenLifetimeMinutes), cancellationToken);
 
-        await _emailSender.SendAsync(
+        // Fire-and-forget: the reset link is already saved, so the response must
+        // NOT wait for SMTP. Awaiting it made the page hang for minutes when the
+        // mail server was slow/unreachable. CancellationToken.None so the request
+        // ending doesn't cancel the send.
+        _ = _emailSender.SendAsync(
             systemUser.Email,
             "Reset your Klivia password",
             EmailTemplates.PasswordReset(
                 systemUser.FirstName, resetLink, ResetTokenLifetimeMinutes),
-            cancellationToken);
+            CancellationToken.None);
     }
 
     public async Task ResetPasswordAsync(

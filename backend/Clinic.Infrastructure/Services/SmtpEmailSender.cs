@@ -48,7 +48,10 @@ public class SmtpEmailSender : IEmailSender
             using var client = new SmtpClient(_settings.Host, _settings.Port)
             {
                 EnableSsl = true,
-                Credentials = new NetworkCredential(_settings.User, _settings.Password)
+                Credentials = new NetworkCredential(_settings.User, _settings.Password),
+                // Fail fast: if the mail host is unreachable (e.g. a PaaS that
+                // blocks outbound SMTP), don't hang for the default 100 seconds
+                Timeout = 20_000
             };
 
             using var message = new MailMessage
