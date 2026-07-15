@@ -1,3 +1,4 @@
+using Clinic.Application.Features.Forms.DTOs;
 using Clinic.Application.Features.Patients.DTOs;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
@@ -7,15 +8,12 @@ namespace Clinic.Infrastructure.Services;
 
 /// <summary>
 /// Printable patient intake form — modeled on the paper forms Kerala clinics
-/// use today (clinic header, patient block, chief complaint, disease
-/// checklist, histories, examination, findings table, informed consent).
-/// The registration data is PRE-FILLED; clinical sections stay blank for the
-/// doctor's pen. This is the paper→digital bridge clinics actually adopt.
+/// use today, styled like the clinic's letterhead (ink header band, teal
+/// accents) so the printout looks premium while staying pen-friendly.
+/// Registration data is PRE-FILLED; clinical sections stay blank.
 ///
-/// Two seeded templates ship with every clinic:
-///   "dental"  — oral health status, ortho findings, intra/extra oral exam
-///   "general" — vitals strip, general + systemic examination
-/// v3: full form builder (paid add-on) lets Admins design their own.
+/// Two seeded templates ("dental" | "general") + the clinic's own CUSTOM
+/// sections (form builder v1) which print on additional pages.
 /// </summary>
 public static class IntakeFormPdfGenerator
 {
@@ -26,9 +24,12 @@ public static class IntakeFormPdfGenerator
 
     private const string Ink = "#0C2B23";
     private const string Teal = "#008465";
-    private const string Border = "#B9CFC7";
+    private const string TealBright = "#00BD8F";
+    private const string TealSoft = "#E7F5F0";
+    private const string Border = "#D6E7E0";
     private const string Muted = "#5B6F68";
-    private const string Bg = "#F4FAF7";
+    private const string Mint = "#F4FAF7";
+    private const string HeaderSub = "#9DBAB1";
 
     private static readonly string[] DiseaseChecklist =
     [
@@ -52,71 +53,75 @@ public static class IntakeFormPdfGenerator
     private static readonly string[] VitalsFields =
         ["BP", "Pulse", "Temp", "SpO₂", "Weight", "Height"];
 
-    /// <param name="template">"dental" (default) or "general" — which seeded layout to print.</param>
+    /// <param name="template">"dental" (default) or "general".</param>
+    /// <param name="customSections">The clinic's own form-builder sections (may be null).</param>
     public static byte[] Generate(
         string clinicName, string? clinicAddress, string? clinicPhone, PatientDto patient,
-        string template = "dental")
+        string template = "dental", List<IntakeFormSectionDto>? customSections = null)
     {
         var isDental = !string.Equals(template, "general", StringComparison.OrdinalIgnoreCase);
+        var sections = customSections ?? [];
+        var totalPages = 2 + (sections.Count > 0 ? ChunkSections(sections).Count : 0);
 
         return Document.Create(container =>
         {
             // ---------- Page 1: patient info + clinical intake ----------
             container.Page(page =>
             {
-                page.Size(PageSizes.A4);
-                page.Margin(36);
-                page.DefaultTextStyle(t => t.FontSize(9.5f).FontColor(Ink));
+                ApplyChrome(page, clinicName, clinicAddress, clinicPhone,
+                    isDental, patient, pageNumber: 1, totalPages);
 
-                page.Header().Row(row =>
+                page.Content().PaddingHorizontal(34).PaddingVertical(10).Column(content =>
                 {
-                    row.RelativeItem().Column(col =>
-                    {
-                        col.Item().Text(clinicName).FontSize(19).SemiBold().FontColor(Ink);
-                        if (!string.IsNullOrWhiteSpace(clinicAddress))
-                            col.Item().Text(clinicAddress).FontSize(8.5f).FontColor(Muted);
-                        if (!string.IsNullOrWhiteSpace(clinicPhone))
-                            col.Item().Text($"☎ {clinicPhone}").FontSize(8.5f).FontColor(Muted);
-                        col.Item().PaddingTop(2)
-                            .Text(isDental ? "Dental intake form" : "General intake form")
-                            .FontSize(8).SemiBold().FontColor(Teal);
-                    });
-                    row.ConstantItem(170).Column(col =>
-                    {
-                        col.Item().Border(1).BorderColor(Ink).Padding(6).Column(alert =>
+                    // Alerts: the one thing a doctor must never miss — amber
+                    content.Item().Background("#FEF7E5").BorderLeft(3).BorderColor("#F0B429")
+                        .Padding(8).Row(r =>
                         {
-                            alert.Item().Text("ALERTS").FontSize(7.5f).SemiBold().FontColor(Muted);
-                            alert.Item().Height(18);
+                            r.AutoItem().Text("⚠ ALERTS").FontSize(8).SemiBold().FontColor("#8A6D1B");
+                            r.RelativeItem().PaddingLeft(10).PaddingTop(6)
+                                .LineHorizontal(0.8f).LineColor("#E4CE96");
                         });
-                        col.Item().PaddingTop(6).Text($"ID No: P-{patient.PatientNumber:D6}").SemiBold();
-                        col.Item().Text($"Date: {DateTime.UtcNow:dd/MM/yyyy}");
-                        col.Item().Text($"Sex: {patient.Gender}   Age: {(patient.Age.HasValue ? patient.Age.ToString() : "—")}");
-                    });
-                });
 
-                page.Content().PaddingTop(10).Column(content =>
-                {
-                    // Patient info (pre-filled — the part reception hand-writes today)
-                    content.Item().Background(Bg).Padding(10).Column(info =>
+                    // Patient info (pre-filled — what reception hand-writes today)
+                    SectionTitle(content, "Patient information");
+                    content.Item().Background(Mint).Border(1).BorderColor(Border)
+                        .Padding(10).Column(info =>
                     {
-                        info.Item().Text("PATIENT INFORMATION").FontSize(8).SemiBold().FontColor(Teal);
-                        info.Item().PaddingTop(4).Text($"Name of Patient:  {patient.FullName}").SemiBold();
-                        info.Item().Text($"Address:  {patient.Address ?? "—"}");
                         info.Item().Row(r =>
                         {
-                            r.RelativeItem().Text($"Mobile:  {patient.Phone}");
-                            r.RelativeItem().Text($"E-mail:  {patient.Email ?? "—"}");
+                            r.RelativeItem(2).Text(t =>
+                            {
+                                t.Span("Name:  ").FontSize(8.5f).FontColor(Muted);
+                                t.Span(patient.FullName).FontSize(10).SemiBold();
+                            });
+                            r.RelativeItem().Text(t =>
+                            {
+                                t.Span("Mobile:  ").FontSize(8.5f).FontColor(Muted);
+                                t.Span(patient.Phone).FontSize(9.5f).SemiBold();
+                            });
+                        });
+                        info.Item().PaddingTop(4).Row(r =>
+                        {
+                            r.RelativeItem(2).Text(t =>
+                            {
+                                t.Span("Address:  ").FontSize(8.5f).FontColor(Muted);
+                                t.Span(patient.Address ?? "—").FontSize(9);
+                            });
+                            r.RelativeItem().Text(t =>
+                            {
+                                t.Span("E-mail:  ").FontSize(8.5f).FontColor(Muted);
+                                t.Span(patient.Email ?? "—").FontSize(9);
+                            });
                         });
                     });
 
-                    content.Item().PaddingTop(10).AlignCenter()
-                        .Text("To be filled by the Doctor").FontSize(8.5f).SemiBold().FontColor(Muted);
+                    content.Item().PaddingTop(8).AlignCenter()
+                        .Text("· To be filled by the doctor ·").FontSize(8).SemiBold().FontColor(Muted);
 
-                    // General template: a vitals strip is the first thing a
-                    // physician records; dental clinics rarely chart these
+                    // General template: vitals strip first, as physicians chart
                     if (!isDental)
                     {
-                        content.Item().PaddingTop(8).Border(1).BorderColor(Border).Padding(8).Row(r =>
+                        content.Item().PaddingTop(6).Border(1).BorderColor(Border).Padding(8).Row(r =>
                         {
                             foreach (var vital in VitalsFields)
                             {
@@ -124,171 +129,307 @@ public static class IntakeFormPdfGenerator
                                 {
                                     line.AutoItem().Text($"{vital}: ").FontSize(8.5f).SemiBold();
                                     line.RelativeItem().PaddingTop(9).PaddingRight(6)
-                                        .LineHorizontal(0.7f).LineColor(Muted);
+                                        .LineHorizontal(0.8f).LineColor(Border);
                                 });
                             }
                         });
                     }
 
-                    // Chief complaint
-                    LabeledBox(content, "Chief Complaint", 44);
+                    SectionTitle(content, "Chief complaint");
+                    WritingBox(content, 34);
 
-                    // Disease checklist
-                    content.Item().PaddingTop(8).Border(1).BorderColor(Border).Padding(8).Column(check =>
+                    SectionTitle(content, "Medical diseases checklist");
+                    content.Item().Border(1).BorderColor(Border).Padding(9).Row(r =>
                     {
-                        check.Item().Text("Medical Diseases Checklist").FontSize(8.5f).SemiBold();
-                        check.Item().PaddingTop(4).Row(r =>
+                        foreach (var chunk in DiseaseChecklist.Chunk(4))
                         {
-                            foreach (var chunk in DiseaseChecklist.Chunk(4))
+                            r.RelativeItem().Column(c =>
                             {
-                                r.RelativeItem().Column(c =>
-                                {
-                                    foreach (var disease in chunk)
-                                        c.Item().PaddingVertical(1.5f).Row(line =>
-                                        {
-                                            line.ConstantItem(11).Height(9).Border(1).BorderColor(Ink);
-                                            line.ConstantItem(5);
-                                            line.RelativeItem().Text(disease).FontSize(8.5f);
-                                        });
-                                });
-                            }
-                        });
+                                foreach (var disease in chunk)
+                                    CheckItem(c, disease);
+                            });
+                        }
                     });
 
-                    // Medical history | Medications
-                    content.Item().PaddingTop(8).Row(r =>
+                    SectionTitle(content, isDental
+                        ? "Medical & dental history  ·  Medications"
+                        : "Medical, surgical & family history  ·  Medications");
+                    content.Item().Row(r =>
                     {
                         r.RelativeItem(2).Border(1).BorderColor(Border).Padding(8).Column(c =>
                         {
-                            c.Item().Text("Medical history").FontSize(8.5f).SemiBold();
-                            c.Item().Height(52);
-                            c.Item().Text(isDental ? "Dental history" : "Surgical / Family history")
-                                .FontSize(8.5f).SemiBold();
-                            c.Item().Height(52);
+                            c.Item().Text("Medical history").FontSize(8.5f).SemiBold().FontColor(Teal);
+                            c.Item().Height(40);
+                            c.Item().Text(isDental ? "Dental history" : "Surgical / family history")
+                                .FontSize(8.5f).SemiBold().FontColor(Teal);
+                            c.Item().Height(40);
                         });
                         r.ConstantItem(8);
                         r.RelativeItem().Border(1).BorderColor(Border).Padding(8).Column(c =>
                         {
-                            c.Item().Text("Medications").FontSize(8.5f).SemiBold();
-                            c.Item().Height(118);
+                            c.Item().Text("Medications").FontSize(8.5f).SemiBold().FontColor(Teal);
+                            c.Item().Height(94);
                         });
                     });
 
-                    // Examination row — the section that differs per specialty
-                    content.Item().PaddingTop(8).Row(r =>
+                    SectionTitle(content, "Examination");
+                    content.Item().Row(r =>
                     {
                         if (isDental)
                         {
                             r.RelativeItem().Border(1).BorderColor(Border).Padding(8).Column(c =>
                             {
-                                c.Item().Text("Ortho Findings (if any)").FontSize(8.5f).SemiBold();
-                                c.Item().Height(96);
+                                c.Item().Text("Ortho findings (if any)").FontSize(8.5f).SemiBold().FontColor(Teal);
+                                c.Item().Height(76);
                             });
                             r.ConstantItem(8);
-                            DottedSection(r.RelativeItem(), "Oral Health Status", OralHealthLines);
+                            DottedSection(r.RelativeItem(), "Oral health status", OralHealthLines);
                             r.ConstantItem(8);
-                            DottedSection(r.RelativeItem(), "Extra / Intra Oral Examination", DentalExamLines);
+                            DottedSection(r.RelativeItem(), "Extra / intra oral", DentalExamLines);
                         }
                         else
                         {
                             r.RelativeItem().Border(1).BorderColor(Border).Padding(8).Column(c =>
                             {
-                                c.Item().Text("Local Examination").FontSize(8.5f).SemiBold();
-                                c.Item().Height(96);
+                                c.Item().Text("Local examination").FontSize(8.5f).SemiBold().FontColor(Teal);
+                                c.Item().Height(76);
                             });
                             r.ConstantItem(8);
-                            DottedSection(r.RelativeItem(), "General Examination", GeneralExamLines);
+                            DottedSection(r.RelativeItem(), "General examination", GeneralExamLines);
                             r.ConstantItem(8);
-                            DottedSection(r.RelativeItem(), "Systemic Examination", SystemicExamLines);
+                            DottedSection(r.RelativeItem(), "Systemic examination", SystemicExamLines);
                         }
                     });
                 });
-
-                page.Footer().AlignCenter()
-                    .Text($"{clinicName} · Patient intake form · powered by Klivia")
-                    .FontSize(7.5f).FontColor(Muted);
             });
 
             // ---------- Page 2: findings, treatment plan, consent ----------
             container.Page(page =>
             {
-                page.Size(PageSizes.A4);
-                page.Margin(36);
-                page.DefaultTextStyle(t => t.FontSize(9.5f).FontColor(Ink));
+                ApplyChrome(page, clinicName, clinicAddress, clinicPhone,
+                    isDental, patient, pageNumber: 2, totalPages);
 
-                page.Content().Column(content =>
+                page.Content().PaddingHorizontal(34).PaddingVertical(10).Column(content =>
                 {
-                    LabeledBox(content, "Investigations", 70);
-                    LabeledBox(content, isDental
-                        ? "Previous Dental Treatment (if any, please specify)"
-                        : "Previous Treatment / Hospitalisation (if any, please specify)", 56);
+                    SectionTitle(content, "Investigations");
+                    WritingBox(content, 54);
 
-                    // Findings / treatment table
-                    content.Item().PaddingTop(10).Table(table =>
+                    SectionTitle(content, isDental
+                        ? "Previous dental treatment (if any, please specify)"
+                        : "Previous treatment / hospitalisation (if any, please specify)");
+                    WritingBox(content, 44);
+
+                    SectionTitle(content, "Findings & treatment plan");
+                    content.Item().Table(table =>
                     {
                         table.ColumnsDefinition(cols =>
                         {
-                            cols.ConstantColumn(30);
+                            cols.ConstantColumn(28);
                             cols.RelativeColumn(3);
                             cols.RelativeColumn(3);
-                            cols.ConstantColumn(70);
+                            cols.ConstantColumn(66);
                         });
                         table.Header(h =>
                         {
                             foreach (var title in new[]
-                                { "Sl. No", "Clinical / Radiographic Findings", "Respective Treatment Advised", "Selected Tx" })
-                                h.Cell().Border(1).BorderColor(Ink).Padding(5)
-                                    .Text(title).FontSize(8.5f).SemiBold();
+                                { "SL", "CLINICAL / RADIOGRAPHIC FINDINGS", "TREATMENT ADVISED", "SELECTED" })
+                                h.Cell().Background(Ink).Padding(5)
+                                    .Text(title).FontSize(7).SemiBold().FontColor(Colors.White);
                         });
                         for (var i = 0; i < 6; i++)
                             for (var col = 0; col < 4; col++)
-                                table.Cell().Border(0.8f).BorderColor(Border).Height(30);
+                                table.Cell().Border(0.8f).BorderColor(Border).Height(26);
                     });
 
-                    content.Item().PaddingTop(8).Text("Initial Estimated Cost of Selected Tx:  ₹ __________________")
-                        .FontSize(9.5f).SemiBold();
+                    content.Item().PaddingTop(8).Text(t =>
+                    {
+                        t.Span("Initial estimated cost of selected treatment:  ").FontSize(9).SemiBold();
+                        t.Span("₹ ____________________").FontSize(9.5f);
+                    });
 
                     // Informed consent — Malayalam version arrives with i18n
-                    content.Item().PaddingTop(16).AlignCenter()
-                        .Text("PATIENT TREATMENT INFORMED CONSENT").FontSize(10.5f).SemiBold();
-                    content.Item().PaddingTop(6).Text(
+                    content.Item().PaddingTop(12).AlignCenter().Column(c =>
+                    {
+                        c.Item().AlignCenter().Text("PATIENT TREATMENT INFORMED CONSENT")
+                            .FontSize(10).SemiBold();
+                        c.Item().AlignCenter().PaddingTop(3).Width(60)
+                            .LineHorizontal(2).LineColor(TealBright);
+                    });
+                    content.Item().PaddingTop(8).Text(
                         "I have been fully informed of the nature of the procedures involved in the treatment " +
                         $"of my {(isDental ? "dental" : "medical")} conditions, the procedures to be utilized, the risks and benefits of the " +
                         "treatment, the anesthesia selected, and the necessity of follow-up and self-care. The " +
                         "treatments have been decided in consultation with me after analysing the risks, " +
-                        "benefits and the costs involved.").FontSize(8.5f).LineHeight(1.5f);
+                        "benefits and the costs involved.").FontSize(8.5f).LineHeight(1.5f).FontColor("#2E4A41");
                     content.Item().PaddingTop(5).Text(
                         "I have had the opportunity to ask any questions I may have in connection with the " +
                         "treatment and to discuss my concerns with the Doctor. I hereby consent to the " +
                         "performance of the procedures as presented to me during consultation and the " +
-                        "treatment plan described in this document.").FontSize(8.5f).LineHeight(1.5f);
-                    content.Item().PaddingTop(5).Text(
+                        "treatment plan described in this document.").FontSize(8.5f).LineHeight(1.5f).FontColor("#2E4A41");
+                    content.Item().PaddingTop(6).Text(
                         "I CERTIFY THAT I HAVE READ AND FULLY UNDERSTAND THIS CONSENT DOCUMENT.")
                         .FontSize(8.5f).SemiBold();
 
-                    content.Item().PaddingTop(22).Row(r =>
+                    content.Item().PaddingTop(14).Row(r =>
                     {
                         r.RelativeItem().Column(c =>
                         {
-                            c.Item().Text("Name of Patient / Guardian:  ______________________").FontSize(9);
-                            c.Item().PaddingTop(12).Text("Signature:  ______________________").FontSize(9);
+                            c.Item().LineHorizontal(0.9f).LineColor(Ink);
+                            c.Item().PaddingTop(3).Text("Name of patient / guardian")
+                                .FontSize(7.5f).FontColor(Muted);
                         });
-                        r.ConstantItem(140).AlignRight().Text($"Date: {DateTime.UtcNow:dd/MM/yyyy}").FontSize(9);
+                        r.ConstantItem(30);
+                        r.RelativeItem().Column(c =>
+                        {
+                            c.Item().LineHorizontal(0.9f).LineColor(Ink);
+                            c.Item().PaddingTop(3).Text("Signature").FontSize(7.5f).FontColor(Muted);
+                        });
+                        r.ConstantItem(30);
+                        r.ConstantItem(110).Column(c =>
+                        {
+                            c.Item().Text($"Date: {DateTime.UtcNow:dd/MM/yyyy}").FontSize(9);
+                        });
                     });
                 });
-
-                page.Footer().AlignCenter()
-                    .Text($"{clinicName} · Page 2 of 2").FontSize(7.5f).FontColor(Muted);
             });
+
+            // ---------- Extra pages: the clinic's OWN sections (form builder) ----------
+            if (sections.Count > 0)
+            {
+                var chunks = ChunkSections(sections);
+                for (var i = 0; i < chunks.Count; i++)
+                {
+                    var chunk = chunks[i];
+                    var pageNumber = 3 + i;
+                    container.Page(page =>
+                    {
+                        ApplyChrome(page, clinicName, clinicAddress, clinicPhone,
+                            isDental, patient, pageNumber, totalPages);
+
+                        page.Content().PaddingHorizontal(34).PaddingVertical(10).Column(content =>
+                        {
+                            content.Item().Text("Additional sections")
+                                .FontSize(8).SemiBold().FontColor(Muted);
+
+                            foreach (var section in chunk)
+                            {
+                                SectionTitle(content, section.Title);
+                                switch (section.Kind)
+                                {
+                                    case "box":
+                                        WritingBox(content, 64);
+                                        break;
+
+                                    case "lines":
+                                        content.Item().Border(1).BorderColor(Border).Padding(9).Column(c =>
+                                        {
+                                            foreach (var item in section.Items)
+                                                c.Item().PaddingTop(7).Row(r =>
+                                                {
+                                                    r.ConstantItem(120).Text(item).FontSize(8.5f);
+                                                    r.RelativeItem().PaddingTop(9)
+                                                        .LineHorizontal(0.8f).LineColor(Border);
+                                                });
+                                        });
+                                        break;
+
+                                    case "checklist":
+                                        content.Item().Border(1).BorderColor(Border).Padding(9).Row(r =>
+                                        {
+                                            var half = (section.Items.Count + 1) / 2;
+                                            foreach (var column in new[]
+                                                { section.Items.Take(half), section.Items.Skip(half) })
+                                            {
+                                                r.RelativeItem().Column(c =>
+                                                {
+                                                    foreach (var item in column)
+                                                        CheckItem(c, item);
+                                                });
+                                            }
+                                        });
+                                        break;
+                                }
+                            }
+                        });
+                    });
+                }
+            }
         }).GeneratePdf();
     }
 
-    private static void LabeledBox(ColumnDescriptor content, string label, float height)
+    /// <summary>Shared page chrome: A4, ink letterhead band, footer band.</summary>
+    private static void ApplyChrome(
+        PageDescriptor page, string clinicName, string? clinicAddress, string? clinicPhone,
+        bool isDental, PatientDto patient, int pageNumber, int totalPages)
     {
-        content.Item().PaddingTop(8).Border(1).BorderColor(Border).Padding(8).Column(c =>
+        page.Size(PageSizes.A4);
+        page.Margin(0);
+        page.DefaultTextStyle(t => t.FontSize(9.5f).FontColor(Ink));
+
+        page.Header().Background(Ink).PaddingHorizontal(34).PaddingVertical(14).Row(row =>
         {
-            c.Item().Text(label).FontSize(8.5f).SemiBold();
-            c.Item().Height(height);
+            row.RelativeItem().Column(col =>
+            {
+                col.Item().Row(brand =>
+                {
+                    brand.AutoItem().Width(19).Height(19).Background(TealBright)
+                        .AlignCenter().AlignMiddle()
+                        .Text("+").FontSize(13).SemiBold().FontColor("#06362B");
+                    brand.AutoItem().PaddingLeft(7).AlignMiddle()
+                        .Text(clinicName).FontSize(15).SemiBold().FontColor(Colors.White);
+                });
+                var contactLine = string.Join("   ·   ",
+                    new[] { clinicAddress, clinicPhone }.Where(v => !string.IsNullOrWhiteSpace(v))!);
+                if (contactLine.Length > 0)
+                    col.Item().PaddingTop(2).Text(contactLine).FontSize(7.5f).FontColor(HeaderSub);
+                col.Item().PaddingTop(2)
+                    .Text((isDental ? "DENTAL" : "GENERAL") + " PATIENT INTAKE FORM")
+                    .FontSize(7).SemiBold().FontColor("#7FC8B4").LetterSpacing(0.15f);
+            });
+            row.ConstantItem(150).AlignRight().AlignMiddle().Column(col =>
+            {
+                col.Item().AlignRight().Text($"ID No: P-{patient.PatientNumber:D6}")
+                    .FontSize(10.5f).SemiBold().FontColor(Colors.White);
+                col.Item().AlignRight().Text($"{DateTime.UtcNow:dd MMM yyyy}")
+                    .FontSize(8).FontColor(HeaderSub);
+                col.Item().AlignRight()
+                    .Text($"{patient.Gender}  ·  {(patient.Age.HasValue ? patient.Age + " yrs" : "Age —")}")
+                    .FontSize(8).FontColor(HeaderSub);
+            });
+        });
+
+        page.Footer().Background(Ink).PaddingHorizontal(34).PaddingVertical(6).Row(row =>
+        {
+            row.RelativeItem().Text(clinicName).FontSize(7).SemiBold().FontColor(Colors.White);
+            row.RelativeItem().AlignRight()
+                .Text($"Page {pageNumber} of {totalPages}  ·  powered by Klivia")
+                .FontSize(7).FontColor(HeaderSub);
+        });
+    }
+
+    /// <summary>Uppercase micro-title with a teal accent bar — the section voice.</summary>
+    private static void SectionTitle(ColumnDescriptor content, string title)
+    {
+        content.Item().PaddingTop(6).PaddingBottom(3).Row(r =>
+        {
+            r.AutoItem().PaddingTop(1).Width(3).Height(10).Background(TealBright);
+            r.AutoItem().PaddingLeft(6).Text(title.ToUpperInvariant())
+                .FontSize(7.5f).SemiBold().FontColor(Teal).LetterSpacing(0.08f);
+        });
+    }
+
+    private static void WritingBox(ColumnDescriptor content, float height)
+    {
+        content.Item().Border(1).BorderColor(Border).Padding(8).Column(c => c.Item().Height(height));
+    }
+
+    private static void CheckItem(ColumnDescriptor column, string label)
+    {
+        column.Item().PaddingVertical(2).Row(line =>
+        {
+            line.ConstantItem(10).Height(10).Border(1.1f).BorderColor(Teal);
+            line.ConstantItem(5);
+            line.RelativeItem().Text(label).FontSize(8.5f);
         });
     }
 
@@ -296,13 +437,45 @@ public static class IntakeFormPdfGenerator
     {
         container.Border(1).BorderColor(Border).Padding(8).Column(c =>
         {
-            c.Item().Text(title).FontSize(8.5f).SemiBold();
+            c.Item().Text(title).FontSize(8.5f).SemiBold().FontColor(Teal);
             foreach (var line in lines)
                 c.Item().PaddingTop(6).Row(r =>
                 {
-                    r.ConstantItem(78).Text(line).FontSize(8.5f);
-                    r.RelativeItem().PaddingTop(9).LineHorizontal(0.7f).LineColor(Muted);
+                    r.ConstantItem(74).Text(line).FontSize(8.5f);
+                    r.RelativeItem().PaddingTop(9).LineHorizontal(0.8f).LineColor(Border);
                 });
         });
+    }
+
+    /// <summary>Rough per-section height estimate → chunk to pages so a
+    /// clinic with many custom sections never overflows a fixed page.</summary>
+    private static List<List<IntakeFormSectionDto>> ChunkSections(List<IntakeFormSectionDto> sections)
+    {
+        const float pageBudget = 640f;
+        var chunks = new List<List<IntakeFormSectionDto>>();
+        var current = new List<IntakeFormSectionDto>();
+        var used = 0f;
+
+        foreach (var section in sections)
+        {
+            var height = section.Kind switch
+            {
+                "box" => 100f,
+                "lines" => 46f + section.Items.Count * 20f,
+                "checklist" => 46f + ((section.Items.Count + 1) / 2) * 15f,
+                _ => 100f,
+            };
+
+            if (used + height > pageBudget && current.Count > 0)
+            {
+                chunks.Add(current);
+                current = [];
+                used = 0f;
+            }
+            current.Add(section);
+            used += height;
+        }
+        if (current.Count > 0) chunks.Add(current);
+        return chunks;
     }
 }

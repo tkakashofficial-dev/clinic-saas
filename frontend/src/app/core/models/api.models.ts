@@ -292,6 +292,27 @@ export interface ClinicSettings {
   defaultIntakeTemplate: IntakeTemplate;
 }
 
+// ---------- Forms (intake form builder) ----------
+
+export type FormSectionKind = 'box' | 'lines' | 'checklist';
+export type FormSectionTemplate = 'dental' | 'general' | 'both';
+
+export interface IntakeFormSection {
+  id: string;
+  template: FormSectionTemplate;
+  kind: FormSectionKind;
+  title: string;
+  items: string[];
+  sortOrder: number;
+}
+
+export interface SaveIntakeFormSectionRequest {
+  template: FormSectionTemplate;
+  kind: FormSectionKind;
+  title: string;
+  items: string[];
+}
+
 // ---------- Platform (SaaS owner console) ----------
 
 export interface PlatformTenant {

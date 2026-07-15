@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { parseApiError } from '../../core/api/api-error';
 import { SettingsService } from '../../core/api/settings.service';
 import { IntakeTemplate } from '../../core/models/api.models';
@@ -19,7 +20,7 @@ interface TemplateOption {
  */
 @Component({
   selector: 'app-settings',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './settings.html',
   styleUrl: './settings.scss',
 })

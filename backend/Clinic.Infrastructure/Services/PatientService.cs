@@ -240,8 +240,12 @@ public class PatientService : IPatientService
             .AsNoTracking()
             .FirstAsync(t => t.Id == _currentUser.TenantId, cancellationToken);
 
+        // The clinic's own form-builder sections print on extra pages
+        var sections = await new FormsService(_context, _currentUser)
+            .GetSectionsForTemplateAsync(template, cancellationToken);
+
         var pdf = IntakeFormPdfGenerator.Generate(
-            tenant.Name, tenant.Address, tenant.Phone, patient, template);
+            tenant.Name, tenant.Address, tenant.Phone, patient, template, sections);
         return (pdf, $"intake-{template}-P{patient.PatientNumber:D6}.pdf");
     }
 

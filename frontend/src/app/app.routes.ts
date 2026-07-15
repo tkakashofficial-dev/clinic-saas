@@ -92,6 +92,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/billing/billing').then((m) => m.Billing),
       },
       {
+        // Intake form builder — everyone views/previews, Admin designs
+        path: 'forms',
+        loadComponent: () => import('./features/forms/forms').then((m) => m.Forms),
+      },
+      {
         path: 'settings',
         canActivate: [roleGuard],
         data: { roles: ['Admin'] },

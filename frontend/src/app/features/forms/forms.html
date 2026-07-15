@@ -1,0 +1,181 @@
+<header class="page-header">
+  <div>
+    <h1>Forms</h1>
+    <p class="sub">Your intake form — pick a template, add your own sections, preview the print</p>
+  </div>
+  @if (isAdmin()) {
+    <button type="button" class="btn btn-primary" (click)="openAdd()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add section
+    </button>
+  }
+</header>
+
+@if (notice()) {
+  <div class="alert-success" style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
+    <span>{{ notice() }}</span>
+    <button type="button" class="btn btn-ghost" style="padding:2px 8px;" (click)="notice.set('')" aria-label="Dismiss">✕</button>
+  </div>
+}
+@if (error()) {
+  <div class="alert-error">{{ error() }}</div>
+}
+
+<p class="intake-hint" style="margin-bottom:16px;">
+  <strong>How it works:</strong> reception prints the form from a patient's record —
+  patient details are pre-filled, the <strong>patient</strong> signs the consent, the
+  <strong>doctor</strong> fills the clinical parts. <strong>You</strong> (Admin) design
+  it here; the team just prints.
+</p>
+
+<!-- Template cards -->
+<div class="template-row">
+  @for (template of templates; track template.key) {
+    <div class="card card-pad template-tile" [class.default]="defaultTemplate() === template.key">
+      <div class="tile-head">
+        <span class="tile-emoji">{{ template.emoji }}</span>
+        <div class="tile-titles">
+          <h3>{{ template.title }}</h3>
+          @if (defaultTemplate() === template.key) {
+            <span class="chip chip-completed">★ Clinic default</span>
+          }
+        </div>
+      </div>
+      <p class="tile-blurb">{{ template.blurb }}</p>
+      <div class="tile-actions">
+        <button type="button" class="btn btn-secondary" (click)="preview(template.key)"
+                [disabled]="previewing() !== null">
+          👁 {{ previewing() === template.key ? 'Opening…' : 'Preview PDF' }}
+        </button>
+        @if (isAdmin() && defaultTemplate() !== template.key) {
+          <button type="button" class="btn btn-ghost" (click)="setDefault(template.key)"
+                  [disabled]="settingDefault()">
+            Set as default
+          </button>
+        }
+      </div>
+    </div>
+  }
+</div>
+
+<!-- Custom sections -->
+<h3 class="sections-title">
+  Your custom sections
+  @if (sections().length > 0) { <span class="sections-count">{{ sections().length }}</span> }
+</h3>
+<p class="muted" style="font-size:13px; margin-bottom:12px;">
+  These print on an extra page of the form, in this order. Choose which template each one belongs to.
+</p>
+
+<section class="card">
+  @if (loading()) {
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
+  } @else if (sections().length === 0) {
+    <div class="empty-state">
+      <div class="icon">📄</div>
+      <h3>No custom sections yet</h3>
+      <p>Add what your paper form has and ours doesn't — insurance details, habits
+        checklist, referral source, anything.</p>
+      @if (isAdmin()) {
+        <button type="button" class="btn btn-secondary" (click)="openAdd()">Add your first section</button>
+      }
+    </div>
+  } @else {
+    @for (section of sections(); track section.id; let first = $first; let last = $last) {
+      <div class="section-row">
+        <span class="section-kind" [title]="kindMeta(section.kind).label">
+          {{ kindMeta(section.kind).emoji }}
+        </span>
+        <div class="section-main">
+          <span class="section-title">{{ section.title }}</span>
+          <span class="section-meta">
+            {{ kindMeta(section.kind).label }}
+            @if (section.items.length > 0) { · {{ section.items.length }} items }
+            · {{ section.template === 'both' ? 'Both templates'
+                : section.template === 'dental' ? 'Dental only' : 'General only' }}
+          </span>
+        </div>
+        @if (isAdmin()) {
+          <div class="section-actions">
+            <button type="button" class="btn btn-ghost" [disabled]="first"
+                    (click)="move(section, -1)" aria-label="Move up">↑</button>
+            <button type="button" class="btn btn-ghost" [disabled]="last"
+                    (click)="move(section, 1)" aria-label="Move down">↓</button>
+            <button type="button" class="btn btn-ghost danger-text" (click)="remove(section)">Remove</button>
+          </div>
+        }
+      </div>
+    }
+  }
+</section>
+
+<!-- ============ Add section drawer ============ -->
+@if (addOpen()) {
+  <div class="drawer-backdrop" (click)="addOpen.set(false)"></div>
+  <aside class="drawer" role="dialog" aria-label="Add form section">
+    <div class="drawer-header">
+      <h2>Add a section</h2>
+      <button type="button" class="btn btn-ghost" (click)="addOpen.set(false)" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="drawer-body">
+      @if (formError()) {
+        <div class="alert-error">{{ formError() }}</div>
+      }
+
+      <div class="field">
+        <label>What shape is it?<span class="req" aria-hidden="true">*</span></label>
+        <div class="kind-picker">
+          @for (kind of kinds; track kind.key) {
+            <button type="button" class="kind-option" [class.selected]="newKind === kind.key"
+                    (click)="newKind = kind.key">
+              <span class="kind-emoji">{{ kind.emoji }}</span>
+              <span class="kind-label">{{ kind.label }}</span>
+              <span class="kind-hint">{{ kind.hint }}</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="f-title">Section title<span class="req" aria-hidden="true">*</span></label>
+        <input id="f-title" class="input" [(ngModel)]="newTitle"
+               placeholder="e.g. Habits · Insurance details · Referred by">
+      </div>
+
+      @if (newKind !== 'box') {
+        <div class="field">
+          <label for="f-items">Items — one per line<span class="req" aria-hidden="true">*</span></label>
+          <textarea id="f-items" class="input" rows="5" [(ngModel)]="newItemsText"
+                    [placeholder]="newKind === 'checklist'
+                      ? 'Smoking\nPan chewing\nAlcohol'
+                      : 'Policy number\nInsurance company\nValid till'"></textarea>
+        </div>
+      }
+
+      <div class="field">
+        <label>Appears on</label>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="filter-chip" [class.active]="newTemplate === 'both'"
+                  (click)="newTemplate = 'both'">Both templates</button>
+          <button type="button" class="filter-chip" [class.active]="newTemplate === 'dental'"
+                  (click)="newTemplate = 'dental'">🦷 Dental only</button>
+          <button type="button" class="filter-chip" [class.active]="newTemplate === 'general'"
+                  (click)="newTemplate = 'general'">🩺 General only</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="drawer-footer">
+      <button type="button" class="btn btn-secondary" (click)="addOpen.set(false)">Cancel</button>
+      <button type="button" class="btn btn-primary"
+              [disabled]="saving() || !newTitle.trim()" (click)="addSection()">
+        @if (saving()) { <span class="inline-spinner" aria-hidden="true"></span> }
+        {{ saving() ? 'Adding…' : 'Add section' }}
+      </button>
+    </div>
+  </aside>
+}

@@ -45,35 +45,12 @@
     </section>
 
     <section class="card card-pad settings-block">
-      <h2>Intake form template</h2>
+      <h2>Intake form</h2>
       <p class="muted block-sub">
-        The design your team prints by default from a patient's record — both stay
-        available, this just picks which one leads. A full custom form builder is
-        coming as an add-on.
+        Templates, your own custom sections, and a live PDF preview all moved to
+        their own home.
       </p>
-
-      <div class="template-grid">
-        @for (template of templates; track template.key) {
-          <button type="button" class="template-card"
-                  [class.selected]="selectedTemplate() === template.key"
-                  (click)="selectedTemplate.set(template.key)">
-            <div class="template-head">
-              <span class="template-emoji">{{ template.emoji }}</span>
-              <span class="template-title">{{ template.title }}</span>
-              @if (selectedTemplate() === template.key) {
-                <span class="template-check">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                </span>
-              }
-            </div>
-            <ul class="template-sections">
-              @for (section of template.sections; track section) {
-                <li>{{ section }}</li>
-              }
-            </ul>
-          </button>
-        }
-      </div>
+      <a routerLink="/forms" class="btn btn-secondary">📄 Open the Forms builder →</a>
     </section>
 
     <div class="settings-actions">
