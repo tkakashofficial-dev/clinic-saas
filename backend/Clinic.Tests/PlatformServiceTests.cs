@@ -166,6 +166,38 @@ public class PlatformServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task RecordPayment_BackdatedToTheRealPaymentDay_CoversFromThatDay()
+    {
+        // Owner records on Monday a UPI that landed on Saturday — coverage
+        // must run from Saturday, and the history must show Saturday
+        var clinic = await _db.SeedTenantAsync("Smile Dental", "admin@clinic.com");
+        ActAsPlatformOwner();
+        var saturday = DateTime.UtcNow.AddDays(-2);
+
+        var updated = await CreatePlatformService().RecordPaymentAsync(
+            clinic.TenantId, new RecordPaymentRequest
+            {
+                AmountRupees = 999, Method = "BankTransfer", PeriodMonths = 1, PaidAt = saturday,
+            });
+
+        Assert.InRange(updated.PaidUntil!.Value,
+            saturday.AddDays(27), saturday.AddDays(32));
+
+        var history = await CreatePlatformService().GetPaymentsAsync(clinic.TenantId);
+        var payment = Assert.Single(history);
+        Assert.Equal(saturday, payment.PaidAt, TimeSpan.FromSeconds(5));
+        Assert.Equal("BankTransfer", payment.Method);
+
+        // Future-dated payments are nonsense — refuse them
+        await Assert.ThrowsAsync<BadRequestException>(
+            () => CreatePlatformService().RecordPaymentAsync(clinic.TenantId,
+                new RecordPaymentRequest
+                {
+                    AmountRupees = 999, Method = "Upi", PaidAt = DateTime.UtcNow.AddDays(9),
+                }));
+    }
+
+    [Fact]
     public async Task RecordPayment_Garbage_IsRejected()
     {
         var clinic = await _db.SeedTenantAsync("Smile Dental", "admin@clinic.com");

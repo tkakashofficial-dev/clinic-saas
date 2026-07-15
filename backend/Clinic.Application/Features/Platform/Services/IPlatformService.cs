@@ -23,4 +23,8 @@ public interface IPlatformService
     /// with an in-app notification + email.</summary>
     Task<PlatformTenantDto> RecordPaymentAsync(
         Guid tenantId, RecordPaymentRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>A clinic's full payment history, newest first.</summary>
+    Task<List<PlatformPaymentDto>> GetPaymentsAsync(
+        Guid tenantId, CancellationToken cancellationToken = default);
 }

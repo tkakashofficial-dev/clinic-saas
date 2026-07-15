@@ -15,6 +15,7 @@ public class PlatformTenantDto
     public string? OwnerName { get; set; }
     public string? OwnerEmail { get; set; }
     public string? ClinicPhone { get; set; }
+    public string? ClinicAddress { get; set; }
     /// <summary>Subscription coverage end from recorded payments (null = never paid).</summary>
     public DateTime? PaidUntil { get; set; }
     public DateTime? LastPaymentAt { get; set; }
@@ -32,9 +33,24 @@ public class RecordPaymentRequest
     public string Method { get; set; } = default!;
     /// <summary>Months of subscription this payment covers (extends remaining time).</summary>
     public int PeriodMonths { get; set; } = 1;
+    /// <summary>When the money actually arrived (default: now). The owner may
+    /// record on Monday a UPI that landed on Saturday.</summary>
+    public DateTime? PaidAt { get; set; }
     public string? Note { get; set; }
     /// <summary>Optionally apply a plan in the same step (payment → activation).</summary>
     public string? PlanToApply { get; set; }
+}
+
+/// <summary>One row of a clinic's payment history in the console.</summary>
+public class PlatformPaymentDto
+{
+    public DateTime PaidAt { get; set; }
+    public decimal AmountRupees { get; set; }
+    public string Method { get; set; } = default!;
+    public int PeriodMonths { get; set; }
+    public DateTime PaidUntil { get; set; }
+    public string? Note { get; set; }
+    public string RecordedByEmail { get; set; } = default!;
 }
 
 public class PlatformChangePlanRequest

@@ -31,6 +31,7 @@ public class PlatformPayment : BaseEntity
         decimal amountRupees,
         string method,
         int periodMonths,
+        DateTime paidAt,
         DateTime paidUntil,
         string recordedByEmail,
         string? note = null)
@@ -41,7 +42,7 @@ public class PlatformPayment : BaseEntity
         TenantId = tenantId;
         AmountRupees = amountRupees;
         Method = method ?? throw new ArgumentNullException(nameof(method));
-        PaidAt = DateTime.UtcNow;
+        PaidAt = paidAt;   // when the money actually arrived (may be days ago)
         PeriodMonths = periodMonths;
         PaidUntil = paidUntil;
         RecordedByEmail = recordedByEmail ?? throw new ArgumentNullException(nameof(recordedByEmail));

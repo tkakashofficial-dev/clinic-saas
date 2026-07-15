@@ -53,14 +53,16 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
       &:hover:not(.active):not(:disabled) { color: var(--color-text); background: rgb(12 43 35 / .04); }
 
       /* Selected state must be UNMISSABLE — white-on-white was invisible
-         inside drawers. Filled ink + check mark: zero ambiguity. */
+         inside drawers, and a black fill felt heavy in light forms. Brand
+         teal + white text + check: obvious, accessible, on-palette. */
       &.active {
-        background: var(--color-ink-900);
-        color: var(--color-text-invert);
+        background: var(--color-primary-600);
+        color: #fff;
         font-weight: 600;
+        box-shadow: 0 1px 4px rgb(0 132 101 / .35);
       }
 
-      .check { flex: none; color: var(--color-primary-300); }
+      .check { flex: none; color: #fff; }
 
       &:disabled { opacity: .5; cursor: not-allowed; }
     }

@@ -112,6 +112,7 @@ public class PlatformService : IPlatformService
                 OwnerName = owners.TryGetValue(t.Id, out var owner) ? owner.OwnerName : null,
                 OwnerEmail = owners.TryGetValue(t.Id, out var contact) ? contact.Email : null,
                 ClinicPhone = t.Phone,
+                ClinicAddress = t.Address,
                 PaidUntil = pay?.PaidUntil,
                 LastPaymentAt = pay?.Last.PaidAt,
                 LastPaymentAmount = pay?.Last.AmountRupees,
@@ -202,17 +203,24 @@ public class PlatformService : IPlatformService
             .FirstOrDefaultAsync(t => t.Id == tenantId, cancellationToken)
             ?? throw new NotFoundException("Clinic not found.");
 
-        // Coverage EXTENDS: paying while 2 weeks remain doesn't lose those weeks
+        // When did the money actually arrive? Recording can lag the payment.
         var now = DateTime.UtcNow;
+        var paidAt = request.PaidAt ?? now;
+        if (paidAt > now.AddDays(1))
+            throw new BadRequestException("Payment date cannot be in the future.");
+        if (paidAt < now.AddYears(-1))
+            throw new BadRequestException("Payment date looks too old — check the date.");
+
+        // Coverage EXTENDS: paying while 2 weeks remain doesn't lose those weeks
         var currentPaidUntil = await _context.PlatformPayments
             .Where(p => p.TenantId == tenantId)
             .MaxAsync(p => (DateTime?)p.PaidUntil, cancellationToken);
-        var baseDate = currentPaidUntil > now ? currentPaidUntil.Value : now;
+        var baseDate = currentPaidUntil > paidAt ? currentPaidUntil.Value : paidAt;
         var paidUntil = baseDate.AddMonths(request.PeriodMonths);
 
         _context.PlatformPayments.Add(new PlatformPayment(
             tenantId, request.AmountRupees, request.Method,
-            request.PeriodMonths, paidUntil, _currentUser.Email!, request.Note));
+            request.PeriodMonths, paidAt, paidUntil, _currentUser.Email!, request.Note));
 
         // Payment usually comes with a plan decision — one step, not two
         if (!string.IsNullOrWhiteSpace(request.PlanToApply))
@@ -254,6 +262,28 @@ public class PlatformService : IPlatformService
         }
 
         return await GetOneAsync(tenantId, cancellationToken);
+    }
+
+    public async Task<List<PlatformPaymentDto>> GetPaymentsAsync(
+        Guid tenantId, CancellationToken cancellationToken = default)
+    {
+        EnsurePlatformAdmin();
+
+        return await _context.PlatformPayments
+            .AsNoTracking()
+            .Where(p => p.TenantId == tenantId)
+            .OrderByDescending(p => p.PaidAt)
+            .Select(p => new PlatformPaymentDto
+            {
+                PaidAt = p.PaidAt,
+                AmountRupees = p.AmountRupees,
+                Method = p.Method,
+                PeriodMonths = p.PeriodMonths,
+                PaidUntil = p.PaidUntil,
+                Note = p.Note,
+                RecordedByEmail = p.RecordedByEmail
+            })
+            .ToListAsync(cancellationToken);
     }
 
     /// <summary>Drops an in-app notification on every ADMIN of the clinic —

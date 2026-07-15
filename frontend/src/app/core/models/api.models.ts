@@ -307,6 +307,7 @@ export interface PlatformTenant {
   ownerName: string | null;
   ownerEmail: string | null;
   clinicPhone: string | null;
+  clinicAddress: string | null;
   /** Subscription coverage end from recorded payments (null = never paid). */
   paidUntil: string | null;
   lastPaymentAt: string | null;
@@ -323,9 +324,21 @@ export interface RecordPaymentRequest {
   method: PaymentMethod;
   /** Months of subscription this payment covers. */
   periodMonths: number;
+  /** When the money actually arrived (ISO date; default today). */
+  paidAt?: string | null;
   note?: string | null;
   /** Optionally apply a plan in the same step. */
   planToApply?: string | null;
+}
+
+export interface PlatformPayment {
+  paidAt: string;
+  amountRupees: number;
+  method: PaymentMethod;
+  periodMonths: number;
+  paidUntil: string;
+  note: string | null;
+  recordedByEmail: string;
 }
 
 export interface PlatformEmailTestResult {

@@ -3,7 +3,8 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { parseApiError } from '../../core/api/api-error';
 import { PlatformService } from '../../core/api/platform.service';
-import { PaymentMethod, PlatformTenant } from '../../core/models/api.models';
+import { PaymentMethod, PlatformPayment, PlatformTenant } from '../../core/models/api.models';
+import { DateField } from '../../shared/ui/date-field';
 
 /**
  * The SaaS owner's back office: every clinic on the platform, its plan, trial
@@ -13,7 +14,7 @@ import { PaymentMethod, PlatformTenant } from '../../core/models/api.models';
  */
 @Component({
   selector: 'app-platform',
-  imports: [DatePipe, DecimalPipe, FormsModule],
+  imports: [DatePipe, DecimalPipe, FormsModule, DateField],
   templateUrl: './platform.html',
   styleUrl: './platform.scss',
 })
@@ -65,6 +66,30 @@ export class Platform {
     });
   }
 
+  // ---- tenant detail drawer: contact + payment history ----
+  readonly detailFor = signal<PlatformTenant | null>(null);
+  readonly payments = signal<PlatformPayment[]>([]);
+  readonly paymentsLoading = signal(false);
+
+  openDetail(tenant: PlatformTenant): void {
+    this.detailFor.set(tenant);
+    this.payments.set([]);
+    this.paymentsLoading.set(true);
+    this.api.getPayments(tenant.tenantId).subscribe({
+      next: (payments) => {
+        this.payments.set(payments);
+        this.paymentsLoading.set(false);
+      },
+      error: () => this.paymentsLoading.set(false),
+    });
+  }
+
+  methodLabel(method: PaymentMethod): string {
+    return method === 'Upi' ? 'UPI'
+      : method === 'BankTransfer' ? 'Bank transfer'
+      : method;
+  }
+
   // ---- record payment drawer ----
   readonly payFor = signal<PlatformTenant | null>(null);
   readonly savingPay = signal(false);
@@ -80,14 +105,18 @@ export class Platform {
   payMonths = 1;
   payPlan = '';
   payNote = '';
+  /** ISO date the money arrived — default today, backdatable. */
+  payDate: string | null = null;
 
   openPay(tenant: PlatformTenant): void {
+    this.detailFor.set(null);       // pay drawer replaces the detail drawer
     this.payFor.set(tenant);
     this.payAmount = null;
     this.payMethod = 'Upi';
     this.payMonths = 1;
     this.payPlan = tenant.plan;   // most payments confirm the plan they're on
     this.payNote = '';
+    this.payDate = new Date().toISOString().slice(0, 10);
   }
 
   submitPay(): void {
@@ -102,6 +131,7 @@ export class Platform {
       amountRupees: this.payAmount,
       method: this.payMethod,
       periodMonths: this.payMonths,
+      paidAt: this.payDate,
       planToApply: this.payPlan || null,
       note: this.payNote.trim() || null,
     }).subscribe({

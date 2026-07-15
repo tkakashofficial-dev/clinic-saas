@@ -83,7 +83,13 @@
         <tbody>
           @for (tenant of tenants(); track tenant.tenantId) {
             <tr [class.row-suspended]="!tenant.isActive">
-              <td class="cell-main">{{ tenant.name }}</td>
+              <td>
+                <button type="button" class="tenant-link" (click)="openDetail(tenant)"
+                        title="Open full details & payment history">
+                  <span class="cell-main">{{ tenant.name }}</span>
+                  <span class="cell-sub">View details →</span>
+                </button>
+              </td>
               <td>
                 <div class="contact-cell">
                   @if (tenant.ownerName) { <span class="contact-name">{{ tenant.ownerName }}</span> }
@@ -202,6 +208,14 @@
       </div>
 
       <div class="field">
+        <label>Payment date *</label>
+        <app-date-field [maxToday]="true" [(ngModel)]="payDate" />
+        <span class="muted" style="font-size:12.5px; margin-top:4px;">
+          The day the money actually arrived — coverage counts from this date.
+        </span>
+      </div>
+
+      <div class="field">
         <label>How did they pay? *</label>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           @for (method of payMethods; track method.key) {
@@ -256,6 +270,124 @@
         @if (savingPay()) { <span class="inline-spinner" aria-hidden="true"></span> }
         {{ savingPay() ? 'Recording…' : 'Record payment' }}
       </button>
+    </div>
+  </aside>
+}
+
+<!-- ============ Tenant detail drawer: contact + payment history ============ -->
+@if (detailFor(); as tenant) {
+  <div class="drawer-backdrop" (click)="detailFor.set(null)"></div>
+  <aside class="drawer drawer-wide" role="dialog" aria-label="Clinic details">
+    <div class="drawer-header">
+      <h2>Clinic details</h2>
+      <button type="button" class="btn btn-ghost" (click)="detailFor.set(null)" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="drawer-body">
+      <!-- Identity -->
+      <div class="detail-head">
+        <div>
+          <div class="detail-name">{{ tenant.name }}</div>
+          <div class="detail-chips">
+            <span class="chip" [class.chip-completed]="tenant.isActive" [class.chip-cancelled]="!tenant.isActive">
+              {{ tenant.isActive ? 'Active' : 'Suspended' }}
+            </span>
+            <span class="chip chip-scheduled">{{ tenant.plan }} plan</span>
+            @if (tenant.isInTrial) { <span class="chip chip-inprogress">Trial</span> }
+            @if (tenant.paymentOverdue) { <span class="chip chip-cancelled">Payment overdue</span> }
+          </div>
+        </div>
+      </div>
+
+      <!-- Contact: the collection toolkit -->
+      <h3 class="detail-title">Owner & contact</h3>
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span class="detail-label">Owner</span>
+          <span class="detail-value">{{ tenant.ownerName || '—' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Email</span>
+          <span class="detail-value">{{ tenant.ownerEmail || '—' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Clinic phone</span>
+          <span class="detail-value">{{ tenant.clinicPhone || '—' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Joined</span>
+          <span class="detail-value">{{ tenant.createdAt | date: 'd MMM y' }}</span>
+        </div>
+        <div class="detail-item span-2">
+          <span class="detail-label">Address</span>
+          <span class="detail-value">{{ tenant.clinicAddress || '—' }}</span>
+        </div>
+      </div>
+
+      <div class="detail-ctas">
+        @if (tenant.clinicPhone) {
+          <a class="btn btn-primary" [href]="waLink(tenant.clinicPhone)" target="_blank" rel="noopener">
+            💬 WhatsApp
+          </a>
+          <a class="btn btn-secondary" href="tel:{{ tenant.clinicPhone }}">📞 Call</a>
+        }
+        @if (tenant.ownerEmail) {
+          <a class="btn btn-secondary" href="mailto:{{ tenant.ownerEmail }}">✉️ Email</a>
+        }
+        <button type="button" class="btn btn-secondary" (click)="openPay(tenant)">💰 Record payment</button>
+      </div>
+
+      <!-- Usage -->
+      <h3 class="detail-title">Usage</h3>
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span class="detail-label">Staff</span>
+          <span class="detail-value">{{ tenant.staffCount }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Patients</span>
+          <span class="detail-value">{{ tenant.patientCount }}</span>
+        </div>
+        <div class="detail-item span-2">
+          <span class="detail-label">Subscription</span>
+          <span class="detail-value">
+            @if (tenant.paidUntil) {
+              {{ tenant.paymentOverdue ? 'Overdue since' : 'Paid until' }}
+              {{ tenant.paidUntil | date: 'd MMM y' }}
+            } @else if (tenant.isInTrial) {
+              On trial until {{ tenant.trialEndsAt | date: 'd MMM y' }}
+            } @else {
+              No payments recorded yet
+            }
+          </span>
+        </div>
+      </div>
+
+      <!-- Payment history -->
+      <h3 class="detail-title">Payment history</h3>
+      @if (paymentsLoading()) {
+        <div class="skeleton-row"></div>
+        <div class="skeleton-row"></div>
+      } @else if (payments().length === 0) {
+        <p class="muted" style="font-size:13px;">
+          Nothing yet — record their first payment with the 💰 button above.
+        </p>
+      } @else {
+        @for (payment of payments(); track payment.paidAt) {
+          <div class="pay-row">
+            <div class="pay-main">
+              <span class="pay-amount">₹{{ payment.amountRupees | number: '1.0-0' }}</span>
+              <span class="pay-meta">{{ methodLabel(payment.method) }}
+                · {{ payment.periodMonths }} {{ payment.periodMonths === 1 ? 'month' : 'months' }}
+                · covered until {{ payment.paidUntil | date: 'd MMM y' }}</span>
+              @if (payment.note) { <span class="pay-note">“{{ payment.note }}”</span> }
+            </div>
+            <div class="pay-date">{{ payment.paidAt | date: 'd MMM y' }}</div>
+          </div>
+        }
+      }
     </div>
   </aside>
 }
