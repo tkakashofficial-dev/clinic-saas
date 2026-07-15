@@ -150,7 +150,7 @@
       }
 
       <div class="field">
-        <label>Patient *</label>
+        <label>Patient<span class="req" title="Required" aria-hidden="true">*</span></label>
         @if (selectedPatient(); as patient) {
           <div class="picked-patient">
             <div>
@@ -177,7 +177,7 @@
 
       <form [formGroup]="bookForm" id="book-form" (ngSubmit)="book()">
         <div class="field">
-          <label>Doctor *</label>
+          <label>Doctor<span class="req" title="Required" aria-hidden="true">*</span></label>
           <app-select
             [options]="doctorOptions()"
             placeholder="Select a doctor…"
@@ -186,11 +186,11 @@
 
         <div class="form-row">
           <div class="field">
-            <label for="b-date">Date *</label>
+            <label for="b-date">Date<span class="req" title="Required" aria-hidden="true">*</span></label>
             <app-date-field formControlName="date" placeholder="DD/MM/YYYY" />
           </div>
           <div class="field">
-            <label for="b-time">Time *</label>
+            <label for="b-time">Time<span class="req" title="Required" aria-hidden="true">*</span></label>
             <input id="b-time" type="time" class="input" formControlName="time">
           </div>
         </div>
@@ -233,7 +233,7 @@
       }
 
       <div class="field">
-        <label for="c-diagnosis">Diagnosis *</label>
+        <label for="c-diagnosis">Diagnosis<span class="req" title="Required" aria-hidden="true">*</span></label>
         <textarea id="c-diagnosis" class="input" formControlName="diagnosis" rows="3"
                   placeholder="e.g. Caries on molar 36, gingivitis upper right…"
                   [class.invalid]="consultForm.controls.diagnosis.invalid && consultForm.controls.diagnosis.touched"></textarea>
@@ -265,6 +265,12 @@
                (change)="withPrescription.set($any($event.target).checked)">
         Add a prescription
       </label>
+      @if (withPrescription()) {
+        <p class="muted" style="font-size:12.5px; margin:-4px 0 10px;">
+          You type it here during the visit — the patient walks out with the
+          printed, clinic-branded PDF.
+        </p>
+      }
 
       @if (withPrescription()) {
         <div formArrayName="items" class="rx-items">

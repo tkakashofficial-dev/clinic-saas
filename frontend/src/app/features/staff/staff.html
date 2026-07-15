@@ -94,13 +94,13 @@
 
       <div class="form-row">
         <div class="field">
-          <label for="s-first">First name *</label>
+          <label for="s-first">First name<span class="req" title="Required" aria-hidden="true">*</span></label>
           <input id="s-first" class="input" formControlName="firstName"
                  [class.invalid]="!!errorFor('firstName')">
           @if (errorFor('firstName')) { <span class="field-error">{{ errorFor('firstName') }}</span> }
         </div>
         <div class="field">
-          <label for="s-last">Last name *</label>
+          <label for="s-last">Last name<span class="req" title="Required" aria-hidden="true">*</span></label>
           <input id="s-last" class="input" formControlName="lastName"
                  [class.invalid]="!!errorFor('lastName')">
           @if (errorFor('lastName')) { <span class="field-error">{{ errorFor('lastName') }}</span> }
@@ -108,14 +108,14 @@
       </div>
 
       <div class="field">
-        <label for="s-email">Email *</label>
+        <label for="s-email">Email<span class="req" title="Required" aria-hidden="true">*</span></label>
         <input id="s-email" type="email" class="input" formControlName="email"
                placeholder="doctor@clinic.com" [class.invalid]="!!errorFor('email')">
         @if (errorFor('email')) { <span class="field-error">{{ errorFor('email') }}</span> }
       </div>
 
       <div class="field">
-        <label>Roles * <span class="muted" style="font-weight:400">(combine them — a partner who treats patients = Admin + Doctor)</span></label>
+        <label>Roles<span class="req" title="Required" aria-hidden="true">*</span> <span class="muted" style="font-weight:400">(combine them — a partner who treats patients = Admin + Doctor)</span></label>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           @for (role of allRoles; track role) {
             <button type="button" class="filter-chip"
@@ -126,7 +126,7 @@
       </div>
 
       <div class="field">
-        <label>How should they get access? *</label>
+        <label>How should they get access?<span class="req" title="Required" aria-hidden="true">*</span></label>
         <div style="display:flex; gap:8px;">
           <button type="button" class="filter-chip" [class.active]="inviteMode()"
                   (click)="setInviteMode(true)">📧 Invite by email</button>
@@ -143,7 +143,7 @@
 
       @if (!inviteMode()) {
         <div class="field">
-          <label for="s-password">Temporary password *</label>
+          <label for="s-password">Temporary password<span class="req" title="Required" aria-hidden="true">*</span></label>
           <input id="s-password" type="password" class="input" formControlName="password"
                  placeholder="They can use this to sign in" [class.invalid]="!!errorFor('password')">
           @if (errorFor('password')) { <span class="field-error">{{ errorFor('password') }}</span> }

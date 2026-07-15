@@ -151,20 +151,20 @@
       }
 
       <div class="field">
-        <label for="i-name">Item name *</label>
+        <label for="i-name">Item name<span class="req" title="Required" aria-hidden="true">*</span></label>
         <input id="i-name" class="input" formControlName="name"
                placeholder="Amoxicillin 500mg" [class.invalid]="!!errorFor('name')">
         @if (errorFor('name')) { <span class="field-error">{{ errorFor('name') }}</span> }
       </div>
 
       <div class="field">
-        <label>Category *</label>
+        <label>Category<span class="req" title="Required" aria-hidden="true">*</span></label>
         <app-segmented [options]="categoryOptions" formControlName="category" />
       </div>
 
       <div class="form-row">
         <div class="field">
-          <label for="i-unit">Unit *</label>
+          <label for="i-unit">Unit<span class="req" title="Required" aria-hidden="true">*</span></label>
           <input id="i-unit" class="input" formControlName="unit" placeholder="strip / bottle / box">
         </div>
         <div class="field">
@@ -184,7 +184,7 @@
           }
         </div>
         <div class="field">
-          <label for="i-reorder">Reorder level *</label>
+          <label for="i-reorder">Reorder level<span class="req" title="Required" aria-hidden="true">*</span></label>
           <input id="i-reorder" type="number" min="0" class="input" formControlName="reorderLevel"
                  [class.invalid]="!!errorFor('reorderLevel')">
           <span class="muted" style="font-size:12px;">"Low stock" shows at or below this.</span>

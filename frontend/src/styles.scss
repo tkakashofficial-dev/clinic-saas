@@ -186,8 +186,31 @@ a.wa-float, a.wa-float:hover {
 
 .field label {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--color-text);
+}
+
+/* Required mark: a quiet teal asterisk hugging the label — not a bare "*" */
+.req {
+  color: var(--color-primary-600);
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+/* Optional chip: modern SaaS marks the exceptions, users skip with confidence */
+.opt {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 1px 8px;
+  margin-left: 4px;
+  vertical-align: 1px;
 }
 
 .input, select.input, textarea.input {
