@@ -169,3 +169,15 @@
     .btn { width: 100%; padding: 12px; font-size: 15px; margin-top: 4px; }
   }
 }
+
+/* "You agree to Terms" line under the signup button */
+.legal-agree {
+  margin-top: 14px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+  text-align: center;
+
+  a { color: var(--color-primary-700); font-weight: 600; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+}

@@ -47,8 +47,9 @@
             <label for="password">Password</label>
             <a routerLink="/forgot-password" class="forgot-link">Forgot password?</a>
           </div>
-          <input id="password" type="password" class="input" formControlName="password"
-                 placeholder="••••••••" [class.invalid]="invalid('password')" autocomplete="current-password">
+          <app-password-input inputId="password" formControlName="password"
+                              placeholder="Your password" autocomplete="current-password"
+                              [invalid]="invalid('password')" />
           @if (invalid('password')) {
             <span class="field-error">Password is required.</span>
           }

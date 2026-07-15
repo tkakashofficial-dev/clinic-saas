@@ -8,6 +8,15 @@ export const routes: Routes = [
     loadComponent: () => import('./features/landing/landing').then((m) => m.Landing),
   },
   {
+    // Terms of Service + Privacy Policy (public)
+    path: 'terms',
+    loadComponent: () => import('./features/legal/legal').then((m) => m.Legal),
+  },
+  {
+    path: 'privacy',
+    loadComponent: () => import('./features/legal/legal').then((m) => m.Legal),
+  },
+  {
     path: 'login',
     canActivate: [guestGuard],
     loadComponent: () => import('./features/auth/login').then((m) => m.Login),

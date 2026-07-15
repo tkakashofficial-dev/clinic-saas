@@ -434,4 +434,17 @@
 
   .brand-logo { color: var(--color-text-invert); }
   p { color: rgb(244 250 247 / .55); font-size: 13px; }
+
+  .footer-links {
+    display: flex;
+    gap: 18px;
+
+    a {
+      color: rgb(244 250 247 / .6);
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      &:hover { color: var(--color-primary-300); }
+    }
+  }
 }

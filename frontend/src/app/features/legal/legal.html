@@ -1,0 +1,142 @@
+<div class="legal-page">
+  <header class="legal-top">
+    <a [routerLink]="backLink" class="legal-back">← Back</a>
+    <div class="brand-logo"><span class="mark">✚</span> {{ company }}</div>
+  </header>
+
+  <main class="legal-body">
+    <p class="legal-updated">Last updated: {{ lastUpdated }}</p>
+
+    <!-- ================= TERMS ================= -->
+    <h1 id="terms">Terms of Service</h1>
+    <p class="legal-intro">
+      These terms govern your use of {{ company }} ("the Service"), a clinic
+      management platform. By creating an account or using the Service, you (the
+      clinic and its staff) agree to these terms. Please read them; if you don't
+      agree, don't use the Service.
+    </p>
+
+    <h2>1. Your account</h2>
+    <p>
+      You are responsible for keeping your login details safe and for all activity
+      under your account. Each staff member should use their own login. You must give
+      accurate information and are responsible for the actions of everyone you invite
+      to your clinic.
+    </p>
+
+    <h2>2. Acceptable use</h2>
+    <p>You agree not to:</p>
+    <ul>
+      <li>use the Service for anything unlawful, or to store data you have no right to store;</li>
+      <li>attempt to access another clinic's data, or probe, scan or breach security;</li>
+      <li>resell or sublicense the Service without our written permission;</li>
+      <li>upload malicious code or disrupt the Service for others.</li>
+    </ul>
+
+    <h2>3. Plans, pricing & payment</h2>
+    <ul>
+      <li>Paid plans are billed in Indian Rupees (₹), monthly or yearly, as shown on our pricing page.</li>
+      <li>A free trial, where offered, gives time-limited access to paid features. When it ends, you choose a plan to continue on paid tiers.</li>
+      <li><strong>We may change our prices, plans and plan limits at any time.</strong> For an
+        existing paid subscription, a price change takes effect at your next renewal, and we will
+        give you reasonable advance notice (at least 30 days) by email or in the app. Continuing to
+        use the Service after a change takes effect means you accept the new price.</li>
+      <li>Payments made are non-refundable except where required by law. If a payment is not
+        received, we may suspend or downgrade your access (see section 6).</li>
+      <li>Taxes (such as GST), where applicable, are your responsibility unless stated otherwise.</li>
+    </ul>
+
+    <h2>4. Your data & patient records</h2>
+    <ul>
+      <li><strong>Your data stays yours.</strong> You own the clinic and patient records you enter.
+        We store and process them only to provide the Service to you.</li>
+      <li>You are the party responsible for your patients' data — including obtaining any consent
+        the law requires, and the accuracy of what you enter. {{ company }} acts as a processor on
+        your instructions.</li>
+      <li>We never sell your data or your patients' data, and we don't use it for advertising.</li>
+      <li>You can export your data and can ask us to delete it when you close your account, subject
+        to any records we must keep by law.</li>
+    </ul>
+
+    <h2>5. Service availability</h2>
+    <p>
+      We work hard to keep the Service running, but we provide it "as is" and cannot promise it will
+      be uninterrupted or error-free. We may update, improve or change features over time. We are not
+      a substitute for professional medical judgement — clinical decisions remain the responsibility
+      of the treating doctor.
+    </p>
+
+    <h2>6. Suspension & termination</h2>
+    <p>
+      You can stop using the Service at any time. We may suspend or limit an account for non-payment,
+      for a breach of these terms, or to protect the Service or other users. Where reasonable, we'll
+      tell you why. Suspension does not delete your data; on account closure we handle data as
+      described in section 4.
+    </p>
+
+    <h2>7. Limitation of liability</h2>
+    <p>
+      To the maximum extent permitted by law, {{ company }} is not liable for indirect or
+      consequential losses, or for loss of data, profit or goodwill. Our total liability for any
+      claim relating to the Service is limited to the amount you paid us for the Service in the three
+      months before the claim.
+    </p>
+
+    <h2>8. Changes to these terms</h2>
+    <p>
+      We may update these terms as the Service evolves. If we make a material change, we'll notify
+      you by email or in the app. Continuing to use the Service after a change means you accept the
+      updated terms.
+    </p>
+
+    <h2>9. Governing law</h2>
+    <p>
+      These terms are governed by the laws of India. Any disputes are subject to the courts of
+      Kerala, India.
+    </p>
+
+    <!-- ================= PRIVACY ================= -->
+    <h1 id="privacy" class="legal-divider">Privacy Policy</h1>
+    <p class="legal-intro">
+      This policy explains what we collect and how we handle it. We keep it short and honest.
+    </p>
+
+    <h2>What we collect</h2>
+    <ul>
+      <li><strong>Account details</strong> — your name, email and clinic name, so you can sign in and we can support you.</li>
+      <li><strong>Clinic data you enter</strong> — patients, appointments, consultations, prescriptions and inventory. This belongs to your clinic.</li>
+      <li><strong>Basic usage &amp; technical logs</strong> — needed to run the Service securely and fix problems.</li>
+    </ul>
+
+    <h2>How we use it</h2>
+    <ul>
+      <li>To provide and secure the Service, and to give you support.</li>
+      <li>To send you essential emails (sign-up, invitations, password resets, and important account notices).</li>
+      <li>We do <strong>not</strong> sell your data or use it for third-party advertising.</li>
+    </ul>
+
+    <h2>Where it's stored</h2>
+    <p>
+      Data is stored with reputable cloud infrastructure providers. Passwords are stored only as
+      secure one-way hashes — we can never see your password. Every clinic's data is isolated so one
+      clinic cannot access another's records.
+    </p>
+
+    <h2>Your choices</h2>
+    <p>
+      You can access, correct or export your clinic's data from within the app, and you can ask us to
+      delete your account. For any privacy request, contact us using the details below.
+    </p>
+
+    <h2>Contact</h2>
+    <p>
+      Questions about these terms or your data? Email
+      <a href="mailto:{{ contactEmail }}">{{ contactEmail }}</a>
+      or message us on WhatsApp at {{ whatsapp }}.
+    </p>
+
+    <p class="legal-note">
+      {{ company }} · Clinic management, made calm · Kerala, India
+    </p>
+  </main>
+</div>

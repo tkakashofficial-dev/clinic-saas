@@ -1,13 +1,21 @@
 import { Component, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { parseApiError } from '../../core/api/api-error';
 import { AuthService } from '../../core/auth/auth.service';
+import { PasswordInput } from '../../shared/ui/password-input';
 import { ProvisioningOverlay } from '../../shared/ui/provisioning-overlay';
+
+/** Group validator: confirm must equal password. */
+function passwordsMatch(group: AbstractControl): ValidationErrors | null {
+  const password = group.get('password')?.value;
+  const confirm = group.get('confirmPassword')?.value;
+  return confirm && password !== confirm ? { passwordMismatch: true } : null;
+}
 
 @Component({
   selector: 'app-register',
-  imports: [ReactiveFormsModule, RouterLink, ProvisioningOverlay],
+  imports: [ReactiveFormsModule, RouterLink, ProvisioningOverlay, PasswordInput],
   templateUrl: './register.html',
   styleUrl: './auth-layout.scss',
 })
@@ -28,17 +36,21 @@ export class Register {
   readonly step = signal<1 | 2>(1);
 
   continueToClinic(): void {
-    const account = ['firstName', 'lastName', 'email', 'password'] as const;
-    const allValid = account.every((name) => {
-      const control = this.form.controls[name];
-      control.markAsTouched();
-      return control.valid;
-    });
-    if (allValid) this.step.set(2);
+    const account = ['firstName', 'lastName', 'email', 'password', 'confirmPassword'] as const;
+    account.forEach((name) => this.form.controls[name].markAsTouched());
+    const fieldsValid = account.every((name) => this.form.controls[name].valid);
+    // The match check lives on the group, not a single control
+    if (fieldsValid && !this.form.errors?.['passwordMismatch']) this.step.set(2);
   }
 
   back(): void {
     this.step.set(1);
+  }
+
+  /** Show the mismatch error only once confirm has been touched. */
+  showMismatch(): boolean {
+    const confirm = this.form.controls.confirmPassword;
+    return !!this.form.errors?.['passwordMismatch'] && confirm.touched;
   }
 
   readonly form = this.fb.nonNullable.group({
@@ -47,8 +59,9 @@ export class Register {
     lastName: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(8)]],
+    confirmPassword: ['', Validators.required],
     ownerIsDoctor: [true], // most small-clinic owners are the practicing doctor
-  });
+  }, { validators: passwordsMatch });
 
   submit(): void {
     if (this.form.invalid) {
@@ -62,7 +75,7 @@ export class Register {
 
     // The wait can be long (cold server) — show the "building your clinic"
     // experience instead of a frozen button
-    const value = this.form.getRawValue();
+    const { confirmPassword, ...value } = this.form.getRawValue();
     this.provisioningName.set(value.clinicName.trim() || 'your clinic');
 
     this.auth.register(value).subscribe({

@@ -5,6 +5,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { parseApiError } from '../../core/api/api-error';
 import { AuthService } from '../../core/auth/auth.service';
+import { PasswordInput } from '../../shared/ui/password-input';
 
 interface InviteInfo {
   firstName: string;
@@ -19,7 +20,7 @@ interface InviteInfo {
  */
 @Component({
   selector: 'app-accept-invite',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, PasswordInput],
   templateUrl: './accept-invite.html',
   styleUrl: './auth-layout.scss',
 })

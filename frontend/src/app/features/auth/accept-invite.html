@@ -35,9 +35,10 @@
 
           <div class="field">
             <label for="ai-password">Choose a password</label>
-            <input id="ai-password" type="password" class="input" formControlName="password"
-                   placeholder="Min. 8 characters, letters + digits" autocomplete="new-password"
-                   [class.invalid]="form.controls.password.invalid && form.controls.password.touched">
+            <app-password-input inputId="ai-password" formControlName="password"
+                                placeholder="Min. 8 characters, letters + digits"
+                                autocomplete="new-password"
+                                [invalid]="form.controls.password.invalid && form.controls.password.touched" />
             @if (form.controls.password.invalid && form.controls.password.touched) {
               <span class="field-error">At least 8 characters.</span>
             }
@@ -45,8 +46,8 @@
 
           <div class="field">
             <label for="ai-confirm">Confirm password</label>
-            <input id="ai-confirm" type="password" class="input" formControlName="confirm"
-                   placeholder="Same password again" autocomplete="new-password">
+            <app-password-input inputId="ai-confirm" formControlName="confirm"
+                                placeholder="Same password again" autocomplete="new-password" />
           </div>
 
           <button type="submit" class="btn btn-primary" [disabled]="saving()">

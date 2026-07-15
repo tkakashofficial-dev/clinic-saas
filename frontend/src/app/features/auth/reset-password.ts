@@ -4,10 +4,11 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { parseApiError } from '../../core/api/api-error';
+import { PasswordInput } from '../../shared/ui/password-input';
 
 @Component({
   selector: 'app-reset-password',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, PasswordInput],
   templateUrl: './reset-password.html',
   styleUrl: './auth-layout.scss',
 })

@@ -3,10 +3,11 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { parseApiError } from '../../core/api/api-error';
 import { AuthService } from '../../core/auth/auth.service';
+import { PasswordInput } from '../../shared/ui/password-input';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, PasswordInput],
   templateUrl: './login.html',
   styleUrl: './auth-layout.scss',
 })
