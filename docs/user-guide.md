@@ -1,128 +1,243 @@
-# Klivia — User Guide
+# Klivia Handbook — the complete guide
 
-*The simple guide for clinic owners, doctors and reception staff.*
+> The one document to open when you (or a customer) have a doubt.
+> Live app: https://clinic-saas-gamma-nine.vercel.app · Contact: WhatsApp +91 62384 56205 · taveperz@gmail.com
 
 ---
 
-## What is Klivia?
+## 1. What is Klivia?
 
-Klivia runs your clinic's daily work in one calm place: **patients, appointments,
-consultations, prescriptions, and reports**. It works in any browser — laptop at
-reception, tablet in the consultation room, phone anywhere.
+Klivia is clinic management, made calm: patients, appointments, consultations,
+prescriptions, pharmacy stock, printable forms and reports — one quiet system
+for Indian dental and general clinics. It runs in the browser (nothing to
+install) and can be added to a phone's home screen like a real app.
 
-## Who does what (roles)
+## 2. Who does what (roles)
 
-| Role | What they can do |
+| Role | What they see & do |
 |---|---|
-| **Admin** (owner/partner) | Everything: staff, plans & billing, reports + all clinic work |
-| **Doctor** | See their appointments and waiting room, consult, write prescriptions |
-| **Receptionist** | Register patients, book appointments, check patients in |
+| **Admin** | Runs the clinic: staff, settings, forms, reports, billing, inventory. The person who registers the clinic becomes its Admin. |
+| **Doctor** | Their day: their appointments, waiting patients, consultations, prescriptions. Can view inventory and patient records. |
+| **Receptionist** | The front desk: register patients, book appointments, check-in, manage inventory stock. |
 
-One person can hold several roles — a doctor-owner is Admin **and** Doctor.
+Roles **combine** — a doctor who owns the clinic is Admin + Doctor. An
+investor-owner who doesn't treat patients is Admin only (they won't appear in
+the booking list).
 
----
+## 3. Getting started (one-time, ~10 minutes)
 
-## Getting started (one-time, 2 minutes)
-
-1. Open the website → **Register your clinic**
-2. Fill in the clinic name, your name, email and password
-3. Tick **"I'm a practicing doctor"** if you treat patients yourself
-4. You land on your dashboard — your clinic exists 🎉
-5. Go to **Staff → Add staff member** for each doctor and receptionist.
-   They receive an **email invitation** to set their own password.
-
-## A normal day at the clinic
-
-### Front desk (Receptionist)
-1. **New patient walks in** → Patients → *Register patient* (name + phone is enough)
-2. **Book their visit** → Appointments → *Book appointment* → search patient,
-   pick doctor, pick time
-3. **Patient arrives** → press **Check in** — the doctor instantly sees them
-   in the waiting room and gets a notification 🔔
-
-### In the consultation room (Doctor)
-1. Your **dashboard** shows *your* day: your queue and who's waiting
-2. Open **Appointments** → your waiting patient → **Consult**
-3. Type the **diagnosis**, treatment notes, and vitals (BP, pulse, temp, weight)
-4. Tick **Add a prescription** → medicine names are suggested from your own
-   **Inventory**; one-tap chips fill the Indian dose pattern (1-0-1) and food
-   timing (After food) → **Save & complete**
-5. The prescription is ready as a **branded PDF** — print it or share it
-
-### Pharmacy & stores (Reception / Admin)
-- **Inventory** — add medicines, consumables and equipment with a reorder level
-- Dispense or receive stock with **± Stock** — counts can never go below zero
-- **Low stock** and **Expiring** items float to the top automatically
-- Doctors see stock too, so they never prescribe what you don't have
-
-### Printing intake forms (any role)
-- Open a patient → **🦷 Dental intake form** or **🩺 General intake form** —
-  a 2-page clinic-branded PDF, pre-filled with the patient's details, clinical
-  sections left blank for the doctor's pen. The clinic Admin decides which
-  template the clinic uses; doctors just print and fill.
-
-### Running the clinic (Admin)
-- **Settings** — your clinic's letterhead (name, phone, address — printed on every
-  prescription and intake form) and the **default intake template** (dental or
-  general; the team's print button leads with your choice)
-- **Reports** — patients, busiest days, doctor performance; **Download PDF** to print or send to a partner
-- **Staff** — add doctors/receptionists; roles combine (a partner who practices = Admin + Doctor)
-- **Plan & billing** — see usage vs. your plan's limits; upgrade in one click
-- **Multiple clinics?** Click your clinic's name (top of sidebar) → *＋ New clinic* — each clinic is completely separate (Growth plan)
-
-### Running the PLATFORM (Klivia owner only)
-Sign in with a platform-admin email (configured on the server) and a
-**Platform** item appears in the sidebar:
-- Every clinic with its plan, trial state, staff & patient counts
-- **Change plan** after a manual UPI/bank payment lands (Razorpay later)
-- **Suspend** a clinic that stopped paying — sign-in is blocked for its whole
-  team within the hour, nothing is deleted; **Re-activate** restores it
-
-## Notifications & reminders 🔔
-
-The bell (top right) collects everything relevant to **you**:
-- A booking made for you (doctors)
-- A patient checked in for you
-- Automatic reminders for appointments in the next 24 hours
+1. **Register** — your name, email, password (with confirm), then your clinic's
+   name. You're the Admin. Free 14-day trial, no card.
+2. **Take the tour** — it points at every menu. Replay any time from the
+   profile menu (top-right avatar) → *Replay the tour*.
+3. **Settings** — fill your clinic's **name, phone and address**. These print
+   on every prescription and intake form (your letterhead). Skipping this
+   means blank letterheads!
+4. **Forms** — pick your default intake template (🦷 dental or 🩺 general) and
+   press *Preview PDF* to see it.
+5. **Staff** — invite your doctors and receptionists by email. They pick their
+   own password from the emailed link.
+6. **Register your first patient** and book a visit. That's the whole loop.
 
 ---
 
-## Current limitations (honest list — updated as we ship)
+## 4. Menu-by-menu guide
+
+### 📊 Dashboard
+Your day at a glance. Doctors see *their* queue; admins see the whole clinic
+plus a 30-day pulse (new patients, completed visits, cancellations, completion
+rate) and per-doctor performance bars. The **Waiting room** number updates as
+reception checks patients in.
+
+### 👥 Patients
+- **Register**: name + phone is enough (other fields are optional). The
+  patient gets an automatic clinic number like **P-000123**.
+- **Search** by name or phone — instant.
+- **Click any patient** (or the *View →* button) to open their full record:
+  profile card, contact details, medical-condition chips, and the **visit
+  timeline** (every diagnosis, vitals and prescription, newest first).
+- **Edit** fixes typos any time.
+- **Intake form, two ways:**
+  - **🖨 Print** (dental or general button — ★ marks your clinic default):
+    a pre-filled, letterhead PDF. The *patient* ticks the medical checklist
+    and signs the consent in the waiting room; the *doctor* fills the
+    clinical sections during the exam.
+  - **✍️ Fill digitally**: staff ask the patient and tick/type the answers
+    on screen. Answers save to the record and the printed form comes out
+    **pre-filled** (ticked boxes, typed text). Use whichever suits the
+    patient — both produce the same premium printout.
+
+### 📅 Appointments
+- **Book**: search the patient, pick the doctor, date (branded calendar) and time.
+- **Check in** when the patient arrives — the doctor instantly sees them and
+  gets a 🔔 notification.
+- Statuses flow: *Scheduled → Waiting → In progress → Completed* (or *Cancelled*).
+- **Consult** (doctor): diagnosis, treatment notes, vitals (BP/pulse/temp/weight),
+  and the prescription:
+  - medicine names **auto-suggest from your own inventory**
+  - one-tap dose chips **1-0-0 / 1-0-1 / 1-1-1 / 0-0-1** and timing chips
+    (*after food, before food, at bedtime, with warm water*)
+  - Save & complete → a **designer PDF prescription** to print or share.
+
+### 💊 Inventory *(Clinic plan and above)*
+- Track **medicines, consumables and equipment**: unit, price, stock count,
+  reorder level, expiry date.
+- **Low stock rises to the top** with a red chip; expiring items (60 days)
+  get flagged — the top of this list is your daily purchase list.
+- **± Stock** for deliveries and dispensing — counts can never go below zero.
+- On the Solo plan this page shows what it does and how to unlock it.
+
+### 📄 Forms
+The intake form's home:
+- **Two templates** — 🦷 dental / 🩺 general — with **Preview PDF** (renders
+  the real form with sample data) and **Set as default**.
+- **Custom sections (form builder)**: Admin adds their own sections that print
+  on the form — three shapes: **writing box**, **labelled lines** (e.g. Policy
+  number / Company / Valid till) and **checklist** (e.g. Smoking / Pan chewing /
+  Alcohol). Reorder with ↑↓. Each section applies to both templates or just one.
+- Doctors/reception can view and preview; only Admin designs.
+
+### 📈 Reports *(Admin)*
+Patients over time, busiest days, status mix, per-doctor booked-vs-completed.
+**Download PDF** for records or partners.
+
+### 🧑‍⚕️ Staff *(Admin)*
+- **Invite by email** (they set their own password via a 7-day link) or set a
+  **temporary password** in person — both work.
+- **Visiting doctors**: if their email already has a Klivia account at another
+  clinic, your clinic simply attaches to it — one login, both clinics, and
+  their password is never touched.
+- **Resend invite** for lost emails.
+
+### 💳 Billing *(Admin)*
+Current plan, trial state, staff/doctor usage vs limits, and plan cards to
+upgrade. Hitting a limit anywhere in the app shows an upgrade prompt.
+
+### ⚙️ Settings *(Admin)*
+Your clinic's **letterhead** — name, phone, address printed on every PDF —
+plus a link to the Forms builder.
+
+### 🏥 My clinics *(Growth plan)*
+Click your clinic's name (top of sidebar) → switch between clinics or open a
+new branch; *Manage all clinics* shows the full structure as cards. Each
+clinic's patients, staff, stock and billing are completely separate.
+On Solo/Clinic plans this option shows locked (🔒) — tapping explains Growth.
+
+### 🔔 Notifications
+The bell collects what matters to **you**: bookings made for you, check-ins,
+24-hour appointment reminders, and billing messages (payment received, plan
+changed).
+
+---
+
+## 5. On your phone 📱
+
+Klivia is a **PWA** — in Chrome on Android: menu → **Add to Home screen /
+Install app**. It opens full-screen with the Klivia icon, and the bottom tab
+bar (Dashboard · Patients · Appointments · Inventory · More) is built for
+thumbs. After app updates, one extra refresh picks up the newest version.
+
+## 6. Plans — what's included where
+
+| | Solo ₹999/mo | Clinic ₹1,999/mo ⭐ | Growth ₹3,999/mo |
+|---|---|---|---|
+| Doctors / staff | 1 / 2 | 5 / 10 | Unlimited |
+| Patients, appointments, prescriptions, forms | ✅ | ✅ | ✅ |
+| Pharmacy & inventory | — | ✅ | ✅ |
+| Reports & analytics | ✅* | ✅ | ✅ |
+| Multiple clinics (branches) | — | — | ✅ |
+| Yearly option | ₹9,990 | ₹19,990 | ₹39,990 (2 months free) |
+
+Free 14-day trial = full Clinic-tier features. Prices may change per the
+Terms (30 days' notice at renewal).
+
+## 7. For the platform owner (Klivia's own back office) 🔐
+
+Sign in with a platform-admin email (configured on the server) → **Platform**
+appears in the sidebar:
+
+- Every clinic: plan, trial, staff/patient counts, **owner contact with
+  one-tap WhatsApp / Call / Email**.
+- **Click a clinic** → full details + complete payment history.
+- **💰 Record payment**: amount, method (UPI/bank/cash), months covered,
+  the **actual payment date** (backdatable), optional plan change — coverage
+  extends from their current paid-until date. The clinic's admins get a
+  "Payment received 🎉" notification + email receipt automatically.
+- **Paid until / Overdue** chips per clinic + a red "Payment overdue" card =
+  your collection list.
+- **Suspend** for non-payment (blocks the whole clinic's sign-in within the
+  hour; deletes nothing) / **Re-activate** (sends "Welcome back").
+- **✉️ Test production email** verifies the live mail pipeline.
+
+## 8. Customer FAQ (for demos & doubts)
+
+- **Is patient data safe?** Each clinic's data is isolated at the database
+  core — another clinic *cannot* read your records. Passwords are stored as
+  one-way hashes. No data selling, no ads.
+- **Who owns the data?** The clinic. Export any time; leaving is allowed.
+- **Can we move from paper / another software?** Start fresh in minutes; Growth
+  includes migration help.
+- **Who fills the intake form?** Either: print it (patient ticks & signs, doctor
+  completes) or staff fill it digitally by asking — both print identically.
+- **Owner isn't a doctor?** Fine — Admin manages; only Doctor-role users are bookable.
+- **Do we need to install anything?** No. Browser on any device; optional
+  home-screen install on phones.
+- **Internet down?** Klivia needs a connection (recent screens may still show
+  from cache). Clinic Wi-Fi or a phone hotspot is enough.
+- **What if we stop paying?** Access pauses; data is kept and restored on payment.
+
+## 9. Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| Email not received (invite/reset) | Check spam. Staff page → *Resend invite*. If server email is down, the owner can use a temp password instead. |
+| Page feels stuck | The thin teal bar at the very top = still loading (free server wakes in ~30-60s on first visit of the day). |
+| Old tab icon / old version | Hard refresh (Ctrl+Shift+R); on phone, close and reopen the installed app. |
+| Can't open second clinic | Multi-clinic is Growth-only — the lock explains it. |
+| Inventory shows an upgrade page | It's a Clinic-plan feature on Solo. |
+| Forgot the tour | Profile menu → *Replay the tour*. |
+
+## 10. Current limitations (honest list — updated as we ship)
 
 | Not yet available | Status |
 |---|---|
-| Online payments for plan subscriptions | Free during beta; Razorpay planned |
-| WhatsApp/SMS messages **to patients** | Reminders are in-app today; WhatsApp channel planned |
-| Patient portal (patients logging in) | Planned |
-| Clinic logo upload | Planned (with cloud hosting) |
-| Invoices & patient billing | Planned — next major module |
-| Dental chart (odontogram), treatment plans | Planned |
+| Online payments for subscriptions | Manual UPI/bank/cash + owner console today; Razorpay planned |
+| WhatsApp/SMS **to patients** | Reminders are in-app today; WhatsApp channel planned |
+| Patient billing / invoices | Planned — next major module |
+| Patient portal / online booking | Planned |
+| Clinic logo upload | Planned (needs file storage) |
+| Dental chart (odontogram), treatment plans, attachments | Planned |
 | Malayalam / regional language | Planned |
-| Payroll & staff leave | Under consideration (see roadmap) |
+| Appointment reschedule (cancel+rebook today) | Planned |
+| Payroll & staff leave | Under consideration |
 
 ---
 
-## Marketing playbook (for the Klivia founder 😉)
+## 11. Marketing playbook (for the Klivia founder 😉)
 
 **Who to sell to first:** single-doctor and 2–5 doctor clinics in Kerala that
 run on paper or WhatsApp chats. They feel the pain daily and decide fast —
 the doctor-owner IS the buyer.
 
 **The pitch (10 seconds):**
-> "Your whole clinic — patients, appointments, prescriptions — in one clean
-> app. ₹499 a month. Free while in beta. I'll set it up for you in 10 minutes."
+> "Your whole clinic — patients, appointments, prescriptions, pharmacy — in
+> one clean app. From ₹999 a month, 14 days free. I'll set it up for you in
+> 10 minutes."
 
 **The demo that sells (5 minutes, in this order):**
 1. Register their clinic **live with their real name** (ownership feeling)
 2. Register a patient in 20 seconds → book → **Check in** → show the
    doctor's waiting room updating
-3. Record a consult → **download the branded prescription PDF** — this is
-   the "wow" moment for dentists
-4. Show the Reports page → "you'll finally know your busiest days"
-5. Point at the price → "less than one filling per month"
+3. Record a consult with the **1-0-1 dose chips** → **download the branded
+   prescription PDF** — the "wow" moment
+4. Open **Forms** → *Preview PDF* → "and this is YOUR intake form, with YOUR
+   name on it — add any section you want"
+5. Show Reports → "you'll finally know your busiest days"
+6. Point at the price → "less than one filling per month"
 
 **Channels that work for this market:**
-- WhatsApp outreach (your floating button already captures inbound)
+- WhatsApp outreach (the floating button captures inbound) + send the
+  brochure PDF (docs/marketing/Klivia-Complete-Guide.pdf)
 - Visit clinics at 1–3 PM (lunch lull) with a tablet demo
 - One happy dentist → ask for 2 referrals; dentists trust dentists
 - Local dental association meetups in Kochi/Trivandrum
@@ -130,4 +245,4 @@ the doctor-owner IS the buyer.
 **Objection answers:**
 - *"My data?"* → "Isolated per clinic, password-protected accounts, you can export and leave anytime."
 - *"Too techy for my receptionist"* → "If she can use WhatsApp, she can use this. I'll train her in 15 minutes."
-- *"Price?"* → "Beta is free. After that, less than the cost of one patient visit per month."
+- *"Price?"* → "14 days free, then less than the cost of one patient visit per month — and pharmacy tracking alone saves more than that."
