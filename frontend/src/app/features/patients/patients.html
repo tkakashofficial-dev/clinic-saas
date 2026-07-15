@@ -107,13 +107,13 @@
 
       <div class="form-row">
         <div class="field">
-          <label for="p-first">First name<span class="req" title="Required" aria-hidden="true">*</span></label>
+          <label for="p-first">First name</label>
           <input id="p-first" class="input" formControlName="firstName" placeholder="Muhammed"
                  [class.invalid]="!!errorFor('firstName')">
           @if (errorFor('firstName')) { <span class="field-error">{{ errorFor('firstName') }}</span> }
         </div>
         <div class="field">
-          <label for="p-last">Last name<span class="req" title="Required" aria-hidden="true">*</span></label>
+          <label for="p-last">Last name</label>
           <input id="p-last" class="input" formControlName="lastName" placeholder="Ashraf"
                  [class.invalid]="!!errorFor('lastName')">
           @if (errorFor('lastName')) { <span class="field-error">{{ errorFor('lastName') }}</span> }
@@ -121,14 +121,14 @@
       </div>
 
       <div class="field">
-        <label for="p-phone">Phone<span class="req" title="Required" aria-hidden="true">*</span></label>
+        <label for="p-phone">Phone</label>
         <input id="p-phone" class="input" formControlName="phone" placeholder="+91 98765 43210"
                [class.invalid]="!!errorFor('phone')">
         @if (errorFor('phone')) { <span class="field-error">{{ errorFor('phone') }}</span> }
       </div>
 
       <div class="field">
-        <label>Gender<span class="req" title="Required" aria-hidden="true">*</span></label>
+        <label>Gender</label>
         <app-segmented [options]="['Male', 'Female', 'Other']" formControlName="gender" />
       </div>
 
@@ -241,10 +241,21 @@
                     [disabled]="downloadingForm() !== null">
               {{ template.emoji }}
               {{ downloadingForm() === template.key ? 'Preparing…' : template.label }}
-              @if (template.isDefault) { <span class="default-star" title="Clinic default — change it in Settings">★</span> }
+              @if (template.isDefault) { <span class="default-star" title="Clinic default — change it in Forms">★</span> }
             </button>
           }
+          <button type="button" class="btn btn-secondary" (click)="openFill()"
+                  title="Ask the patient and tick/type the answers — they save to the record and print pre-filled">
+            ✍️ {{ latestFill() ? 'Update answers' : 'Fill digitally' }}
+          </button>
         </div>
+
+        @if (latestFill(); as fill) {
+          <p class="filled-badge">
+            ✅ Form filled digitally on {{ fill.filledAt | date: 'd MMM y' }} by
+            {{ fill.filledByName }} — printing now includes these answers.
+          </p>
+        }
 
         <!-- Who fills what — the flow real clinics follow -->
         <p class="intake-hint">
@@ -312,6 +323,115 @@
           </div>
         }
       }
+    </div>
+  </aside>
+}
+
+<!-- ============ Fill intake form digitally ============ -->
+@if (fillOpen()) {
+  <div class="drawer-backdrop" (click)="fillOpen.set(false)"></div>
+  <aside class="drawer drawer-wide" role="dialog" aria-label="Fill intake form">
+    <div class="drawer-header">
+      <div>
+        <h2>Fill intake form</h2>
+        <p class="cell-sub">Ask the patient — tick and type; it prints pre-filled</p>
+      </div>
+      <button type="button" class="btn btn-ghost" (click)="fillOpen.set(false)" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="drawer-body">
+      @if (fillError()) {
+        <div class="alert-error">{{ fillError() }}</div>
+      }
+
+      <div class="field">
+        <label>Template</label>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="filter-chip" [class.active]="fillTemplate === 'dental'"
+                  (click)="fillTemplate = 'dental'">🦷 Dental</button>
+          <button type="button" class="filter-chip" [class.active]="fillTemplate === 'general'"
+                  (click)="fillTemplate = 'general'">🩺 General</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Medical diseases checklist</label>
+        <div class="disease-grid">
+          @for (disease of diseaseChecklist; track disease) {
+            <button type="button" class="filter-chip"
+                    [class.active]="checkedDiseases.has(disease)"
+                    (click)="toggleDisease(disease)">
+              {{ checkedDiseases.has(disease) ? '✓ ' : '' }}{{ disease }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="fd-chief">Chief complaint</label>
+        <textarea id="fd-chief" class="input" rows="2" [(ngModel)]="fillChiefComplaint"
+                  placeholder="Why did the patient come in?"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="fd-medhist">Medical history</label>
+        <textarea id="fd-medhist" class="input" rows="2" [(ngModel)]="fillMedicalHistory"
+                  placeholder="Past illnesses, surgeries, conditions…"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="fd-sechist">{{ fillTemplate === 'dental' ? 'Dental history' : 'Surgical / family history' }}</label>
+        <textarea id="fd-sechist" class="input" rows="2" [(ngModel)]="fillSecondaryHistory"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="fd-meds">Current medications</label>
+        <textarea id="fd-meds" class="input" rows="2" [(ngModel)]="fillMedications"
+                  placeholder="e.g. Metformin 500mg, daily"></textarea>
+      </div>
+
+      @for (section of fillSections(); track section.id) {
+        <div class="field custom-fill">
+          <label>{{ section.title }} <span class="opt">Your section</span></label>
+          @switch (section.kind) {
+            @case ('box') {
+              <textarea class="input" rows="2"
+                        [ngModel]="customText[section.id] ?? ''"
+                        (ngModelChange)="customText[section.id] = $event"></textarea>
+            }
+            @case ('checklist') {
+              <div class="disease-grid">
+                @for (item of section.items; track item) {
+                  <button type="button" class="filter-chip"
+                          [class.active]="customChecked[section.id]?.has(item)"
+                          (click)="toggleCustomCheck(section.id, item)">
+                    {{ customChecked[section.id]?.has(item) ? '✓ ' : '' }}{{ item }}
+                  </button>
+                }
+              </div>
+            }
+            @case ('lines') {
+              @for (item of section.items; track item) {
+                <div class="line-fill">
+                  <span class="line-label">{{ item }}</span>
+                  <input class="input" [ngModel]="lineValue(section.id, item)"
+                         (ngModelChange)="setLineValue(section.id, item, $event)">
+                </div>
+              }
+            }
+          }
+        </div>
+      }
+    </div>
+
+    <div class="drawer-footer">
+      <button type="button" class="btn btn-secondary" (click)="fillOpen.set(false)">Cancel</button>
+      <button type="button" class="btn btn-primary" [disabled]="fillSaving()" (click)="saveFill()">
+        @if (fillSaving()) { <span class="inline-spinner" aria-hidden="true"></span> }
+        {{ fillSaving() ? 'Saving…' : 'Save answers' }}
+      </button>
     </div>
   </aside>
 }

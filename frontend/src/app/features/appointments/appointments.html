@@ -150,7 +150,7 @@
       }
 
       <div class="field">
-        <label>Patient<span class="req" title="Required" aria-hidden="true">*</span></label>
+        <label>Patient</label>
         @if (selectedPatient(); as patient) {
           <div class="picked-patient">
             <div>
@@ -177,7 +177,7 @@
 
       <form [formGroup]="bookForm" id="book-form" (ngSubmit)="book()">
         <div class="field">
-          <label>Doctor<span class="req" title="Required" aria-hidden="true">*</span></label>
+          <label>Doctor</label>
           <app-select
             [options]="doctorOptions()"
             placeholder="Select a doctor…"
@@ -186,17 +186,17 @@
 
         <div class="form-row">
           <div class="field">
-            <label for="b-date">Date<span class="req" title="Required" aria-hidden="true">*</span></label>
+            <label for="b-date">Date</label>
             <app-date-field formControlName="date" placeholder="DD/MM/YYYY" />
           </div>
           <div class="field">
-            <label for="b-time">Time<span class="req" title="Required" aria-hidden="true">*</span></label>
+            <label for="b-time">Time</label>
             <input id="b-time" type="time" class="input" formControlName="time">
           </div>
         </div>
 
         <div class="field">
-          <label for="b-notes">Notes</label>
+          <label for="b-notes">Notes <span class="opt">Optional</span></label>
           <textarea id="b-notes" class="input" formControlName="notes"
                     placeholder="Reason for visit, special requirements…"></textarea>
         </div>
@@ -233,7 +233,7 @@
       }
 
       <div class="field">
-        <label for="c-diagnosis">Diagnosis<span class="req" title="Required" aria-hidden="true">*</span></label>
+        <label for="c-diagnosis">Diagnosis</label>
         <textarea id="c-diagnosis" class="input" formControlName="diagnosis" rows="3"
                   placeholder="e.g. Caries on molar 36, gingivitis upper right…"
                   [class.invalid]="consultForm.controls.diagnosis.invalid && consultForm.controls.diagnosis.touched"></textarea>

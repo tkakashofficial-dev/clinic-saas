@@ -55,6 +55,23 @@ public class FormsController : ControllerBase
         Guid id, [FromQuery] int direction, CancellationToken cancellationToken)
         => Ok(await _formsService.MoveSectionAsync(id, direction, cancellationToken));
 
+    /// <summary>Staff asked the patient and filled the form digitally.</summary>
+    [HttpPost("responses/{patientId}")]
+    [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Doctor},{RoleNames.Receptionist}")]
+    public async Task<ActionResult<IntakeFormResponseDto>> SaveResponse(
+        Guid patientId, [FromBody] SaveIntakeFormResponseRequest request, CancellationToken cancellationToken)
+        => Ok(await _formsService.SaveResponseAsync(patientId, request, cancellationToken));
+
+    /// <summary>The patient's latest digital answers (204 = never filled).</summary>
+    [HttpGet("responses/{patientId}/latest")]
+    [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Doctor},{RoleNames.Receptionist}")]
+    public async Task<ActionResult<IntakeFormResponseDto>> LatestResponse(
+        Guid patientId, CancellationToken cancellationToken)
+    {
+        var response = await _formsService.GetLatestResponseAsync(patientId, cancellationToken);
+        return response is null ? NoContent() : Ok(response);
+    }
+
     /// <summary>The form with SAMPLE data — see exactly what will print.</summary>
     [HttpGet("preview")]
     [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Doctor},{RoleNames.Receptionist}")]

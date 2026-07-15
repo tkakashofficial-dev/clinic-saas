@@ -141,6 +141,56 @@ public class FormsService : IFormsService
         return sections.Select(MapToDto).ToList();
     }
 
+    public async Task<IntakeFormResponseDto> SaveResponseAsync(
+        Guid patientId, SaveIntakeFormResponseRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request.Template is not ("dental" or "general"))
+            throw new BadRequestException("Unknown template. Available: dental, general.");
+
+        var patientExists = await _context.Patients
+            .AnyAsync(p => p.Id == patientId, cancellationToken);
+        if (!patientExists) throw new NotFoundException("Patient not found.");
+
+        var json = JsonSerializer.Serialize(request.Answers ?? new IntakeAnswersDto());
+        if (json.Length > 11_000)
+            throw new BadRequestException("The answers are too long — shorten the text fields.");
+
+        var response = new IntakeFormResponse(
+            _currentUser.TenantId, patientId, request.Template, json, _currentUser.TenantUserId);
+        _context.IntakeFormResponses.Add(response);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return (await GetLatestResponseAsync(patientId, cancellationToken))!;
+    }
+
+    public async Task<IntakeFormResponseDto?> GetLatestResponseAsync(
+        Guid patientId, CancellationToken cancellationToken = default)
+    {
+        var latest = await _context.IntakeFormResponses
+            .AsNoTracking()
+            .Where(r => r.PatientId == patientId)
+            .OrderByDescending(r => r.CreatedAt)
+            .Select(r => new
+            {
+                r.Template,
+                r.AnswersJson,
+                r.CreatedAt,
+                FilledBy = r.FilledBy.SystemUser.FirstName + " " + r.FilledBy.SystemUser.LastName
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (latest is null) return null;
+
+        return new IntakeFormResponseDto
+        {
+            Template = latest.Template,
+            Answers = JsonSerializer.Deserialize<IntakeAnswersDto>(latest.AnswersJson) ?? new(),
+            FilledAt = latest.CreatedAt,
+            FilledByName = latest.FilledBy,
+        };
+    }
+
     private async Task<IntakeFormSection> GetSectionAsync(Guid id, CancellationToken ct)
         => await _context.IntakeFormSections.FirstOrDefaultAsync(s => s.Id == id, ct)
            ?? throw new NotFoundException("Section not found.");

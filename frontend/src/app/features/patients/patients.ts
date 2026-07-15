@@ -1,20 +1,28 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { parseApiError } from '../../core/api/api-error';
 import { AppointmentsService } from '../../core/api/appointments.service';
+import { FormsService } from '../../core/api/forms.service';
 import { PatientsService } from '../../core/api/patients.service';
 import { SettingsService } from '../../core/api/settings.service';
 import { AuthService } from '../../core/auth/auth.service';
-import { PagedResult, PatientDto, PatientHistory } from '../../core/models/api.models';
+import {
+  IntakeFormResponse,
+  IntakeFormSection,
+  IntakeTemplate,
+  PagedResult,
+  PatientDto,
+  PatientHistory,
+} from '../../core/models/api.models';
 import { DateField } from '../../shared/ui/date-field';
 import { Segmented } from '../../shared/ui/segmented';
 
 @Component({
   selector: 'app-patients',
-  imports: [DatePipe, ReactiveFormsModule, Segmented, DateField],
+  imports: [DatePipe, ReactiveFormsModule, FormsModule, Segmented, DateField],
   templateUrl: './patients.html',
   styleUrl: './patients.scss',
 })
@@ -60,12 +68,123 @@ export class Patients {
     this.historyOpen.set(true);
     this.historyLoading.set(true);
     this.history.set(null);
+    this.latestFill.set(null);
     this.api.getHistory(patient.id).subscribe({
       next: (history) => {
         this.history.set(history);
         this.historyLoading.set(false);
       },
       error: () => this.historyLoading.set(false),
+    });
+    // In parallel: has this patient's form been filled digitally?
+    this.formsApi.latestResponse(patient.id).subscribe({
+      next: (response) => this.latestFill.set(response),
+      error: () => {},
+    });
+  }
+
+  // ---- fill the intake form digitally (staff asks the patient) ----
+  private readonly formsApi = inject(FormsService);
+  readonly latestFill = signal<IntakeFormResponse | null>(null);
+  readonly fillOpen = signal(false);
+  readonly fillSaving = signal(false);
+  readonly fillError = signal('');
+  readonly fillSections = signal<IntakeFormSection[]>([]);
+  fillTemplate: IntakeTemplate = 'dental';
+
+  readonly diseaseChecklist = [
+    'Diabetic', 'Blood Pressure', 'Drug Allergies', 'Latex Allergy',
+    'Cardiac', 'Anticoagulant Use', 'Pregnancy', 'Epilepsy',
+    'Hepatic', 'Renal', 'Pulmonary', 'STD',
+  ];
+  checkedDiseases = new Set<string>();
+  fillChiefComplaint = '';
+  fillMedicalHistory = '';
+  fillSecondaryHistory = '';
+  fillMedications = '';
+  /** sectionId → answer state for the clinic's custom sections. */
+  customText: Record<string, string> = {};
+  customChecked: Record<string, Set<string>> = {};
+  customLines: Record<string, Record<string, string>> = {};
+
+  openFill(): void {
+    const previous = this.latestFill();
+    this.fillTemplate = previous?.template
+      ?? this.settingsApi.settings()?.defaultIntakeTemplate ?? 'dental';
+
+    // Pre-load previous answers so staff UPDATE instead of retyping
+    const answers = previous?.answers;
+    this.checkedDiseases = new Set(answers?.diseaseChecklist ?? []);
+    this.fillChiefComplaint = answers?.chiefComplaint ?? '';
+    this.fillMedicalHistory = answers?.medicalHistory ?? '';
+    this.fillSecondaryHistory = answers?.secondaryHistory ?? '';
+    this.fillMedications = answers?.medications ?? '';
+    this.customText = {};
+    this.customChecked = {};
+    this.customLines = {};
+    for (const custom of answers?.custom ?? []) {
+      this.customText[custom.sectionId] = custom.text ?? '';
+      this.customChecked[custom.sectionId] = new Set(custom.checked);
+      this.customLines[custom.sectionId] = { ...custom.lines };
+    }
+
+    this.fillError.set('');
+    this.fillOpen.set(true);
+    this.formsApi.getSections().subscribe({
+      next: (sections) => this.fillSections.set(
+        sections.filter((s) => s.template === 'both' || s.template === this.fillTemplate)),
+      error: () => {},
+    });
+  }
+
+  toggleDisease(disease: string): void {
+    if (this.checkedDiseases.has(disease)) this.checkedDiseases.delete(disease);
+    else this.checkedDiseases.add(disease);
+  }
+
+  toggleCustomCheck(sectionId: string, item: string): void {
+    const set = (this.customChecked[sectionId] ??= new Set<string>());
+    if (set.has(item)) set.delete(item);
+    else set.add(item);
+  }
+
+  lineValue(sectionId: string, item: string): string {
+    return this.customLines[sectionId]?.[item] ?? '';
+  }
+
+  setLineValue(sectionId: string, item: string, value: string): void {
+    (this.customLines[sectionId] ??= {})[item] = value;
+  }
+
+  saveFill(): void {
+    const patient = this.history()?.patient;
+    if (!patient) return;
+
+    this.fillSaving.set(true);
+    this.fillError.set('');
+
+    this.formsApi.saveResponse(patient.id, this.fillTemplate, {
+      diseaseChecklist: [...this.checkedDiseases],
+      chiefComplaint: this.fillChiefComplaint.trim() || null,
+      medicalHistory: this.fillMedicalHistory.trim() || null,
+      secondaryHistory: this.fillSecondaryHistory.trim() || null,
+      medications: this.fillMedications.trim() || null,
+      custom: this.fillSections().map((section) => ({
+        sectionId: section.id,
+        text: this.customText[section.id]?.trim() || null,
+        checked: [...(this.customChecked[section.id] ?? [])],
+        lines: this.customLines[section.id] ?? {},
+      })),
+    }).subscribe({
+      next: (response) => {
+        this.latestFill.set(response);
+        this.fillSaving.set(false);
+        this.fillOpen.set(false);
+      },
+      error: (err) => {
+        this.fillSaving.set(false);
+        this.fillError.set(parseApiError(err).message);
+      },
     });
   }
 

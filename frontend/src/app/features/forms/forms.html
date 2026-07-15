@@ -127,7 +127,7 @@
       }
 
       <div class="field">
-        <label>What shape is it?<span class="req" aria-hidden="true">*</span></label>
+        <label>What shape is it?</label>
         <div class="kind-picker">
           @for (kind of kinds; track kind.key) {
             <button type="button" class="kind-option" [class.selected]="newKind === kind.key"
@@ -141,14 +141,14 @@
       </div>
 
       <div class="field">
-        <label for="f-title">Section title<span class="req" aria-hidden="true">*</span></label>
+        <label for="f-title">Section title</label>
         <input id="f-title" class="input" [(ngModel)]="newTitle"
                placeholder="e.g. Habits · Insurance details · Referred by">
       </div>
 
       @if (newKind !== 'box') {
         <div class="field">
-          <label for="f-items">Items — one per line<span class="req" aria-hidden="true">*</span></label>
+          <label for="f-items">Items — one per line</label>
           <textarea id="f-items" class="input" rows="5" [(ngModel)]="newItemsText"
                     [placeholder]="newKind === 'checklist'
                       ? 'Smoking\nPan chewing\nAlcohol'

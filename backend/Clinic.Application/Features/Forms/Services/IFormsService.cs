@@ -26,4 +26,13 @@ public interface IFormsService
     /// so admins see exactly what reception will print.</summary>
     Task<(byte[] Content, string FileName)> PreviewPdfAsync(
         string template, CancellationToken cancellationToken = default);
+
+    /// <summary>Staff filled the form digitally by asking the patient —
+    /// saves the answers to the patient's record.</summary>
+    Task<IntakeFormResponseDto> SaveResponseAsync(
+        Guid patientId, SaveIntakeFormResponseRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>The patient's latest digital answers (null = never filled).</summary>
+    Task<IntakeFormResponseDto?> GetLatestResponseAsync(
+        Guid patientId, CancellationToken cancellationToken = default);
 }

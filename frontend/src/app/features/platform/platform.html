@@ -202,13 +202,13 @@
 
     <div class="drawer-body">
       <div class="field">
-        <label for="pay-amount">Amount received (₹)<span class="req" title="Required" aria-hidden="true">*</span></label>
+        <label for="pay-amount">Amount received (₹)</label>
         <input id="pay-amount" type="number" min="1" class="input" [(ngModel)]="payAmount"
                placeholder="1999" autofocus>
       </div>
 
       <div class="field">
-        <label>Payment date<span class="req" title="Required" aria-hidden="true">*</span></label>
+        <label>Payment date</label>
         <app-date-field [maxToday]="true" [(ngModel)]="payDate" />
         <span class="muted" style="font-size:12.5px; margin-top:4px;">
           The day the money actually arrived — coverage counts from this date.
@@ -216,7 +216,7 @@
       </div>
 
       <div class="field">
-        <label>How did they pay?<span class="req" title="Required" aria-hidden="true">*</span></label>
+        <label>How did they pay?</label>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           @for (method of payMethods; track method.key) {
             <button type="button" class="filter-chip" [class.active]="payMethod === method.key"
@@ -226,7 +226,7 @@
       </div>
 
       <div class="field">
-        <label>Covers how many months?<span class="req" title="Required" aria-hidden="true">*</span></label>
+        <label>Covers how many months?</label>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           @for (months of monthPresets; track months) {
             <button type="button" class="filter-chip" [class.active]="payMonths === months"
@@ -251,7 +251,7 @@
       </div>
 
       <div class="field">
-        <label for="pay-note">Note (optional)</label>
+        <label for="pay-note">Note <span class="opt">Optional</span></label>
         <input id="pay-note" class="input" [(ngModel)]="payNote"
                placeholder="e.g. UPI ref 4521… / paid at clinic visit">
       </div>

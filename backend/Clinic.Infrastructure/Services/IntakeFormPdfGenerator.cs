@@ -55,9 +55,11 @@ public static class IntakeFormPdfGenerator
 
     /// <param name="template">"dental" (default) or "general".</param>
     /// <param name="customSections">The clinic's own form-builder sections (may be null).</param>
+    /// <param name="answers">Digital answers captured by staff — prints PRE-FILLED (may be null).</param>
     public static byte[] Generate(
         string clinicName, string? clinicAddress, string? clinicPhone, PatientDto patient,
-        string template = "dental", List<IntakeFormSectionDto>? customSections = null)
+        string template = "dental", List<IntakeFormSectionDto>? customSections = null,
+        IntakeAnswersDto? answers = null)
     {
         var isDental = !string.Equals(template, "general", StringComparison.OrdinalIgnoreCase);
         var sections = customSections ?? [];
@@ -116,7 +118,10 @@ public static class IntakeFormPdfGenerator
                     });
 
                     content.Item().PaddingTop(8).AlignCenter()
-                        .Text("· To be filled by the doctor ·").FontSize(8).SemiBold().FontColor(Muted);
+                        .Text(answers is null
+                            ? "· To be filled by the doctor ·"
+                            : "· Recorded digitally with the patient — please verify ·")
+                        .FontSize(8).SemiBold().FontColor(Muted);
 
                     // General template: vitals strip first, as physicians chart
                     if (!isDental)
@@ -136,7 +141,7 @@ public static class IntakeFormPdfGenerator
                     }
 
                     SectionTitle(content, "Chief complaint");
-                    WritingBox(content, 34);
+                    WritingBox(content, 34, answers?.ChiefComplaint);
 
                     SectionTitle(content, "Medical diseases checklist");
                     content.Item().Border(1).BorderColor(Border).Padding(9).Row(r =>
@@ -146,7 +151,8 @@ public static class IntakeFormPdfGenerator
                             r.RelativeItem().Column(c =>
                             {
                                 foreach (var disease in chunk)
-                                    CheckItem(c, disease);
+                                    CheckItem(c, disease,
+                                        answers?.DiseaseChecklist.Contains(disease) == true);
                             });
                         }
                     });
@@ -159,16 +165,16 @@ public static class IntakeFormPdfGenerator
                         r.RelativeItem(2).Border(1).BorderColor(Border).Padding(8).Column(c =>
                         {
                             c.Item().Text("Medical history").FontSize(8.5f).SemiBold().FontColor(Teal);
-                            c.Item().Height(40);
+                            FilledOrBlank(c, 40, answers?.MedicalHistory);
                             c.Item().Text(isDental ? "Dental history" : "Surgical / family history")
                                 .FontSize(8.5f).SemiBold().FontColor(Teal);
-                            c.Item().Height(40);
+                            FilledOrBlank(c, 40, answers?.SecondaryHistory);
                         });
                         r.ConstantItem(8);
                         r.RelativeItem().Border(1).BorderColor(Border).Padding(8).Column(c =>
                         {
                             c.Item().Text("Medications").FontSize(8.5f).SemiBold().FontColor(Teal);
-                            c.Item().Height(94);
+                            FilledOrBlank(c, 94, answers?.Medications);
                         });
                     });
 
@@ -313,23 +319,33 @@ public static class IntakeFormPdfGenerator
 
                             foreach (var section in chunk)
                             {
+                                var answer = answers?.Custom
+                                    .FirstOrDefault(a => a.SectionId == section.Id);
+
                                 SectionTitle(content, section.Title);
                                 switch (section.Kind)
                                 {
                                     case "box":
-                                        WritingBox(content, 64);
+                                        WritingBox(content, 64, answer?.Text);
                                         break;
 
                                     case "lines":
                                         content.Item().Border(1).BorderColor(Border).Padding(9).Column(c =>
                                         {
                                             foreach (var item in section.Items)
+                                            {
+                                                var value = answer?.Lines.GetValueOrDefault(item);
                                                 c.Item().PaddingTop(7).Row(r =>
                                                 {
                                                     r.ConstantItem(120).Text(item).FontSize(8.5f);
-                                                    r.RelativeItem().PaddingTop(9)
-                                                        .LineHorizontal(0.8f).LineColor(Border);
+                                                    if (string.IsNullOrWhiteSpace(value))
+                                                        r.RelativeItem().PaddingTop(9)
+                                                            .LineHorizontal(0.8f).LineColor(Border);
+                                                    else
+                                                        r.RelativeItem().Text(Truncate(value, 90))
+                                                            .FontSize(8.5f).SemiBold();
                                                 });
+                                            }
                                         });
                                         break;
 
@@ -343,7 +359,8 @@ public static class IntakeFormPdfGenerator
                                                 r.RelativeItem().Column(c =>
                                                 {
                                                     foreach (var item in column)
-                                                        CheckItem(c, item);
+                                                        CheckItem(c, item,
+                                                            answer?.Checked.Contains(item) == true);
                                                 });
                                             }
                                         });
@@ -418,18 +435,40 @@ public static class IntakeFormPdfGenerator
         });
     }
 
-    private static void WritingBox(ColumnDescriptor content, float height)
+    private static void WritingBox(ColumnDescriptor content, float height, string? text = null)
     {
-        content.Item().Border(1).BorderColor(Border).Padding(8).Column(c => c.Item().Height(height));
+        content.Item().Border(1).BorderColor(Border).Padding(8)
+            .Column(c => FilledOrBlank(c, height, text));
     }
 
-    private static void CheckItem(ColumnDescriptor column, string label)
+    /// <summary>Blank writing space on paper forms; the captured answer when
+    /// staff filled it digitally. Text is clamped so pages can't overflow.</summary>
+    private static void FilledOrBlank(ColumnDescriptor column, float height, string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            column.Item().Height(height);
+        else
+            column.Item().MinHeight(height).PaddingTop(2)
+                .Text(Truncate(text, (int)(height * 6.5f)))
+                .FontSize(9).LineHeight(1.4f).FontColor("#1A362D");
+    }
+
+    private static string Truncate(string value, int max)
+        => value.Length <= max ? value : value[..max] + "…";
+
+    private static void CheckItem(ColumnDescriptor column, string label, bool ticked = false)
     {
         column.Item().PaddingVertical(2).Row(line =>
         {
-            line.ConstantItem(10).Height(10).Border(1.1f).BorderColor(Teal);
+            if (ticked)
+                line.ConstantItem(10).Height(10).Background(TealBright)
+                    .AlignCenter().AlignMiddle()
+                    .Text("✓").FontSize(7).SemiBold().FontColor(Colors.White);
+            else
+                line.ConstantItem(10).Height(10).Border(1.1f).BorderColor(Teal);
             line.ConstantItem(5);
-            line.RelativeItem().Text(label).FontSize(8.5f);
+            var text = line.RelativeItem().Text(label).FontSize(8.5f);
+            if (ticked) text.SemiBold();
         });
     }
 

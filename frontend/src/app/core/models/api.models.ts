@@ -313,6 +313,30 @@ export interface SaveIntakeFormSectionRequest {
   items: string[];
 }
 
+/** Answers captured by staff asking the patient — prints pre-filled. */
+export interface IntakeAnswers {
+  diseaseChecklist: string[];
+  chiefComplaint?: string | null;
+  medicalHistory?: string | null;
+  secondaryHistory?: string | null;
+  medications?: string | null;
+  custom: CustomSectionAnswer[];
+}
+
+export interface CustomSectionAnswer {
+  sectionId: string;
+  text?: string | null;
+  checked: string[];
+  lines: Record<string, string>;
+}
+
+export interface IntakeFormResponse {
+  template: IntakeTemplate;
+  answers: IntakeAnswers;
+  filledAt: string;
+  filledByName: string;
+}
+
 // ---------- Platform (SaaS owner console) ----------
 
 export interface PlatformTenant {

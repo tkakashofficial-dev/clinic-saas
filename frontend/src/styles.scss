@@ -190,12 +190,6 @@ a.wa-float, a.wa-float:hover {
   color: var(--color-text);
 }
 
-/* Required mark: a quiet teal asterisk hugging the label — not a bare "*" */
-.req {
-  color: var(--color-primary-600);
-  font-weight: 700;
-  margin-left: 2px;
-}
 
 /* Optional chip: modern SaaS marks the exceptions, users skip with confidence */
 .opt {
