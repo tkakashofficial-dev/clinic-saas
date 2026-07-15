@@ -126,6 +126,77 @@ public class PlatformServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task RecordPayment_ExtendsCoverage_AndNotifiesTheClinic()
+    {
+        var clinic = await _db.SeedTenantAsync("Smile Dental", "admin@clinic.com");
+        // Realistic production shape: the platform owner is signed into their
+        // OWN clinic while writing into the customer's tenant
+        var ownClinic = await _db.SeedTenantAsync("Klivia HQ", "hq@klivia.com");
+        _db.CurrentUser.ActAs(ownClinic.TenantId, ownClinic.TenantUserId);
+        _db.CurrentUser.Email = OwnerEmail;
+
+        var afterFirst = await CreatePlatformService().RecordPaymentAsync(
+            clinic.TenantId, new RecordPaymentRequest
+            {
+                AmountRupees = 1999, Method = "Upi", PeriodMonths = 1, PlanToApply = "Clinic",
+            });
+
+        Assert.NotNull(afterFirst.PaidUntil);
+        Assert.Equal("Clinic", afterFirst.Plan);
+        Assert.Equal(1999, afterFirst.LastPaymentAmount);
+        Assert.False(afterFirst.PaymentOverdue);
+        // ~1 month out (paying now, no prior coverage)
+        Assert.InRange(afterFirst.PaidUntil!.Value,
+            DateTime.UtcNow.AddDays(27), DateTime.UtcNow.AddDays(32));
+
+        // Second payment EXTENDS from the current coverage end, not from today
+        var afterSecond = await CreatePlatformService().RecordPaymentAsync(
+            clinic.TenantId, new RecordPaymentRequest
+            {
+                AmountRupees = 1999, Method = "Cash", PeriodMonths = 1,
+            });
+        Assert.True(afterSecond.PaidUntil > afterFirst.PaidUntil);
+
+        // The clinic's Admin got thanked in-app (Billing notifications)
+        await using var context = _db.CreateContext();
+        _db.CurrentUser.ActAs(clinic.TenantId, clinic.TenantUserId);
+        var notes = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions
+            .ToListAsync(context.Notifications);
+        Assert.Contains(notes, n => n.Type == "Billing" && n.Title.Contains("Payment received"));
+    }
+
+    [Fact]
+    public async Task RecordPayment_Garbage_IsRejected()
+    {
+        var clinic = await _db.SeedTenantAsync("Smile Dental", "admin@clinic.com");
+        ActAsPlatformOwner();
+        var service = CreatePlatformService();
+
+        await Assert.ThrowsAsync<BadRequestException>(() => service.RecordPaymentAsync(
+            clinic.TenantId, new RecordPaymentRequest { AmountRupees = 0, Method = "Upi" }));
+        await Assert.ThrowsAsync<BadRequestException>(() => service.RecordPaymentAsync(
+            clinic.TenantId, new RecordPaymentRequest { AmountRupees = 999, Method = "Hawala" }));
+        await Assert.ThrowsAsync<BadRequestException>(() => service.RecordPaymentAsync(
+            clinic.TenantId, new RecordPaymentRequest { AmountRupees = 999, Method = "Upi", PeriodMonths = 99 }));
+    }
+
+    [Fact]
+    public async Task ChangePlan_NotifiesTheClinicAdmins()
+    {
+        var clinic = await _db.SeedTenantAsync("Smile Dental", "admin@clinic.com");
+        ActAsPlatformOwner();
+
+        await CreatePlatformService().ChangePlanAsync(
+            clinic.TenantId, new PlatformChangePlanRequest { Plan = "Growth" });
+
+        await using var context = _db.CreateContext();
+        _db.CurrentUser.ActAs(clinic.TenantId, clinic.TenantUserId);
+        var notes = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions
+            .ToListAsync(context.Notifications);
+        Assert.Contains(notes, n => n.Type == "Billing" && n.Title.Contains("Growth"));
+    }
+
+    [Fact]
     public async Task TestEmail_GoesToThePlatformAdmin_AndReportsOutcome()
     {
         ActAsPlatformOwner();

@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { PlatformEmailTestResult, PlatformTenant } from '../models/api.models';
+import { PlatformEmailTestResult, PlatformTenant, RecordPaymentRequest } from '../models/api.models';
 
 /**
  * SaaS-owner console API. Every endpoint re-checks the server-side email
@@ -26,6 +26,12 @@ export class PlatformService {
   setActive(tenantId: string, isActive: boolean): Observable<PlatformTenant> {
     return this.http.post<PlatformTenant>(
       `${this.baseUrl}/tenants/${tenantId}/set-active`, { isActive });
+  }
+
+  /** Records a collected payment (UPI/bank/cash) and extends coverage. */
+  recordPayment(tenantId: string, request: RecordPaymentRequest): Observable<PlatformTenant> {
+    return this.http.post<PlatformTenant>(
+      `${this.baseUrl}/tenants/${tenantId}/record-payment`, request);
   }
 
   /** Sends a REAL email to the platform admin — proves production SMTP works. */

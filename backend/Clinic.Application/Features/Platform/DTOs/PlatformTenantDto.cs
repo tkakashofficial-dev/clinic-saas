@@ -15,7 +15,26 @@ public class PlatformTenantDto
     public string? OwnerName { get; set; }
     public string? OwnerEmail { get; set; }
     public string? ClinicPhone { get; set; }
+    /// <summary>Subscription coverage end from recorded payments (null = never paid).</summary>
+    public DateTime? PaidUntil { get; set; }
+    public DateTime? LastPaymentAt { get; set; }
+    public decimal? LastPaymentAmount { get; set; }
+    /// <summary>Coverage lapsed (or never paid after trial) — time to call them.</summary>
+    public bool PaymentOverdue { get; set; }
     public DateTime CreatedAt { get; set; }
+}
+
+/// <summary>Manual payment collection: UPI/bank/cash today, gateway later.</summary>
+public class RecordPaymentRequest
+{
+    public decimal AmountRupees { get; set; }
+    /// <summary>PaymentMethods constants: Upi, BankTransfer, Cash, Other.</summary>
+    public string Method { get; set; } = default!;
+    /// <summary>Months of subscription this payment covers (extends remaining time).</summary>
+    public int PeriodMonths { get; set; } = 1;
+    public string? Note { get; set; }
+    /// <summary>Optionally apply a plan in the same step (payment → activation).</summary>
+    public string? PlanToApply { get; set; }
 }
 
 public class PlatformChangePlanRequest

@@ -216,7 +216,7 @@ export interface RecordConsultationRequest {
 
 export interface NotificationDto {
   id: string;
-  type: 'Booking' | 'CheckIn' | 'Reminder';
+  type: 'Booking' | 'CheckIn' | 'Reminder' | 'Billing';
   title: string;
   message: string;
   isRead: boolean;
@@ -307,7 +307,25 @@ export interface PlatformTenant {
   ownerName: string | null;
   ownerEmail: string | null;
   clinicPhone: string | null;
+  /** Subscription coverage end from recorded payments (null = never paid). */
+  paidUntil: string | null;
+  lastPaymentAt: string | null;
+  lastPaymentAmount: number | null;
+  /** Coverage lapsed — time to call them. */
+  paymentOverdue: boolean;
   createdAt: string;
+}
+
+export type PaymentMethod = 'Upi' | 'BankTransfer' | 'Cash' | 'Other';
+
+export interface RecordPaymentRequest {
+  amountRupees: number;
+  method: PaymentMethod;
+  /** Months of subscription this payment covers. */
+  periodMonths: number;
+  note?: string | null;
+  /** Optionally apply a plan in the same step. */
+  planToApply?: string | null;
 }
 
 export interface PlatformEmailTestResult {

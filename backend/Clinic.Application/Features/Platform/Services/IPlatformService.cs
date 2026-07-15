@@ -17,4 +17,10 @@ public interface IPlatformService
     /// <summary>Sends a real email to the platform admin — proves production
     /// SMTP works end-to-end (or reports that it doesn't, with a reason).</summary>
     Task<PlatformEmailTestResult> SendTestEmailAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Records a collected payment (manual UPI/bank/cash), extends the
+    /// clinic's coverage, optionally applies a plan, and thanks the clinic
+    /// with an in-app notification + email.</summary>
+    Task<PlatformTenantDto> RecordPaymentAsync(
+        Guid tenantId, RecordPaymentRequest request, CancellationToken cancellationToken = default);
 }

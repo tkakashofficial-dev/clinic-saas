@@ -35,6 +35,12 @@ public class PlatformController : ControllerBase
         Guid id, [FromBody] PlatformSetActiveRequest request, CancellationToken cancellationToken)
         => Ok(await _platformService.SetActiveAsync(id, request, cancellationToken));
 
+    /// <summary>Records a collected payment (UPI/bank/cash) and extends coverage.</summary>
+    [HttpPost("tenants/{id}/record-payment")]
+    public async Task<ActionResult<PlatformTenantDto>> RecordPayment(
+        Guid id, [FromBody] RecordPaymentRequest request, CancellationToken cancellationToken)
+        => Ok(await _platformService.RecordPaymentAsync(id, request, cancellationToken));
+
     /// <summary>Proves production SMTP works: sends a real mail to the caller.</summary>
     [HttpPost("test-email")]
     public async Task<ActionResult<PlatformEmailTestResult>> TestEmail(CancellationToken cancellationToken)

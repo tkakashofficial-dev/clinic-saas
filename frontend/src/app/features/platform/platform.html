@@ -33,6 +33,12 @@
     <span class="stat-value">{{ paidClinics() }}</span>
     <span class="stat-label">Paying</span>
   </div>
+  @if (overdueClinics() > 0) {
+    <div class="stat-card danger">
+      <span class="stat-value">{{ overdueClinics() }}</span>
+      <span class="stat-label">Payment overdue</span>
+    </div>
+  }
 </div>
 
 <div class="payment-note-row">
@@ -67,10 +73,10 @@
             <th>Clinic</th>
             <th>Owner / contact</th>
             <th>Plan</th>
+            <th>Subscription</th>
             <th>Status</th>
             <th>Staff</th>
             <th>Patients</th>
-            <th>Joined</th>
             <th style="text-align:right"></th>
           </tr>
         </thead>
@@ -82,9 +88,13 @@
                 <div class="contact-cell">
                   @if (tenant.ownerName) { <span class="contact-name">{{ tenant.ownerName }}</span> }
                   @if (tenant.clinicPhone) {
-                    <a class="contact-line" href="tel:{{ tenant.clinicPhone }}" title="Call to collect payment">
-                      📞 {{ tenant.clinicPhone }}
-                    </a>
+                    <span class="contact-row">
+                      <a class="contact-line" href="tel:{{ tenant.clinicPhone }}" title="Call to collect payment">
+                        📞 {{ tenant.clinicPhone }}
+                      </a>
+                      <a class="contact-line wa" [href]="waLink(tenant.clinicPhone)" target="_blank"
+                         rel="noopener" title="WhatsApp them">💬 WhatsApp</a>
+                    </span>
                   }
                   @if (tenant.ownerEmail) {
                     <a class="contact-line" href="mailto:{{ tenant.ownerEmail }}">✉️ {{ tenant.ownerEmail }}</a>
@@ -120,14 +130,38 @@
                 </div>
               </td>
               <td>
+                <div class="sub-cell">
+                  @if (tenant.paidUntil) {
+                    <span class="chip" [class.chip-completed]="!tenant.paymentOverdue"
+                          [class.chip-cancelled]="tenant.paymentOverdue">
+                      {{ tenant.paymentOverdue ? 'Overdue since' : 'Paid until' }}
+                      {{ tenant.paidUntil | date: 'd MMM y' }}
+                    </span>
+                    @if (tenant.lastPaymentAmount) {
+                      <span class="sub-last">last ₹{{ tenant.lastPaymentAmount | number: '1.0-0' }}
+                        · {{ tenant.lastPaymentAt | date: 'd MMM' }}</span>
+                    }
+                  } @else if (tenant.isInTrial) {
+                    <span class="muted">On trial</span>
+                  } @else {
+                    <span class="sub-none">No payments yet</span>
+                  }
+                </div>
+              </td>
+              <td>
                 <span class="chip" [class.chip-completed]="tenant.isActive" [class.chip-cancelled]="!tenant.isActive">
                   {{ tenant.isActive ? 'Active' : 'Suspended' }}
                 </span>
               </td>
               <td>{{ tenant.staffCount }}</td>
               <td>{{ tenant.patientCount }}</td>
-              <td class="muted">{{ tenant.createdAt | date: 'd MMM y' }}</td>
-              <td style="text-align:right">
+              <td style="text-align:right; white-space:nowrap;">
+                <button type="button" class="btn btn-ghost"
+                        [disabled]="busy() === tenant.tenantId"
+                        (click)="openPay(tenant)"
+                        title="Record a collected payment (UPI/bank/cash) — extends their coverage and thanks them automatically">
+                  💰 Payment
+                </button>
                 <button type="button" class="btn btn-ghost"
                         [class.danger-text]="tenant.isActive"
                         [disabled]="busy() === tenant.tenantId"
@@ -145,3 +179,83 @@
     </div>
   }
 </section>
+
+<!-- ============ Record payment drawer ============ -->
+@if (payFor(); as tenant) {
+  <div class="drawer-backdrop" (click)="payFor.set(null)"></div>
+  <aside class="drawer" role="dialog" aria-label="Record payment">
+    <div class="drawer-header">
+      <div>
+        <h2>Record payment</h2>
+        <p class="cell-sub">{{ tenant.name }}</p>
+      </div>
+      <button type="button" class="btn btn-ghost" (click)="payFor.set(null)" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="drawer-body">
+      <div class="field">
+        <label for="pay-amount">Amount received (₹) *</label>
+        <input id="pay-amount" type="number" min="1" class="input" [(ngModel)]="payAmount"
+               placeholder="1999" autofocus>
+      </div>
+
+      <div class="field">
+        <label>How did they pay? *</label>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          @for (method of payMethods; track method.key) {
+            <button type="button" class="filter-chip" [class.active]="payMethod === method.key"
+                    (click)="payMethod = method.key">{{ method.label }}</button>
+          }
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Covers how many months? *</label>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          @for (months of monthPresets; track months) {
+            <button type="button" class="filter-chip" [class.active]="payMonths === months"
+                    (click)="payMonths = months">
+              {{ months }} {{ months === 1 ? 'month' : 'months' }}
+            </button>
+          }
+        </div>
+        <span class="muted" style="font-size:12.5px; margin-top:4px;">
+          Coverage extends from their current paid-until date — paying early never loses days.
+        </span>
+      </div>
+
+      <div class="field">
+        <label>Plan after this payment</label>
+        <div style="display:flex; gap:8px;">
+          @for (plan of plans; track plan) {
+            <button type="button" class="filter-chip" [class.active]="payPlan === plan"
+                    (click)="payPlan = plan">{{ plan }}</button>
+          }
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="pay-note">Note (optional)</label>
+        <input id="pay-note" class="input" [(ngModel)]="payNote"
+               placeholder="e.g. UPI ref 4521… / paid at clinic visit">
+      </div>
+
+      <p class="muted" style="font-size:12.5px;">
+        The clinic's admins get an in-app "Payment received 🎉" notification and an
+        email receipt automatically.
+      </p>
+    </div>
+
+    <div class="drawer-footer">
+      <button type="button" class="btn btn-secondary" (click)="payFor.set(null)">Cancel</button>
+      <button type="button" class="btn btn-primary"
+              [disabled]="savingPay() || !payAmount || payAmount <= 0"
+              (click)="submitPay()">
+        @if (savingPay()) { <span class="inline-spinner" aria-hidden="true"></span> }
+        {{ savingPay() ? 'Recording…' : 'Record payment' }}
+      </button>
+    </div>
+  </aside>
+}

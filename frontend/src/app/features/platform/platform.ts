@@ -1,8 +1,9 @@
-import { DatePipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { parseApiError } from '../../core/api/api-error';
 import { PlatformService } from '../../core/api/platform.service';
-import { PlatformTenant } from '../../core/models/api.models';
+import { PaymentMethod, PlatformTenant } from '../../core/models/api.models';
 
 /**
  * The SaaS owner's back office: every clinic on the platform, its plan, trial
@@ -12,7 +13,7 @@ import { PlatformTenant } from '../../core/models/api.models';
  */
 @Component({
   selector: 'app-platform',
-  imports: [DatePipe],
+  imports: [DatePipe, DecimalPipe, FormsModule],
   templateUrl: './platform.html',
   styleUrl: './platform.scss',
 })
@@ -36,6 +37,16 @@ export class Platform {
   readonly paidClinics = computed(
     () => this.tenants().filter((t) => !t.isInTrial && t.plan !== 'Solo' && t.isActive).length,
   );
+  readonly overdueClinics = computed(
+    () => this.tenants().filter((t) => t.paymentOverdue).length,
+  );
+
+  /** wa.me link from the clinic phone (Indian default country code). */
+  waLink(phone: string): string {
+    let digits = phone.replace(/\D/g, '');
+    if (digits.length === 10) digits = '91' + digits;
+    return `https://wa.me/${digits}`;
+  }
 
   constructor() {
     this.load();
@@ -50,6 +61,63 @@ export class Platform {
       error: (err) => {
         this.error.set(parseApiError(err).message);
         this.loading.set(false);
+      },
+    });
+  }
+
+  // ---- record payment drawer ----
+  readonly payFor = signal<PlatformTenant | null>(null);
+  readonly savingPay = signal(false);
+  readonly payMethods: { key: PaymentMethod; label: string }[] = [
+    { key: 'Upi', label: 'UPI' },
+    { key: 'BankTransfer', label: 'Bank transfer' },
+    { key: 'Cash', label: 'Cash' },
+    { key: 'Other', label: 'Other' },
+  ];
+  readonly monthPresets = [1, 3, 6, 12];
+  payAmount: number | null = null;
+  payMethod: PaymentMethod = 'Upi';
+  payMonths = 1;
+  payPlan = '';
+  payNote = '';
+
+  openPay(tenant: PlatformTenant): void {
+    this.payFor.set(tenant);
+    this.payAmount = null;
+    this.payMethod = 'Upi';
+    this.payMonths = 1;
+    this.payPlan = tenant.plan;   // most payments confirm the plan they're on
+    this.payNote = '';
+  }
+
+  submitPay(): void {
+    const tenant = this.payFor();
+    if (!tenant || !this.payAmount || this.payAmount <= 0) return;
+
+    this.savingPay.set(true);
+    this.error.set('');
+    this.notice.set('');
+
+    this.api.recordPayment(tenant.tenantId, {
+      amountRupees: this.payAmount,
+      method: this.payMethod,
+      periodMonths: this.payMonths,
+      planToApply: this.payPlan || null,
+      note: this.payNote.trim() || null,
+    }).subscribe({
+      next: (updated) => {
+        this.tenants.update((list) =>
+          list.map((t) => (t.tenantId === updated.tenantId ? updated : t)));
+        this.savingPay.set(false);
+        this.payFor.set(null);
+        this.notice.set(
+          `Payment recorded — ${updated.name} is covered until ` +
+          `${new Date(updated.paidUntil!).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}. ` +
+          'The clinic has been notified. 🎉');
+      },
+      error: (err) => {
+        this.savingPay.set(false);
+        this.error.set(parseApiError(err).message);
       },
     });
   }

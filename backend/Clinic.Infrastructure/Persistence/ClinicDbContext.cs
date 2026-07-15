@@ -34,6 +34,7 @@ public class ClinicDbContext : DbContext
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
     public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
+    public DbSet<PlatformPayment> PlatformPayments => Set<PlatformPayment>();
     // Evaluated per query — EF captures the context instance, so each request's
     // scoped ICurrentUserService supplies the tenant from the verified JWT.
     private Guid CurrentTenantId => _currentUser.TenantId;
@@ -122,15 +123,16 @@ public class ClinicDbContext : DbContext
     }
 
     /// <summary>
-    /// The one legit cross-tenant write: an Admin opening a NEW clinic must
-    /// insert that clinic's first TenantUser/Roles while their token is still
-    /// scoped to the old clinic. AllowProvisioningFor whitelists exactly that
-    /// new tenant id, for this request only (the context is request-scoped) —
-    /// writes into any EXISTING other tenant stay blocked.
+    /// The rare legit cross-tenant writes: (1) an Admin opening a NEW clinic
+    /// provisions its first TenantUser/Roles while their token is still scoped
+    /// to the old clinic; (2) the PLATFORM console (email-allowlisted owner)
+    /// writes billing notifications into a customer clinic. This whitelists
+    /// exactly ONE tenant id, for this request only (the context is
+    /// request-scoped) — writes into any other tenant stay blocked.
     /// </summary>
-    private Guid? _provisioningTenantId;
+    private Guid? _crossTenantWriteTenantId;
 
-    public void AllowProvisioningFor(Guid newTenantId) => _provisioningTenantId = newTenantId;
+    public void AllowCrossTenantWritesFor(Guid tenantId) => _crossTenantWriteTenantId = tenantId;
 
     /// <summary>
     /// Write-side tenant protection:
@@ -160,7 +162,7 @@ public class ClinicDbContext : DbContext
             }
             else if (CurrentTenantId != Guid.Empty
                      && entityTenantId != CurrentTenantId
-                     && entityTenantId != _provisioningTenantId)
+                     && entityTenantId != _crossTenantWriteTenantId)
             {
                 throw new InvalidOperationException(
                     $"Cross-tenant write blocked: '{entry.Metadata.ClrType.Name}' belongs to " +

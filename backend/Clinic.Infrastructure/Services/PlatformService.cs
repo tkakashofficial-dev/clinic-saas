@@ -3,6 +3,7 @@ using Clinic.Application.Common.Interfaces;
 using Clinic.Application.Features.Platform.DTOs;
 using Clinic.Application.Features.Platform.Services;
 using Clinic.Domain.Constants;
+using Clinic.Domain.Entities;
 using Clinic.Domain.Enums;
 using Clinic.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -78,20 +79,47 @@ public class PlatformService : IPlatformService
             .ToListAsync(cancellationToken))
             .ToDictionary(x => x.TenantId);
 
-        return tenants.Select(t => new PlatformTenantDto
+        // Subscription coverage: latest payment + how far the clinic is paid up
+        var payments = (await _context.PlatformPayments
+            .AsNoTracking()
+            .GroupBy(p => p.TenantId)
+            .Select(g => new
+            {
+                TenantId = g.Key,
+                PaidUntil = g.Max(p => p.PaidUntil),
+                Last = g.OrderByDescending(p => p.PaidAt)
+                        .Select(p => new { p.PaidAt, p.AmountRupees })
+                        .First()
+            })
+            .ToListAsync(cancellationToken))
+            .ToDictionary(x => x.TenantId);
+
+        var now = DateTime.UtcNow;
+        return tenants.Select(t =>
         {
-            TenantId = t.Id,
-            Name = t.Name,
-            Plan = t.Plan.ToString(),
-            IsInTrial = t.TrialEndsAt != null && t.TrialEndsAt > DateTime.UtcNow,
-            TrialEndsAt = t.TrialEndsAt,
-            IsActive = t.IsActive,
-            StaffCount = staffCounts.GetValueOrDefault(t.Id),
-            PatientCount = patientCounts.GetValueOrDefault(t.Id),
-            OwnerName = owners.TryGetValue(t.Id, out var owner) ? owner.OwnerName : null,
-            OwnerEmail = owners.TryGetValue(t.Id, out var contact) ? contact.Email : null,
-            ClinicPhone = t.Phone,
-            CreatedAt = t.CreatedAt
+            var pay = payments.GetValueOrDefault(t.Id);
+            var isInTrial = t.TrialEndsAt != null && t.TrialEndsAt > now;
+            return new PlatformTenantDto
+            {
+                TenantId = t.Id,
+                Name = t.Name,
+                Plan = t.Plan.ToString(),
+                IsInTrial = isInTrial,
+                TrialEndsAt = t.TrialEndsAt,
+                IsActive = t.IsActive,
+                StaffCount = staffCounts.GetValueOrDefault(t.Id),
+                PatientCount = patientCounts.GetValueOrDefault(t.Id),
+                OwnerName = owners.TryGetValue(t.Id, out var owner) ? owner.OwnerName : null,
+                OwnerEmail = owners.TryGetValue(t.Id, out var contact) ? contact.Email : null,
+                ClinicPhone = t.Phone,
+                PaidUntil = pay?.PaidUntil,
+                LastPaymentAt = pay?.Last.PaidAt,
+                LastPaymentAmount = pay?.Last.AmountRupees,
+                // Overdue = coverage lapsed after they had paid before.
+                // (Trial clinics aren't "overdue" — they haven't bought yet.)
+                PaymentOverdue = !isInTrial && pay != null && pay.PaidUntil < now,
+                CreatedAt = t.CreatedAt
+            };
         }).ToList();
     }
 
@@ -111,9 +139,20 @@ public class PlatformService : IPlatformService
 
         // Platform override: used after manual (UPI/WhatsApp) payment until
         // the payment gateway automates this
+        var changed = tenant.Plan != plan;
         tenant.ChangePlan(plan);
-        await _context.SaveChangesAsync(cancellationToken);
 
+        if (changed)
+        {
+            // The clinic should FEEL the upgrade — congratulate them in-app
+            await NotifyTenantAdminsAsync(tenantId,
+                $"You're now on the {plan} plan 🎉",
+                $"Congratulations! {tenant.Name} has been moved to the {plan} plan. " +
+                "All its features are unlocked — enjoy the extra room.",
+                cancellationToken);
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
         return await GetOneAsync(tenantId, cancellationToken);
     }
 
@@ -127,11 +166,115 @@ public class PlatformService : IPlatformService
             .FirstOrDefaultAsync(t => t.Id == tenantId, cancellationToken)
             ?? throw new NotFoundException("Clinic not found.");
 
+        var wasActive = tenant.IsActive;
         if (request.IsActive) tenant.Activate();
         else tenant.Deactivate();   // non-payment etc. — logins stop working
 
+        if (request.IsActive && !wasActive)
+        {
+            // Re-activation is a happy moment — greet them when they're back in
+            await NotifyTenantAdminsAsync(tenantId,
+                "Welcome back! Your clinic is active again ✅",
+                $"{tenant.Name} has been re-activated — your whole team can sign in again. " +
+                "Thank you for staying with Klivia.",
+                cancellationToken);
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
         return await GetOneAsync(tenantId, cancellationToken);
+    }
+
+    public async Task<PlatformTenantDto> RecordPaymentAsync(
+        Guid tenantId, RecordPaymentRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        EnsurePlatformAdmin();
+
+        if (request.AmountRupees <= 0)
+            throw new BadRequestException("Amount must be greater than zero.");
+        if (request.PeriodMonths is < 1 or > 24)
+            throw new BadRequestException("Period must be between 1 and 24 months.");
+        if (!PaymentMethods.All.Contains(request.Method))
+            throw new BadRequestException(
+                $"Unknown payment method. Available: {string.Join(", ", PaymentMethods.All)}.");
+
+        var tenant = await _context.Tenants
+            .FirstOrDefaultAsync(t => t.Id == tenantId, cancellationToken)
+            ?? throw new NotFoundException("Clinic not found.");
+
+        // Coverage EXTENDS: paying while 2 weeks remain doesn't lose those weeks
+        var now = DateTime.UtcNow;
+        var currentPaidUntil = await _context.PlatformPayments
+            .Where(p => p.TenantId == tenantId)
+            .MaxAsync(p => (DateTime?)p.PaidUntil, cancellationToken);
+        var baseDate = currentPaidUntil > now ? currentPaidUntil.Value : now;
+        var paidUntil = baseDate.AddMonths(request.PeriodMonths);
+
+        _context.PlatformPayments.Add(new PlatformPayment(
+            tenantId, request.AmountRupees, request.Method,
+            request.PeriodMonths, paidUntil, _currentUser.Email!, request.Note));
+
+        // Payment usually comes with a plan decision — one step, not two
+        if (!string.IsNullOrWhiteSpace(request.PlanToApply))
+        {
+            if (!Enum.TryParse<PlanType>(request.PlanToApply, true, out var plan) || !Enum.IsDefined(plan))
+                throw new BadRequestException(
+                    $"Unknown plan '{request.PlanToApply}'. Available: {string.Join(", ", Enum.GetNames<PlanType>())}.");
+            tenant.ChangePlan(plan);
+        }
+
+        // Thank the clinic where they'll see it — every Admin's bell
+        await NotifyTenantAdminsAsync(tenantId,
+            "Payment received — thank you! 🎉",
+            $"We've received ₹{request.AmountRupees:N0} for {tenant.Name}. Your " +
+            $"{tenant.Plan} plan is active until {paidUntil:d MMM yyyy}.",
+            cancellationToken);
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        // A receipt in their inbox builds trust (fire-and-forget, never blocks)
+        var ownerEmail = await _context.TenantUsers
+            .IgnoreQueryFilters([QueryFilters.Tenant])
+            .Where(tu => tu.TenantId == tenantId)
+            .OrderBy(tu => tu.CreatedAt)
+            .Select(tu => tu.SystemUser.Email)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (ownerEmail is not null)
+        {
+            _ = _emailSender.SendAsync(ownerEmail,
+                $"Payment received — {tenant.Name} is active until {paidUntil:d MMM yyyy}",
+                EmailTemplates.Branded(
+                    "Payment received — thank you! 🎉",
+                    $"<p>We've received <strong>₹{request.AmountRupees:N0}</strong> for " +
+                    $"<strong>{EmailTemplates.Safe(tenant.Name)}</strong>.</p>" +
+                    $"<p>Your <strong>{tenant.Plan}</strong> plan is active until " +
+                    $"<strong>{paidUntil:d MMM yyyy}</strong>. Thank you for running your " +
+                    "clinic with Klivia!</p>"),
+                CancellationToken.None);
+        }
+
+        return await GetOneAsync(tenantId, cancellationToken);
+    }
+
+    /// <summary>Drops an in-app notification on every ADMIN of the clinic —
+    /// the platform's voice inside the tenant (payments, plan changes).</summary>
+    private async Task NotifyTenantAdminsAsync(
+        Guid tenantId, string title, string message, CancellationToken ct)
+    {
+        var adminTenantUserIds = await _context.TenantUsers
+            .IgnoreQueryFilters([QueryFilters.Tenant])
+            .Where(tu => tu.TenantId == tenantId && tu.IsActive
+                && tu.Roles.Any(r => r.Role.Name == RoleNames.Admin))
+            .Select(tu => tu.Id)
+            .ToListAsync(ct);
+
+        // The platform admin's token is scoped to THEIR clinic — whitelist
+        // this one tenant or the cross-tenant write guard rejects the insert
+        _context.AllowCrossTenantWritesFor(tenantId);
+
+        foreach (var recipientId in adminTenantUserIds)
+            _context.Notifications.Add(new Notification(
+                tenantId, recipientId, NotificationTypes.Billing, title, message));
     }
 
     public async Task<PlatformEmailTestResult> SendTestEmailAsync(
