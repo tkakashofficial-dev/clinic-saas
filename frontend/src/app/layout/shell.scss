@@ -209,8 +209,17 @@
 .nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   flex: 1;
+  /* The menu grew past short screens — without min-height:0 a flex child
+     refuses to shrink, so bottom items (Settings, Platform) fell OFF-SCREEN
+     with no scrollbar. Now the nav scrolls internally; switcher and
+     "Powered by" stay pinned. */
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(244 250 247 / .25) transparent;
+  padding-right: 2px;
 }
 
 .nav-item {
@@ -218,7 +227,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 12px;
+  padding: 8px 12px;
   border-radius: 10px;
   color: rgb(244 250 247 / .64);
   font-size: 14px;
