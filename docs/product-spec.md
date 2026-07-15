@@ -1,4 +1,4 @@
-# Clinic SaaS — Product Specification
+# Klivia — Product Specification
 
 > This document is the single source of truth for WHAT we are building and WHY.
 > Code follows this spec; when the spec changes, we change it here first.

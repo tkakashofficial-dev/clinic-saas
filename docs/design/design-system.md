@@ -1,4 +1,4 @@
-# Clinic SaaS — Design System
+# Klivia — Design System
 
 > Source of truth for all UI. Derived from the approved "Dentiva" reference
 > (see `clinic-ui-mockup.jpg` / `dental-management-system.jpg` in this folder).

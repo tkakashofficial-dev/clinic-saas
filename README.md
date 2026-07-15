@@ -1,8 +1,8 @@
-# Clinic SaaS 🏥
+# Klivia 🏥
 
-A multi-tenant clinic management system — one deployment serves many clinics with strict per-clinic data isolation. Built with .NET 10, EF Core, PostgreSQL, and Angular.
+**Klivia** — clinic management, made calm. A multi-tenant clinic management system — one deployment serves many clinics with strict per-clinic data isolation. Built with .NET 10, EF Core, PostgreSQL, and Angular.
 
-> **Status:** in active development. See the [roadmap](#roadmap) below.
+> **Live:** https://klivia.vercel.app · **Status:** in active development. See the [roadmap](#roadmap) below.
 
 ## Why this project is built the way it is
 

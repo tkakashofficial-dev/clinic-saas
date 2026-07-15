@@ -1,7 +1,7 @@
 # Klivia Handbook — the complete guide
 
 > The one document to open when you (or a customer) have a doubt.
-> Live app: https://clinic-saas-gamma-nine.vercel.app · Contact: WhatsApp +91 62384 56205 · taveperz@gmail.com
+> Live app: https://klivia.vercel.app · Contact: WhatsApp +91 62384 56205 · taveperz@gmail.com
 
 ---
 
