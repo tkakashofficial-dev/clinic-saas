@@ -6,317 +6,497 @@
 <title>Klivia — Your Clinic, Calm and Organized</title>
 <style>
   :root{
-    --teal:#00BD8F; --teal-700:#008465; --ink:#0C2B23; --ink-soft:#294A40;
-    --mint:#F4FAF7; --mint-2:#E7F5F0; --border:#D6E7E0; --muted:#5B6F68; --amber:#B45309;
+    --teal:#00BD8F; --teal-700:#008465; --ink:#0C2B23; --ink-soft:#2E4A41;
+    --mint:#F4FAF7; --mint-2:#E7F5F0; --border:#D6E7E0; --muted:#5B6F68;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  body{
-    font-family:"Segoe UI",Roboto,-apple-system,"Helvetica Neue",Arial,sans-serif;
-    color:var(--ink); background:#fff; line-height:1.6; font-size:15px;
-  }
-  h1,h2,h3,.brand{font-family:"Segoe UI Semibold","Segoe UI",Roboto,Arial,sans-serif;font-weight:700}
-  .page{
-    width:210mm; min-height:296mm; margin:0 auto; padding:22mm 20mm;
-    position:relative; background:#fff;
-  }
-  .page + .page{border-top:1px dashed #cbd5cf}
+  body{font-family:"Segoe UI",Roboto,-apple-system,Arial,sans-serif;color:var(--ink);
+    background:#fff;line-height:1.55;font-size:13.5px}
+  h1,h2,h3,.brand{font-weight:800}
+  .page{width:210mm;min-height:295mm;margin:0 auto;padding:16mm 15mm;position:relative;background:#fff}
   @media print{
-    .page{margin:0;padding:18mm 16mm;min-height:auto;width:auto}
-    .page + .page{border-top:none}
-    .page-break{page-break-before:always}
-    .no-print{display:none}
+    @page{size:A4;margin:0}
+    .page{margin:0;width:210mm;height:296mm;min-height:0;overflow:hidden;page-break-after:always}
+    .page:last-child{page-break-after:auto}
   }
   .brand-row{display:flex;align-items:center;gap:10px}
   .mark{width:34px;height:34px;border-radius:10px;background:var(--teal);color:#06362B;
     display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800}
   .brand{font-size:22px;color:var(--ink)}
   .muted{color:var(--muted)}
-  .teal{color:var(--teal-700)}
   a{color:var(--teal-700);text-decoration:none}
+
+  /* running footer on content pages */
+  .runfoot{position:absolute;left:15mm;right:15mm;bottom:8mm;display:flex;
+    justify-content:space-between;font-size:10.5px;color:var(--muted);
+    border-top:1px solid var(--border);padding-top:6px}
 
   /* ---------- Cover ---------- */
   .cover{
     background:
-      radial-gradient(1200px 500px at 78% -8%, rgba(0,189,143,.18), transparent 60%),
-      linear-gradient(160deg,#0C2B23 0%,#123f34 100%);
-    color:#fff; display:flex; flex-direction:column; justify-content:space-between;
-  }
-  .cover .mark{background:var(--teal)}
-  .cover .brand{color:#fff}
-  .cover h1{font-size:46px;line-height:1.1;margin:20px 0 14px;color:#fff}
+      radial-gradient(1100px 480px at 80% -6%, rgba(0,189,143,.22), transparent 60%),
+      radial-gradient(700px 500px at -10% 108%, rgba(0,189,143,.14), transparent 55%),
+      linear-gradient(160deg,#0C2B23 0%,#11criteria3a30 100%);
+    background-color:#0C2B23;
+    color:#fff;display:flex;flex-direction:column;justify-content:space-between}
+  .cover .mark{width:44px;height:44px;font-size:26px;border-radius:13px}
+  .cover .brand{color:#fff;font-size:28px}
+  .cover h1{font-size:52px;line-height:1.08;margin:22px 0 16px;color:#fff}
   .cover h1 em{color:var(--teal);font-style:normal}
-  .cover .lede{font-size:17px;color:#CFE7DF;max-width:150mm}
-  .cover .tag{display:inline-block;background:rgba(0,189,143,.16);border:1px solid rgba(0,189,143,.4);
-    color:#8FE6CE;padding:6px 14px;border-radius:999px;font-size:13px;font-weight:600}
-  .cover .foot{border-top:1px solid rgba(255,255,255,.14);padding-top:16px;
-    display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;color:#9DBAB1;font-size:13px}
-  .cover-highlights{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
-  .cover-highlights span{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
-    border-radius:10px;padding:9px 14px;font-size:13.5px;color:#E4F3EE}
+  .cover .lede{font-size:17.5px;color:#CFE7DF;max-width:155mm}
+  .cover .tag{display:inline-block;background:rgba(0,189,143,.16);
+    border:1px solid rgba(0,189,143,.45);color:#8FE6CE;padding:7px 16px;
+    border-radius:999px;font-size:13px;font-weight:700;margin-top:30px}
+  .cover-highlights{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:30px;max-width:150mm}
+  .cover-highlights span{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);
+    border-radius:12px;padding:11px 15px;font-size:13.5px;color:#E4F3EE;font-weight:600}
+  .cover .foot{border-top:1px solid rgba(255,255,255,.15);padding-top:14px;
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;color:#9DBAB1;font-size:12.5px}
 
-  /* ---------- Sections ---------- */
-  .kicker{color:var(--teal-700);font-weight:700;font-size:12.5px;letter-spacing:.09em;text-transform:uppercase}
-  h2.sec{font-size:27px;margin:6px 0 6px}
-  .sec-sub{color:var(--muted);font-size:15px;margin-bottom:22px;max-width:150mm}
+  /* ---------- Section headers ---------- */
+  .kicker{color:var(--teal-700);font-weight:800;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase}
+  h2.sec{font-size:25px;margin:4px 0 4px}
+  .sec-sub{color:var(--muted);font-size:13.5px;margin-bottom:14px;max-width:160mm}
 
-  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  .three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  /* ---------- Module blocks ---------- */
+  .module{border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:12px;
+    break-inside:avoid}
+  .module-head{display:flex;align-items:center;gap:11px;margin-bottom:8px}
+  .module-num{width:34px;height:34px;border-radius:11px;background:var(--ink);color:var(--teal);
+    font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center;flex:none}
+  .module-head h3{font-size:17px}
+  .module-head .m-tag{font-size:11px;color:var(--muted);display:block;font-weight:600}
+  .module-cols{display:grid;grid-template-columns:1.05fr .95fr;gap:14px}
+  .m-col h4{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--teal-700);margin-bottom:5px}
+  .m-feats{list-style:none}
+  .m-feats li{font-size:12.5px;color:var(--ink-soft);padding:2.5px 0 2.5px 17px;position:relative}
+  .m-feats li::before{content:"✓";position:absolute;left:0;color:var(--teal-700);font-weight:800}
+  .m-steps{list-style:none;counter-reset:st}
+  .m-steps li{font-size:12.5px;color:var(--ink-soft);padding:2.5px 0 2.5px 24px;position:relative;counter-increment:st}
+  .m-steps li::before{content:counter(st);position:absolute;left:0;top:3px;width:16px;height:16px;
+    border-radius:50%;background:var(--mint-2);color:var(--teal-700);font-size:10px;font-weight:800;
+    display:flex;align-items:center;justify-content:center}
 
-  .card{border:1px solid var(--border);border-radius:14px;padding:16px;background:#fff}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .card{border:1px solid var(--border);border-radius:14px;padding:14px;background:#fff;break-inside:avoid}
   .card.mint{background:var(--mint)}
-  .feat h3{font-size:16px;margin-bottom:5px;display:flex;align-items:center;gap:9px}
-  .feat .ico{width:30px;height:30px;border-radius:9px;background:var(--mint-2);color:var(--teal-700);
-    display:inline-flex;align-items:center;justify-content:center;font-size:17px;flex:none}
-  .feat p{font-size:13.5px;color:var(--ink-soft)}
-
-  /* Steps / day-in-the-life */
-  .flow{display:flex;flex-direction:column;gap:0}
-  .flow-item{display:flex;gap:16px;padding-bottom:18px;position:relative}
-  .flow-item:not(:last-child)::before{content:"";position:absolute;left:16px;top:34px;bottom:0;
-    width:2px;background:var(--border)}
-  .flow-num{width:34px;height:34px;border-radius:50%;background:var(--teal);color:#06362B;
-    font-weight:800;display:flex;align-items:center;justify-content:center;flex:none;z-index:1}
-  .flow-body h3{font-size:16px;margin-bottom:3px}
-  .flow-body p{font-size:13.5px;color:var(--ink-soft)}
-  .who{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
-    padding:2px 8px;border-radius:999px;background:var(--mint-2);color:var(--teal-700);margin-left:6px}
-
-  /* guide table */
-  .guide-row{display:grid;grid-template-columns:130px 1fr;gap:14px;padding:12px 0;border-bottom:1px solid var(--border)}
-  .guide-row:last-child{border-bottom:none}
-  .guide-row .g-name{font-weight:700;color:var(--ink)}
-  .guide-row .g-name small{display:block;color:var(--muted);font-weight:500;font-size:12px;margin-top:2px}
-  .guide-row p{font-size:13.5px;color:var(--ink-soft)}
-
-  /* pricing */
-  .price-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
-  .price{border:1.5px solid var(--border);border-radius:16px;padding:18px;display:flex;flex-direction:column}
-  .price.pop{border-color:var(--teal);box-shadow:0 8px 24px rgba(0,132,101,.12);position:relative}
-  .price .pop-badge{position:absolute;top:-11px;left:50%;transform:translateX(-50%);
-    background:var(--teal);color:#06362B;font-size:11px;font-weight:800;padding:3px 12px;border-radius:999px}
-  .price h3{font-size:18px}
-  .price .scale{font-size:12.5px;color:var(--muted);margin-bottom:10px}
-  .price .amt{font-size:30px;font-weight:800;color:var(--ink)}
-  .price .amt span{font-size:14px;font-weight:600;color:var(--muted)}
-  .price .yr{font-size:12.5px;color:var(--teal-700);font-weight:600;margin-top:2px}
-  .price ul{list-style:none;margin-top:12px;display:flex;flex-direction:column;gap:6px}
-  .price li{font-size:12.5px;color:var(--ink-soft);padding-left:18px;position:relative}
-  .price li::before{content:"✓";position:absolute;left:0;color:var(--teal-700);font-weight:800}
+  .card h3{font-size:15px;margin-bottom:6px}
+  .card p{font-size:12.5px;color:var(--ink-soft)}
 
   .callout{background:var(--mint);border:1px solid var(--border);border-left:4px solid var(--teal);
-    border-radius:12px;padding:16px 18px;margin-top:8px}
-  .callout h3{font-size:16px;margin-bottom:4px}
-  .callout p{font-size:13.5px;color:var(--ink-soft)}
+    border-radius:12px;padding:12px 15px;margin:10px 0;break-inside:avoid}
+  .callout h3{font-size:14px;margin-bottom:3px}
+  .callout p{font-size:12.5px;color:var(--ink-soft)}
 
-  .faq-q{font-weight:700;margin-top:16px;font-size:15px}
-  .faq-a{font-size:13.5px;color:var(--ink-soft)}
+  /* pricing */
+  .price-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:6px}
+  .price{border:1.5px solid var(--border);border-radius:16px;padding:15px;display:flex;flex-direction:column;break-inside:avoid}
+  .price.pop{border-color:var(--teal);box-shadow:0 6px 20px rgba(0,132,101,.13);position:relative}
+  .price .pop-badge{position:absolute;top:-10px;left:50%;transform:translateX(-50%);
+    background:var(--teal);color:#06362B;font-size:10px;font-weight:800;padding:3px 12px;border-radius:999px;white-space:nowrap}
+  .price h3{font-size:17px}
+  .price .scale{font-size:11.5px;color:var(--muted);margin-bottom:8px}
+  .price .amt{font-size:27px;font-weight:800}
+  .price .amt span{font-size:13px;font-weight:600;color:var(--muted)}
+  .price .yr{font-size:11.5px;color:var(--teal-700);font-weight:700;margin-top:1px}
+  .price ul{list-style:none;margin-top:9px}
+  .price li{font-size:11.5px;color:var(--ink-soft);padding:2px 0 2px 16px;position:relative}
+  .price li::before{content:"✓";position:absolute;left:0;color:var(--teal-700);font-weight:800}
 
-  .cta{background:linear-gradient(160deg,#0C2B23,#123f34);color:#fff;border-radius:18px;
-    padding:30px;text-align:center}
-  .cta h2{color:#fff;font-size:26px;margin-bottom:8px}
-  .cta p{color:#CFE7DF;font-size:15px;max-width:140mm;margin:0 auto 16px}
+  .faq-q{font-weight:800;margin-top:11px;font-size:13px}
+  .faq-a{font-size:12.5px;color:var(--ink-soft)}
+
+  .cta{background:linear-gradient(160deg,#0C2B23,#123f34);color:#fff;border-radius:20px;
+    padding:34px 30px;text-align:center}
+  .cta h2{color:#fff;font-size:27px;margin-bottom:10px}
+  .cta p{color:#CFE7DF;font-size:14.5px;max-width:140mm;margin:0 auto 18px}
   .cta .btn{display:inline-block;background:var(--teal);color:#06362B;font-weight:800;
-    padding:12px 26px;border-radius:12px;font-size:15px}
-  .cta .wa{margin-top:14px;color:#8FE6CE;font-size:14px}
-
-  .foot-note{margin-top:26px;text-align:center;color:var(--muted);font-size:12px}
-  .print-hint{background:#FEF9E7;border:1px solid #F6E3A3;color:#8A6D1B;border-radius:10px;
-    padding:10px 14px;font-size:13px;margin:0 auto 14px;max-width:210mm;text-align:center}
+    padding:13px 30px;border-radius:12px;font-size:15px}
+  .cta .contact{margin-top:18px;color:#8FE6CE;font-size:13.5px;line-height:1.8}
+  .cta .contact strong{color:#fff}
 </style>
 </head>
 <body>
 
-<!-- Screen-only tip on how to make the PDF -->
-<div class="print-hint no-print">
-  📄 To make a PDF to send: press <strong>Ctrl&nbsp;+&nbsp;P</strong> (⌘+P on Mac) → Destination
-  <strong>“Save as PDF”</strong> → Save. Turn on “Background graphics” for full colour.
-</div>
-
-<!-- ============ COVER ============ -->
+<!-- ================= COVER ================= -->
 <section class="page cover">
   <div>
     <div class="brand-row"><span class="mark">✚</span><span class="brand">Klivia</span></div>
-    <span class="tag" style="margin-top:26px">A complete guide for your clinic</span>
+    <span class="tag">THE COMPLETE GUIDE FOR YOUR CLINIC</span>
     <h1>Your clinic,<br><em>calm and organized.</em></h1>
     <p class="lede">
-      Klivia brings your patients, appointments, consultations, prescriptions and pharmacy
-      into one quiet, modern system — built for Indian dental and general clinics, at a price
-      that makes sense.
+      Patients, appointments, consultations, prescriptions, pharmacy and reports —
+      one quiet, modern system built for Indian dental and general clinics,
+      at a price that makes sense.
     </p>
     <div class="cover-highlights">
-      <span>🦷 Dental &amp; 🩺 general clinics</span>
+      <span>🦷 Dental &amp; general clinics</span>
       <span>💊 Pharmacy &amp; inventory included</span>
-      <span>📄 Branded PDF prescriptions</span>
-      <span>📱 Works on laptop, tablet &amp; phone</span>
+      <span>📄 Beautiful branded PDF prescriptions</span>
+      <span>📊 Reports &amp; doctor analytics</span>
+      <span>🏥 Multiple branches, one login</span>
+      <span>📱 Laptop · tablet · phone</span>
     </div>
   </div>
   <div class="foot">
     <span>Clinic management, made calm · Kerala, India</span>
-    <span>WhatsApp +91 62384 56205</span>
+    <span>WhatsApp +91 62384 56205 · taveperz&#64;gmail.com</span>
   </div>
 </section>
 
-<!-- ============ WHAT IS KLIVIA ============ -->
-<section class="page page-break">
+<!-- ================= WHY ================= -->
+<section class="page">
   <div class="kicker">Why Klivia</div>
-  <h2 class="sec">From paper and WhatsApp chaos to one calm screen</h2>
+  <h2 class="sec">From paper registers to one calm screen</h2>
   <p class="sec-sub">
-    Most small clinics still run on paper registers, a diary for appointments, and prescriptions
-    written by hand. Records get lost, reception scrambles, and nobody has a clear picture of the
-    day. Klivia replaces all of that with one simple, beautiful system your whole team can use.
+    Most clinics still run on paper files, a diary for appointments and handwritten
+    prescriptions. Records get lost, reception scrambles, stock runs out mid-treatment,
+    and nobody sees the full picture. Klivia replaces all of it — without the learning curve.
   </p>
 
   <div class="two-col">
     <div class="card">
-      <h3 style="font-size:16px;margin-bottom:8px">😟 A clinic without Klivia</h3>
-      <p class="muted" style="font-size:13.5px">
-        Patient files in a cupboard · appointments in a paper diary · handwritten prescriptions ·
-        no idea which medicines are running low · no clear view of the day or the month · a new
-        receptionist takes weeks to learn everything.
-      </p>
+      <h3>😟 Before Klivia</h3>
+      <p>Patient files in a cupboard · appointments in a diary · handwritten prescriptions
+      that pharmacies squint at · no warning when medicines run low · month-end counting
+      by hand · a new receptionist takes weeks to train.</p>
     </div>
     <div class="card mint">
-      <h3 style="font-size:16px;margin-bottom:8px">😌 A clinic with Klivia</h3>
-      <p style="font-size:13.5px;color:var(--ink-soft)">
-        Every patient found in one search · appointments and a live waiting room · one-tap PDF
-        prescriptions · pharmacy stock that warns before it runs out · a dashboard that shows the
-        whole clinic at a glance · anyone can learn it in minutes.
-      </p>
+      <h3>😌 With Klivia</h3>
+      <p>Any patient found in one search · a live waiting room the whole team sees ·
+      one-tap branded PDF prescriptions · stock that warns before it runs out ·
+      a dashboard that counts everything for you · new staff learn it the same morning.</p>
     </div>
   </div>
 
-  <div class="callout" style="margin-top:20px">
-    <h3>Who it's for</h3>
-    <p>
-      Dental clinics, general practice clinics, and small polyclinics that want to look professional
-      and run smoothly — whether you're a single doctor or a team with reception, several doctors and
-      multiple branches.
-    </p>
+  <div class="callout">
+    <h3>Built for how Indian clinics actually work</h3>
+    <p>Dose patterns doctors really write (1-0-1, after food) · intake forms modelled on
+    real Kerala clinic paper forms · prices in rupees · WhatsApp support in your language ·
+    works fine on the clinic's existing laptop and your phone.</p>
   </div>
 
-  <h2 class="sec" style="margin-top:30px;font-size:22px">Everything included — no hidden add-ons</h2>
-  <p class="sec-sub" style="margin-bottom:16px">
-    Other systems charge extra for forms, for pharmacy, for reports. With Klivia, every feature is on
-    every plan. You only ever pay for the size of your team.
-  </p>
-
-  <div class="three-col">
-    <div class="card feat"><h3><span class="ico">👥</span>Patients</h3><p>Register in 20 seconds, search instantly, full history and printable intake forms.</p></div>
-    <div class="card feat"><h3><span class="ico">📅</span>Appointments</h3><p>Book, check-in, and a live waiting room the whole team sees.</p></div>
-    <div class="card feat"><h3><span class="ico">🩺</span>Consultations</h3><p>Diagnosis, vitals and prescriptions recorded in one place.</p></div>
-    <div class="card feat"><h3><span class="ico">📄</span>PDF prescriptions</h3><p>Clean, branded prescriptions your patients keep and pharmacies trust.</p></div>
-    <div class="card feat"><h3><span class="ico">📋</span>Intake forms</h3><p>Pre-filled dental &amp; general forms, printed with your clinic's letterhead.</p></div>
-    <div class="card feat"><h3><span class="ico">💊</span>Pharmacy &amp; stock</h3><p>Track medicines &amp; supplies; low-stock and expiry warnings rise to the top.</p></div>
-    <div class="card feat"><h3><span class="ico">📊</span>Reports</h3><p>Patients, busy days and doctor performance — download as PDF.</p></div>
-    <div class="card feat"><h3><span class="ico">🔔</span>Notifications</h3><p>Bookings, arrivals and appointment reminders, so nothing is missed.</p></div>
-    <div class="card feat"><h3><span class="ico">🏥</span>Multi-clinic</h3><p>Run several branches under one login and switch in a tap.</p></div>
+  <div class="callout">
+    <h3>Everything included — no hidden add-ons</h3>
+    <p>Other systems sell forms, pharmacy and reports as paid add-ons. With Klivia,
+    <strong>every feature is on every plan</strong> — you only pay for the size of your team.</p>
   </div>
+
+  <div class="kicker" style="margin-top:14px">Roles</div>
+  <h2 class="sec" style="font-size:19px">Everyone sees exactly what they need</h2>
+  <div class="two-col" style="grid-template-columns:1fr 1fr 1fr">
+    <div class="card"><h3>👑 Admin</h3><p>Runs the clinic: staff, settings, reports, billing.
+      An owner who also treats patients is simply Admin + Doctor.</p></div>
+    <div class="card"><h3>🩺 Doctor</h3><p>Sees their day, their waiting patients, records
+      consultations and prescriptions.</p></div>
+    <div class="card"><h3>💁 Receptionist</h3><p>Front desk: registers patients, books
+      appointments, checks people in, manages stock.</p></div>
+  </div>
+  <div class="runfoot"><span>Klivia — the complete guide</span><span>2</span></div>
 </section>
 
-<!-- ============ A DAY AT YOUR CLINIC ============ -->
-<section class="page page-break">
-  <div class="kicker">How it works</div>
-  <h2 class="sec">A normal day at your clinic</h2>
-  <p class="sec-sub">
-    Here's how a patient flows through Klivia from the front desk to the pharmacy — the same steps
-    your team will do every day.
-  </p>
+<!-- ================= MODULES 1-2 ================= -->
+<section class="page">
+  <div class="kicker">The modules</div>
+  <h2 class="sec">Every part of your clinic, covered</h2>
+  <p class="sec-sub">Ten modules, one login. Here's what each one does and exactly how your team uses it.</p>
 
-  <div class="flow">
-    <div class="flow-item">
-      <div class="flow-num">1</div>
-      <div class="flow-body">
-        <h3>A patient walks in <span class="who">Reception</span></h3>
-        <p>Reception opens <strong>Patients → Register</strong> and enters a name and phone — that's
-          enough. The patient gets a clinic number (like P-000482) automatically.</p>
-      </div>
+  <div class="module">
+    <div class="module-head">
+      <span class="module-num">01</span>
+      <div><h3>Dashboard</h3><span class="m-tag">The day at a glance — different for each role</span></div>
     </div>
-    <div class="flow-item">
-      <div class="flow-num">2</div>
-      <div class="flow-body">
-        <h3>Book the visit <span class="who">Reception</span></h3>
-        <p>In <strong>Appointments → Book</strong>, reception searches the patient, picks the doctor
-          and the time. Done in seconds.</p>
+    <div class="module-cols">
+      <div class="m-col"><h4>What it does</h4>
+        <ul class="m-feats">
+          <li>Today's appointments and the live waiting-room count</li>
+          <li>Doctors see <em>their</em> queue; admins see the whole clinic</li>
+          <li>14-day appointment trend and status charts</li>
+          <li>30-day pulse: new patients, completed visits, cancellations, completion rate</li>
+          <li>Per-doctor performance bars — booked vs completed</li>
+        </ul>
       </div>
-    </div>
-    <div class="flow-item">
-      <div class="flow-num">3</div>
-      <div class="flow-body">
-        <h3>Patient arrives → Check in <span class="who">Reception</span></h3>
-        <p>Press <strong>Check in</strong>. The doctor instantly sees the patient in their waiting
-          room and gets a notification. No shouting across the clinic.</p>
-      </div>
-    </div>
-    <div class="flow-item">
-      <div class="flow-num">4</div>
-      <div class="flow-body">
-        <h3>The consultation <span class="who">Doctor</span></h3>
-        <p>The doctor opens the waiting patient and records the <strong>diagnosis, vitals and
-          treatment</strong>. Need a form? Print the pre-filled <strong>dental or general intake
-          sheet</strong> for the patient to sign.</p>
-      </div>
-    </div>
-    <div class="flow-item">
-      <div class="flow-num">5</div>
-      <div class="flow-body">
-        <h3>Prescription in one tap <span class="who">Doctor</span></h3>
-        <p>Add medicines — names are suggested from your own pharmacy, and quick chips fill the dose
-          pattern (1-0-1) and timing (after food). Out comes a <strong>beautiful branded PDF</strong>
-          to print or share.</p>
-      </div>
-    </div>
-    <div class="flow-item">
-      <div class="flow-num">6</div>
-      <div class="flow-body">
-        <h3>Pharmacy &amp; the big picture <span class="who">Admin</span></h3>
-        <p>Stock is tracked in <strong>Inventory</strong>, with low-stock and expiry alerts. The
-          <strong>Dashboard</strong> and <strong>Reports</strong> show the day, the month, and how
-          each doctor is doing — no counting by hand.</p>
+      <div class="m-col"><h4>How your team uses it</h4>
+        <ol class="m-steps">
+          <li>Open Klivia in the morning — the day is already laid out</li>
+          <li>Check the waiting room count between patients</li>
+          <li>Owners glance at the 30-day pulse over chai — no counting</li>
+        </ol>
       </div>
     </div>
   </div>
 
-  <div class="callout" style="margin-top:6px">
-    <h3>Everyone sees only what they need</h3>
-    <p>Admins run the clinic, doctors see their patients and consultations, reception handles the
-      front desk. One person can be more than one role — a doctor who owns the clinic is simply
-      Admin + Doctor.</p>
+  <div class="module">
+    <div class="module-head">
+      <span class="module-num">02</span>
+      <div><h3>Patients</h3><span class="m-tag">Register in 20 seconds · every record one search away</span></div>
+    </div>
+    <div class="module-cols">
+      <div class="m-col"><h4>What it does</h4>
+        <ul class="m-feats">
+          <li>Register with just a name and phone — details can come later</li>
+          <li>Automatic clinic numbers (P-000482) like your paper files</li>
+          <li>Instant search by name or phone</li>
+          <li>Full patient record: contacts, medical conditions, visit timeline</li>
+          <li>Every past diagnosis, vitals and prescription in one scroll</li>
+          <li>Edit details any time — reception typos are a daily reality</li>
+          <li>Printable intake forms: 🦷 dental &amp; 🩺 general, pre-filled with
+              the patient's details and your clinic letterhead</li>
+        </ul>
+      </div>
+      <div class="m-col"><h4>How your team uses it</h4>
+        <ol class="m-steps">
+          <li>New patient walks in → Patients → Register → name + phone → Save</li>
+          <li>Returning patient? Type three letters of their name — found</li>
+          <li>Click the patient → their whole history opens</li>
+          <li>Print the intake form; the patient ticks the medical checklist
+              and signs consent in the waiting room; the doctor fills the
+              clinical sections during examination</li>
+        </ol>
+      </div>
+    </div>
   </div>
+  <div class="runfoot"><span>Klivia — the complete guide</span><span>3</span></div>
 </section>
 
-<!-- ============ GET STARTED + SCREEN GUIDE ============ -->
-<section class="page page-break">
-  <div class="kicker">Getting started</div>
-  <h2 class="sec">Up and running in three steps</h2>
-  <div class="three-col" style="margin-bottom:26px">
-    <div class="card mint"><h3 style="font-size:15px">1 · Create your clinic</h3><p class="muted" style="font-size:13px;margin-top:4px">Register with your name, email and clinic name. You become the Admin. Free 14-day trial, no card.</p></div>
-    <div class="card mint"><h3 style="font-size:15px">2 · Invite your team</h3><p class="muted" style="font-size:13px;margin-top:4px">Add doctors and reception by email — they set their own password and sign in.</p></div>
-    <div class="card mint"><h3 style="font-size:15px">3 · See your first patient</h3><p class="muted" style="font-size:13px;margin-top:4px">Register a patient, book an appointment, and record the visit. That's the whole loop.</p></div>
+<!-- ================= MODULES 3-4 ================= -->
+<section class="page">
+  <div class="module">
+    <div class="module-head">
+      <span class="module-num">03</span>
+      <div><h3>Appointments &amp; waiting room</h3><span class="m-tag">Book · check in · treat — the heartbeat of the clinic</span></div>
+    </div>
+    <div class="module-cols">
+      <div class="m-col"><h4>What it does</h4>
+        <ul class="m-feats">
+          <li>Book in seconds: search patient, pick doctor, pick time</li>
+          <li>Day navigator with a beautiful calendar — jump to any date</li>
+          <li>Live statuses: Scheduled → Waiting → In progress → Completed</li>
+          <li>One-tap <strong>Check in</strong> — the doctor instantly sees who's waiting</li>
+          <li>Filter by doctor or status; "My patients only" for doctors</li>
+          <li>Automatic reminders for tomorrow's appointments</li>
+        </ul>
+      </div>
+      <div class="m-col"><h4>How your team uses it</h4>
+        <ol class="m-steps">
+          <li>Reception books the visit while the patient is still on the phone</li>
+          <li>Patient arrives → press Check in → doctor gets a notification</li>
+          <li>Doctor opens the waiting patient and starts the consultation</li>
+          <li>Status flips to Completed automatically when the visit is saved</li>
+        </ol>
+      </div>
+    </div>
   </div>
 
-  <div class="kicker">The menus, explained</div>
-  <h2 class="sec" style="font-size:22px">What each screen is for</h2>
-  <div style="margin-top:8px">
-    <div class="guide-row"><div class="g-name">Dashboard<small>Everyone</small></div><p>Your day at a glance — today's appointments, who's waiting, and (for admins) the month's numbers and doctor performance.</p></div>
-    <div class="guide-row"><div class="g-name">Patients<small>Everyone</small></div><p>Register and search patients. Click any patient to see their full record — details, medical history, past visits and printable intake forms.</p></div>
-    <div class="guide-row"><div class="g-name">Appointments<small>Everyone</small></div><p>Book visits, check patients in, and run the live waiting room. Doctors start the consultation from here.</p></div>
-    <div class="guide-row"><div class="g-name">Inventory<small>Admin · Reception</small></div><p>Your pharmacy and supplies. Add medicines, track stock, and get warned before things run out or expire.</p></div>
-    <div class="guide-row"><div class="g-name">Reports<small>Admin</small></div><p>Patients over time, busiest days, and per-doctor performance — with a one-click PDF to print or share.</p></div>
-    <div class="guide-row"><div class="g-name">Settings<small>Admin</small></div><p>Your clinic's letterhead (name, phone, address printed on every prescription and form) and your default intake template.</p></div>
-    <div class="guide-row"><div class="g-name">Staff<small>Admin</small></div><p>Invite and manage doctors and reception, and set their roles.</p></div>
-    <div class="guide-row"><div class="g-name">Billing<small>Admin</small></div><p>Your plan and usage, and where you upgrade as your clinic grows.</p></div>
+  <div class="module">
+    <div class="module-head">
+      <span class="module-num">04</span>
+      <div><h3>Consultations &amp; prescriptions</h3><span class="m-tag">Diagnosis, vitals and a designer PDF in one tap</span></div>
+    </div>
+    <div class="module-cols">
+      <div class="m-col"><h4>What it does</h4>
+        <ul class="m-feats">
+          <li>Record diagnosis, treatment notes and vitals (BP, pulse, temp, weight)</li>
+          <li>Medicine names auto-suggested from <strong>your own pharmacy stock</strong></li>
+          <li>One-tap dose chips the Indian way: 1-0-0, 1-0-1, 1-1-1, 0-0-1</li>
+          <li>Timing chips: after food, before food, at bedtime, with warm water</li>
+          <li>Beautiful branded PDF prescription — your clinic name, letterhead
+              and doctor's signature line</li>
+          <li>Every consultation lands in the patient's history automatically</li>
+        </ul>
+      </div>
+      <div class="m-col"><h4>How your team uses it</h4>
+        <ol class="m-steps">
+          <li>Doctor taps the waiting patient → Consult</li>
+          <li>Types the diagnosis; vitals take ten seconds</li>
+          <li>Adds medicines — three taps per line with the chips</li>
+          <li>Save &amp; complete → prescription PDF is ready to print or share</li>
+        </ol>
+      </div>
+    </div>
   </div>
+
+  <div class="callout">
+    <h3>Why the PDF matters</h3>
+    <p>The prescription is the paper your patient carries to the pharmacy and keeps at home —
+    it's your clinic's business card. Klivia's prescriptions look like they came from a
+    premium hospital, with your name on top.</p>
+  </div>
+  <div class="runfoot"><span>Klivia — the complete guide</span><span>4</span></div>
 </section>
 
-<!-- ============ PRICING ============ -->
-<section class="page page-break">
+<!-- ================= MODULES 5-6 ================= -->
+<section class="page">
+  <div class="module">
+    <div class="module-head">
+      <span class="module-num">05</span>
+      <div><h3>Pharmacy &amp; inventory</h3><span class="m-tag">Never run out mid-treatment again</span></div>
+    </div>
+    <div class="module-cols">
+      <div class="m-col"><h4>What it does</h4>
+        <ul class="m-feats">
+          <li>Track medicines, consumables (gloves, cartridges) and equipment</li>
+          <li>Each item: unit, price, stock count, reorder level, expiry date</li>
+          <li><strong>Low stock rises to the top</strong> — with a red chip you can't miss</li>
+          <li>Expiring-soon warnings (60 days ahead) so nothing is wasted</li>
+          <li>± Stock in/out with a tap — counts can never go below zero</li>
+          <li>Prescriptions suggest medicine names from this same shelf, so
+              spelling always matches what you actually stock</li>
+          <li>Doctors can see stock too — they never prescribe what you don't have</li>
+        </ul>
+      </div>
+      <div class="m-col"><h4>How your team uses it</h4>
+        <ol class="m-steps">
+          <li>Add your medicines once: name, unit, opening stock, reorder level</li>
+          <li>Supplier delivers? ＋ Stock in with the quantity</li>
+          <li>Dispense or use stock? − Stock out</li>
+          <li>Every morning, the top of the list IS your purchase list</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <div class="module">
+    <div class="module-head">
+      <span class="module-num">06</span>
+      <div><h3>Reports &amp; analytics</h3><span class="m-tag">Know your practice — download and share as PDF</span></div>
+    </div>
+    <div class="module-cols">
+      <div class="m-col"><h4>What it does</h4>
+        <ul class="m-feats">
+          <li>Patients over time and new-patient growth</li>
+          <li>Busiest days and appointment status mix</li>
+          <li>Per-doctor performance: booked vs completed visits</li>
+          <li>One-click <strong>Download PDF</strong> — print it or send it to a partner</li>
+        </ul>
+      </div>
+      <div class="m-col"><h4>How your team uses it</h4>
+        <ol class="m-steps">
+          <li>Open Reports at month end</li>
+          <li>See which days need a second doctor</li>
+          <li>Download the PDF for your records or your partners</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <div class="module">
+    <div class="module-head">
+      <span class="module-num">07</span>
+      <div><h3>Staff &amp; team</h3><span class="m-tag">Invite by email — they're working in minutes</span></div>
+    </div>
+    <div class="module-cols">
+      <div class="m-col"><h4>What it does</h4>
+        <ul class="m-feats">
+          <li>Invite doctors and receptionists by email — they set their own password</li>
+          <li>Or hand them a temporary password in person; both work</li>
+          <li>Combine roles: a partner who treats patients = Admin + Doctor</li>
+          <li><strong>Visiting doctors:</strong> one account works across many clinics —
+              your clinic simply attaches to their existing login</li>
+          <li>Resend invites any time; deactivate staff who leave</li>
+        </ul>
+      </div>
+      <div class="m-col"><h4>How your team uses it</h4>
+        <ol class="m-steps">
+          <li>Staff → Add staff member → their email + role</li>
+          <li>They get a branded email → choose a password → they're in</li>
+          <li>Their dashboard shows only what their role needs</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+  <div class="runfoot"><span>Klivia — the complete guide</span><span>5</span></div>
+</section>
+
+<!-- ================= MODULES 8-10 ================= -->
+<section class="page">
+  <div class="module">
+    <div class="module-head">
+      <span class="module-num">08</span>
+      <div><h3>Notifications &amp; reminders</h3><span class="m-tag">The bell that means nothing gets missed</span></div>
+    </div>
+    <div class="module-cols">
+      <div class="m-col"><h4>What it does</h4>
+        <ul class="m-feats">
+          <li>Doctors are notified the moment a booking is made for them</li>
+          <li>Check-in alerts — "your patient is waiting"</li>
+          <li>Automatic reminders for appointments in the next 24 hours</li>
+          <li>Billing updates land here too — payment confirmations, plan changes</li>
+        </ul>
+      </div>
+      <div class="m-col"><h4>How your team uses it</h4>
+        <ol class="m-steps">
+          <li>Watch the bell badge — tap to see what's new</li>
+          <li>Mark all read when you're caught up</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <div class="module">
+    <div class="module-head">
+      <span class="module-num">09</span>
+      <div><h3>Clinic settings &amp; templates</h3><span class="m-tag">Your letterhead, your forms — set once, used everywhere</span></div>
+    </div>
+    <div class="module-cols">
+      <div class="m-col"><h4>What it does</h4>
+        <ul class="m-feats">
+          <li>Clinic name, phone and address — printed on every prescription
+              and intake form automatically</li>
+          <li>Choose your default intake template: 🦷 dental (oral examination,
+              ortho findings) or 🩺 general (vitals, systemic examination)</li>
+          <li>Both templates stay available; your choice simply leads</li>
+        </ul>
+      </div>
+      <div class="m-col"><h4>How your team uses it</h4>
+        <ol class="m-steps">
+          <li>Settings → fill your clinic profile once</li>
+          <li>Pick your template — done; every printout now carries your letterhead</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <div class="module">
+    <div class="module-head">
+      <span class="module-num">10</span>
+      <div><h3>Multiple clinics &amp; branches</h3><span class="m-tag">Grow without growing the chaos (Growth plan)</span></div>
+    </div>
+    <div class="module-cols">
+      <div class="m-col"><h4>What it does</h4>
+        <ul class="m-feats">
+          <li>Open a second branch or a new practice under the same login</li>
+          <li>Each clinic's patients, staff, stock and billing stay fully separate</li>
+          <li>Switch clinics from the sidebar in one tap</li>
+          <li>"My clinics" page shows your whole structure at a glance</li>
+        </ul>
+      </div>
+      <div class="m-col"><h4>How your team uses it</h4>
+        <ol class="m-steps">
+          <li>Click your clinic's name → ＋ New clinic</li>
+          <li>Name it — Klivia builds it in seconds</li>
+          <li>Invite that branch's team; switch between branches any time</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <h3>🔒 Your data is safe — and it's yours</h3>
+    <p>Every clinic's data is isolated at the core — it is architecturally impossible for
+    another clinic to read your records. Passwords are stored only as secure one-way hashes.
+    We never sell data or show ads. You can export your records any time — they belong to you.</p>
+  </div>
+  <div class="runfoot"><span>Klivia — the complete guide</span><span>6</span></div>
+</section>
+
+<!-- ================= PRICING ================= -->
+<section class="page">
   <div class="kicker">Pricing</div>
   <h2 class="sec">Simple, honest pricing</h2>
-  <p class="sec-sub">
-    Every feature on every plan. You pay for the size of your team, never for modules.
-    Prices in Indian Rupees. Pay yearly and get two months free.
-  </p>
+  <p class="sec-sub">Every feature on every plan — you pay for team size, never for modules.
+    Prices in Indian Rupees. Pay yearly and get <strong>2 months free</strong>.</p>
 
   <div class="price-grid">
     <div class="price">
@@ -327,9 +507,10 @@
       <ul>
         <li>Unlimited patients &amp; appointments</li>
         <li>Front desk &amp; waiting room</li>
-        <li>PDF prescriptions</li>
+        <li>Designer PDF prescriptions</li>
         <li>Dental &amp; general intake forms</li>
         <li>Pharmacy &amp; inventory</li>
+        <li>Laptop, tablet &amp; phone</li>
       </ul>
     </div>
     <div class="price pop">
@@ -343,7 +524,7 @@
         <li>Multiple doctors &amp; reception</li>
         <li>Visiting doctors, one account</li>
         <li>Reminders &amp; notifications</li>
-        <li>Reports &amp; doctor analytics</li>
+        <li>Reports &amp; doctor analytics + PDF</li>
         <li>Priority WhatsApp support</li>
       </ul>
     </div>
@@ -362,42 +543,55 @@
     </div>
   </div>
 
-  <div class="callout" style="margin-top:22px">
-    <h3>Start free for 14 days</h3>
-    <p>Every clinic starts with a free trial that includes the full Clinic-tier features — no credit
-      card needed. Choose a plan when you're ready. You can switch plans any time, and your data
-      always stays yours.</p>
+  <div class="callout" style="margin-top:14px">
+    <h3>Start free for 14 days — no credit card</h3>
+    <p>Every clinic starts with a free trial including full Clinic-tier features.
+    Choose a plan when you're ready. Switch plans any time. Cancel any time — and
+    your data is always exportable.</p>
   </div>
 
-  <h2 class="sec" style="font-size:20px;margin-top:28px">Questions clinics ask us</h2>
+  <h2 class="sec" style="font-size:18px;margin-top:14px">Questions clinics ask us</h2>
   <div class="faq-q">Is my patient data safe?</div>
-  <div class="faq-a">Yes. Each clinic's data is isolated at the core — it's architecturally impossible for another clinic to see your records. Passwords are stored only as secure one-way hashes, and we never sell your data or use it for advertising.</div>
-  <div class="faq-q">Can we move from paper or another system?</div>
-  <div class="faq-a">Absolutely — you can start fresh in minutes, and on the Growth plan we help migrate your existing patient records.</div>
-  <div class="faq-q">The clinic owner is not a doctor. Does that work?</div>
-  <div class="faq-a">Yes. Ownership and being a doctor are separate. An owner runs the clinic; only people with the Doctor role appear in the booking list.</div>
-  <div class="faq-a" style="margin-top:6px">What if we want to stop? Cancel any time, no lock-in, and export your data — your records belong to you.</div>
+  <div class="faq-a">Yes — per-clinic isolation at the database core, hashed passwords, no data selling, no ads.</div>
+  <div class="faq-q">Can we move from paper or another software?</div>
+  <div class="faq-a">Start fresh in minutes; on Growth we help migrate your existing records.</div>
+  <div class="faq-q">The owner isn't a doctor — does that work?</div>
+  <div class="faq-a">Yes. Owners manage; only people with the Doctor role appear in the booking list.</div>
+  <div class="faq-q">Do we need to install anything?</div>
+  <div class="faq-a">No. Klivia runs in the browser on your existing laptop, tablet or phone.</div>
+  <div class="runfoot"><span>Klivia — the complete guide</span><span>7</span></div>
 </section>
 
-<!-- ============ CTA ============ -->
-<section class="page page-break">
+<!-- ================= CTA ================= -->
+<section class="page">
+  <div class="kicker">Getting started</div>
+  <h2 class="sec">Up and running in three steps</h2>
+  <div class="two-col" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:18px">
+    <div class="card mint"><h3>1 · Create your clinic</h3><p>Register with your name, email and
+      clinic name. You're the Admin. Free 14-day trial, no card.</p></div>
+    <div class="card mint"><h3>2 · Invite your team</h3><p>Add doctors and reception by email —
+      they set their own password and sign in.</p></div>
+    <div class="card mint"><h3>3 · See your first patient</h3><p>Register a patient, book, check in,
+      consult. That's the whole loop — you'll know it in a morning.</p></div>
+  </div>
+
   <div class="cta">
-    <div class="brand-row" style="justify-content:center;margin-bottom:14px"><span class="mark">✚</span><span class="brand" style="color:#fff">Klivia</span></div>
+    <div class="brand-row" style="justify-content:center;margin-bottom:16px">
+      <span class="mark">✚</span><span class="brand" style="color:#fff">Klivia</span>
+    </div>
     <h2>Your clinic, calm and organized — starting today.</h2>
-    <p>Start your free 14-day trial in two minutes. No credit card. Bring your whole team.
-      We'll help you get set up.</p>
+    <p>Start your free 14-day trial in two minutes. Bring your whole team.
+      We'll personally help you get set up — in your language.</p>
     <span class="btn">Register your clinic — free</span>
-    <div class="wa">Questions? WhatsApp us at +91 62384 56205</div>
+    <div class="contact">
+      💬 WhatsApp: <strong>+91 62384 56205</strong><br>
+      ✉️ Email: <strong>taveperz&#64;gmail.com</strong>
+    </div>
   </div>
 
-  <div class="two-col" style="margin-top:26px">
-    <div class="card"><h3 style="font-size:15px;margin-bottom:6px">🔒 Private by design</h3><p class="muted" style="font-size:13px">Per-clinic isolation, secure passwords, and zero data selling.</p></div>
-    <div class="card"><h3 style="font-size:15px;margin-bottom:6px">💬 Real support in your language</h3><p class="muted" style="font-size:13px">Talk to a human on WhatsApp — made and supported in Kerala, India.</p></div>
-  </div>
-
-  <p class="foot-note">
-    Klivia · Clinic management, made calm · Kerala, India · WhatsApp +91 62384 56205<br>
-    This guide is for information only; features and pricing may be updated over time.
+  <p style="margin-top:20px;text-align:center;color:var(--muted);font-size:11px">
+    Klivia · Clinic management, made calm · Kerala, India<br>
+    This guide is for information; features and pricing may be updated over time.
   </p>
 </section>
 

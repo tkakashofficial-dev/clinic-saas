@@ -8,10 +8,6 @@
   @media (max-width: 640px) { grid-template-columns: 1fr; }
 }
 
-@media (max-width: 640px) {
-  .sidebar { display: none; }
-}
-
 .sidebar {
   background: var(--color-ink-900);
   color: var(--color-text-invert);
@@ -21,6 +17,12 @@
   position: sticky;
   top: 0;
   height: 100dvh;
+
+  /* Phones: the bottom tab bar replaces the sidebar entirely.
+     MUST live inside this rule — an earlier top-level media block lost the
+     same-specificity source-order battle against display:flex above
+     (the bug that showed a full-screen icon rail on mobile). */
+  @media (max-width: 640px) { display: none; }
 }
 
 /* ---- Clinic identity + switcher: the CLINIC is the hero ---- */

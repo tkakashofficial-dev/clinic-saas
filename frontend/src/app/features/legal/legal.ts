@@ -21,6 +21,7 @@ export class Legal {
 
   readonly lastUpdated = '15 July 2026';
   readonly company = 'Klivia';
+  readonly contactEmail = 'taveperz@gmail.com';
   readonly whatsapp = '+91 62384 56205';
 
   /** Signed-in users go back to the app; visitors to the landing page. */
