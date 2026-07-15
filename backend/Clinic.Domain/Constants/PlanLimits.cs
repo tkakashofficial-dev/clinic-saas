@@ -24,6 +24,10 @@ public static class PlanLimits
         _ => 1
     };
 
+    /// <summary>Pharmacy & inventory is the Clinic tier's headline feature —
+    /// the upgrade lever for Solo doctors whose practice is growing.</summary>
+    public static bool HasInventory(PlanType plan) => plan != PlanType.Solo;
+
     public static string DisplayName(PlanType plan) => plan switch
     {
         PlanType.Solo => "Solo",

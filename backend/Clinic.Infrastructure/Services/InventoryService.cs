@@ -2,6 +2,7 @@ using Clinic.Application.Common.Exceptions;
 using Clinic.Application.Common.Interfaces;
 using Clinic.Application.Features.Inventory.DTOs;
 using Clinic.Application.Features.Inventory.Services;
+using Clinic.Domain.Constants;
 using Clinic.Domain.Entities;
 using Clinic.Domain.Enums;
 using Clinic.Infrastructure.Persistence;
@@ -23,6 +24,8 @@ public class InventoryService : IInventoryService
     public async Task<List<InventoryItemDto>> GetAllAsync(
         string? search, CancellationToken cancellationToken = default)
     {
+        await EnsurePlanAllowsInventoryAsync(cancellationToken);
+
         var query = _context.InventoryItems.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(search))
@@ -45,6 +48,7 @@ public class InventoryService : IInventoryService
     public async Task<InventoryItemDto> CreateAsync(
         SaveInventoryItemRequest request, CancellationToken cancellationToken = default)
     {
+        await EnsurePlanAllowsInventoryAsync(cancellationToken);
         var (name, category, unit) = ValidateAndParse(request);
 
         var exists = await _context.InventoryItems
@@ -69,6 +73,7 @@ public class InventoryService : IInventoryService
     public async Task<InventoryItemDto> UpdateAsync(
         Guid itemId, SaveInventoryItemRequest request, CancellationToken cancellationToken = default)
     {
+        await EnsurePlanAllowsInventoryAsync(cancellationToken);
         var (name, category, unit) = ValidateAndParse(request);
 
         var item = await GetItemAsync(itemId, cancellationToken);
@@ -87,6 +92,8 @@ public class InventoryService : IInventoryService
     public async Task<InventoryItemDto> AdjustStockAsync(
         Guid itemId, AdjustStockRequest request, CancellationToken cancellationToken = default)
     {
+        await EnsurePlanAllowsInventoryAsync(cancellationToken);
+
         if (request.Delta == 0)
             throw new BadRequestException("Adjustment cannot be zero.");
 
@@ -107,6 +114,7 @@ public class InventoryService : IInventoryService
 
     public async Task DeleteAsync(Guid itemId, CancellationToken cancellationToken = default)
     {
+        await EnsurePlanAllowsInventoryAsync(cancellationToken);
         var item = await GetItemAsync(itemId, cancellationToken);
         item.Delete(_currentUser.UserId);   // soft delete — history stays intact
         await _context.SaveChangesAsync(cancellationToken);
@@ -118,6 +126,11 @@ public class InventoryService : IInventoryService
         if (string.IsNullOrWhiteSpace(query) || query.Trim().Length < 2)
             return [];
 
+        // Solo plan: no inventory → quietly no suggestions. Throwing here
+        // would break the prescription form mid-typing for Solo doctors.
+        if (!PlanLimits.HasInventory(await GetEffectivePlanAsync(cancellationToken)))
+            return [];
+
         var term = query.Trim().ToLower();
         return await _context.InventoryItems
             .AsNoTracking()
@@ -127,6 +140,24 @@ public class InventoryService : IInventoryService
             .Select(i => i.Name)
             .Take(8)
             .ToListAsync(cancellationToken);
+    }
+
+    private async Task<PlanType> GetEffectivePlanAsync(CancellationToken ct)
+    {
+        var tenant = await _context.Tenants
+            .AsNoTracking()
+            .FirstAsync(t => t.Id == _currentUser.TenantId, ct);
+        return tenant.EffectivePlan;
+    }
+
+    /// <summary>Inventory is a Clinic-tier feature: the API is the wall,
+    /// the UI shows the beautiful upgrade pitch (HTTP 402).</summary>
+    private async Task EnsurePlanAllowsInventoryAsync(CancellationToken ct)
+    {
+        if (!PlanLimits.HasInventory(await GetEffectivePlanAsync(ct)))
+            throw new PlanLimitException(
+                "Pharmacy & inventory is included from the Clinic plan. " +
+                "Upgrade to track stock, low-stock alerts and expiry warnings.");
     }
 
     private async Task<InventoryItem> GetItemAsync(Guid itemId, CancellationToken ct)

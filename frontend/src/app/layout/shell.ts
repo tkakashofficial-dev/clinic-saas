@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { parseApiError } from '../core/api/api-error';
 import { BillingService } from '../core/api/billing.service';
 import { NotificationsService } from '../core/api/notifications.service';
@@ -42,7 +42,8 @@ const NAV_ITEMS: NavItem[] = [
 export class Shell {
   readonly auth = inject(AuthService);
   readonly notifications = inject(NotificationsService);
-  private readonly billing = inject(BillingService);
+  readonly billing = inject(BillingService);
+  private readonly router = inject(Router);
 
   readonly navItems = computed(() => {
     const roles = this.auth.roles();
@@ -98,6 +99,10 @@ export class Shell {
   readonly canOpenSwitcher = computed(
     () => this.auth.memberships().length > 1 || this.canCreateClinic(),
   );
+  /** Multi-clinic is Growth-only. Already-multi owners obviously qualify. */
+  readonly canMultiClinic = computed(
+    () => this.billing.summary()?.plan === 'Growth' || this.auth.memberships().length > 1,
+  );
 
   // ---- topbar: notifications + profile ----
   readonly notifOpen = signal(false);
@@ -139,11 +144,19 @@ export class Shell {
   }
 
   openNewClinic(): void {
+    this.switcherOpen.set(false);
+    this.moreOpen.set(false);
+
+    // Locked on Solo/Clinic plans: the tap goes straight to the pitch
+    if (!this.canMultiClinic()) {
+      void this.router.navigate(['/billing']);
+      return;
+    }
+
     this.newClinicName = '';
     this.newClinicIsDoctor = true;
     this.newClinicError.set('');
     this.newClinicUpgradeNeeded.set(false);
-    this.switcherOpen.set(false);
     this.newClinicOpen.set(true);
   }
 

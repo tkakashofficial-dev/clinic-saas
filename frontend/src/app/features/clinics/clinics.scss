@@ -58,6 +58,16 @@
     border-color: var(--color-primary-500);
   }
 
+  /* Growth-locked: visible (it sells) but clearly gated */
+  &.locked {
+    border-color: var(--color-border);
+
+    .add-icon { background: var(--color-bg); color: var(--color-text-muted); }
+    .clinic-card-name { color: var(--color-text-muted); }
+    .clinic-card-sub { color: var(--color-primary-700); font-weight: 600; }
+    &:hover { border-color: var(--color-primary-400); }
+  }
+
   .add-icon {
     width: 46px; height: 46px;
     border-radius: 13px;

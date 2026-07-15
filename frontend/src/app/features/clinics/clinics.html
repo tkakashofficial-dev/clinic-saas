@@ -30,12 +30,21 @@
   }
 
   @if (canCreate()) {
-    <button type="button" class="clinic-card card add-card" (click)="openCreate()">
+    <button type="button" class="clinic-card card add-card"
+            [class.locked]="!canMultiClinic()" (click)="openCreate()">
       <span class="add-icon">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        @if (canMultiClinic()) {
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        } @else {
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        }
       </span>
       <h3 class="clinic-card-name">Open a new clinic</h3>
-      <p class="clinic-card-sub">A second branch or a brand-new practice · Growth plan</p>
+      <p class="clinic-card-sub">
+        {{ canMultiClinic()
+            ? 'A second branch or a brand-new practice'
+            : 'A Growth plan feature — tap to see what it unlocks' }}
+      </p>
     </button>
   }
 </div>

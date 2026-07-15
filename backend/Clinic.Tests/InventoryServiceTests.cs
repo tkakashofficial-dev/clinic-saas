@@ -2,6 +2,7 @@ using Clinic.Application.Common.Exceptions;
 using Clinic.Application.Features.Inventory.DTOs;
 using Clinic.Infrastructure.Services;
 using Clinic.Tests.TestInfrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace Clinic.Tests;
 
@@ -84,6 +85,27 @@ public class InventoryServiceTests : IDisposable
         // And clinic B can even reuse the same name for its own shelf
         var own = await CreateService().CreateAsync(Amoxicillin(stock: 3));
         Assert.Equal(3, own.StockQuantity);
+    }
+
+    [Fact]
+    public async Task Inventory_OnSoloPlan_IsAPaidUpgrade()
+    {
+        // Inventory is the Clinic tier's headline feature — Solo gets a 402
+        // wall on the module, but prescription suggestions stay quiet (no
+        // errors mid-typing), they just return nothing.
+        var clinic = await _db.SeedTenantAsync("Solo Dental", "solo@clinic.com");
+        _db.CurrentUser.ActAs(clinic.TenantId, clinic.TenantUserId);
+
+        await using (var context = _db.CreateContext())
+        {
+            var tenant = await context.Tenants.FirstAsync(t => t.Id == clinic.TenantId);
+            tenant.ChangePlan(Clinic.Domain.Enums.PlanType.Solo);  // ends trial too
+            await context.SaveChangesAsync();
+        }
+
+        await Assert.ThrowsAsync<PlanLimitException>(() => CreateService().GetAllAsync(null));
+        await Assert.ThrowsAsync<PlanLimitException>(() => CreateService().CreateAsync(Amoxicillin()));
+        Assert.Empty(await CreateService().SuggestMedicinesAsync("amo"));
     }
 
     [Fact]

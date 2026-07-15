@@ -3,7 +3,7 @@
     <h1>Inventory</h1>
     <p class="sub">Pharmacy & clinic supplies — low stock rises to the top</p>
   </div>
-  @if (canManage) {
+  @if (canManage && !locked()) {
     <button type="button" class="btn btn-primary" (click)="openAdd()">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Add item
@@ -23,6 +23,31 @@
     <button type="button" class="btn btn-ghost" style="padding:2px 8px;" (click)="error.set('')" aria-label="Dismiss">✕</button>
   </div>
 }
+
+@if (locked()) {
+  <!-- The locked door: sell the feature, don't apologise for it -->
+  <section class="card locked-hero">
+    <div class="locked-icon">💊</div>
+    <h2>Pharmacy & inventory comes with the Clinic plan</h2>
+    <p class="locked-sub">
+      Track every medicine and supply, get low-stock alerts before you run out
+      mid-treatment, catch expiring stock 60 days early — and your prescriptions
+      auto-suggest medicines from your own shelf.
+    </p>
+    <ul class="locked-feats">
+      <li>✓ Medicines, consumables & equipment in one list</li>
+      <li>✓ Low stock rises to the top with a red flag</li>
+      <li>✓ Expiry warnings 60 days ahead</li>
+      <li>✓ ± Stock in/out — counts never go below zero</li>
+      <li>✓ Prescription autocomplete from your own stock</li>
+    </ul>
+    @if (auth.hasRole('Admin')) {
+      <a routerLink="/billing" class="btn btn-primary btn-lg">See the Clinic plan →</a>
+    } @else {
+      <p class="muted">Ask your clinic's admin to upgrade to unlock this.</p>
+    }
+  </section>
+} @else {
 
 <div class="toolbar">
   <input type="text" class="input search-input" placeholder="Search items…"
@@ -182,4 +207,6 @@
       </button>
     </div>
   </aside>
+}
+
 }

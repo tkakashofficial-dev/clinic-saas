@@ -1,7 +1,8 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { parseApiError } from '../../core/api/api-error';
+import { BillingService } from '../../core/api/billing.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { ProvisioningOverlay } from '../../shared/ui/provisioning-overlay';
 
@@ -18,8 +19,20 @@ import { ProvisioningOverlay } from '../../shared/ui/provisioning-overlay';
 })
 export class Clinics {
   readonly auth = inject(AuthService);
+  private readonly billing = inject(BillingService);
+  private readonly router = inject(Router);
 
   readonly canCreate = computed(() => this.auth.hasRole('Admin'));
+  /** Multi-clinic is Growth-only; already-multi owners obviously qualify. */
+  readonly canMultiClinic = computed(
+    () => this.billing.summary()?.plan === 'Growth' || this.auth.memberships().length > 1,
+  );
+
+  constructor() {
+    if (this.auth.hasRole('Admin') && !this.billing.summary()) {
+      this.billing.getSummary().subscribe({ error: () => {} });
+    }
+  }
 
   readonly createOpen = signal(false);
   readonly creating = signal(false);
@@ -48,6 +61,11 @@ export class Clinics {
   }
 
   openCreate(): void {
+    // Locked on Solo/Clinic plans — the tap goes straight to the pitch
+    if (!this.canMultiClinic()) {
+      void this.router.navigate(['/billing']);
+      return;
+    }
     this.newName = '';
     this.newIsDoctor = true;
     this.error.set('');

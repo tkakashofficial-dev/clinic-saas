@@ -1,6 +1,7 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { parseApiError } from '../../core/api/api-error';
@@ -17,7 +18,7 @@ import { Segmented } from '../../shared/ui/segmented';
  */
 @Component({
   selector: 'app-inventory',
-  imports: [ReactiveFormsModule, FormsModule, DatePipe, DecimalPipe, DateField, Segmented],
+  imports: [ReactiveFormsModule, FormsModule, RouterLink, DatePipe, DecimalPipe, DateField, Segmented],
   templateUrl: './inventory.html',
   styleUrl: './inventory.scss',
 })
@@ -32,6 +33,8 @@ export class Inventory {
   readonly items = signal<InventoryItemDto[]>([]);
   readonly error = signal('');
   readonly notice = signal('');
+  /** 402 from the API: inventory is a Clinic-plan feature — show the pitch. */
+  readonly locked = signal(false);
 
   // ---- search ----
   private readonly search$ = new Subject<string>();
@@ -71,10 +74,17 @@ export class Inventory {
     this.api.getAll(this.searchTerm.trim() || undefined).subscribe({
       next: (items) => {
         this.items.set(items);
+        this.locked.set(false);
         this.loading.set(false);
       },
       error: (err) => {
-        this.error.set(parseApiError(err).message);
+        const parsed = parseApiError(err);
+        if (parsed.status === 402) {
+          // Not an error — a locked door with a nice handle
+          this.locked.set(true);
+        } else {
+          this.error.set(parsed.message);
+        }
         this.loading.set(false);
       },
     });

@@ -16,9 +16,11 @@ export interface PlanPricing {
 // - MONTHLY is the anchor (₹999/1,999/3,999) — still ~half of eka.care while
 //   giving away what they sell as add-ons. Yearly = 10× monthly, sold as
 //   "2 months free": upfront cash, a year of zero churn, healthy margin.
-// - Ladder that sells itself: Solo hits its 1-doctor wall → Clinic; a second
-//   BRANCH requires Growth (multi-clinic is a Growth feature, enforced by the
-//   API). Expansion-stage clinics have expansion-stage budgets.
+// - Ladder that sells itself (revised 2026-07-15): Solo hits its 1-doctor
+//   wall AND has no pharmacy/inventory (Clinic's headline unlock, API-
+//   enforced 402); a second BRANCH requires Growth (also API-enforced).
+//   Locked features stay VISIBLE in-app as styled upgrade pitches —
+//   invisible features never sell.
 export const PLAN_PRICING: PlanPricing[] = [
   {
     key: 'Solo',
@@ -31,7 +33,6 @@ export const PLAN_PRICING: PlanPricing[] = [
       'Front-desk flow with check-in & waiting room',
       'Consultations, vitals & designer PDF prescriptions',
       'Printable intake forms — dental & general',
-      'Pharmacy & inventory with low-stock alerts',
       'Works on laptop, tablet & phone',
     ],
   },
@@ -44,6 +45,7 @@ export const PLAN_PRICING: PlanPricing[] = [
     popular: true,
     features: [
       'Everything in Solo',
+      'Pharmacy & inventory with low-stock alerts',
       'Multiple doctors, partners & reception',
       'Visiting doctors — one account, many clinics',
       'Appointment reminders & notifications',

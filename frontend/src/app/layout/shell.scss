@@ -169,6 +169,18 @@
 
     .switcher-name { color: var(--color-primary-700); }
   }
+
+  /* Growth-locked: visible (it sells the upgrade) but clearly gated */
+  &.locked {
+    .switcher-avatar.plus {
+      border-style: solid;
+      background: var(--color-bg);
+      color: var(--color-text-muted);
+      border-color: var(--color-border);
+    }
+    .switcher-name { color: var(--color-text-muted); }
+    .switcher-sub { color: var(--color-primary-700); font-weight: 600; }
+  }
 }
 
 .switcher-manage {
