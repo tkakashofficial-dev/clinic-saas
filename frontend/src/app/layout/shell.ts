@@ -15,7 +15,7 @@ const NEW_CLINIC_HINT_KEY = 'klivia.hint.newclinic';
 interface NavItem {
   label: string;
   path: string;
-  icon: 'dashboard' | 'patients' | 'appointments' | 'inventory' | 'forms' | 'staff' | 'reports' | 'billing' | 'settings' | 'platform';
+  icon: 'dashboard' | 'patients' | 'appointments' | 'invoices' | 'inventory' | 'forms' | 'staff' | 'reports' | 'billing' | 'settings' | 'platform';
   roles: Role[];
   /** Only the SaaS owner sees this, regardless of clinic roles. */
   platformOnly?: boolean;
@@ -25,6 +25,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', path: '/dashboard', icon: 'dashboard', roles: ['Admin', 'Doctor', 'Receptionist'] },
   { label: 'Patients', path: '/patients', icon: 'patients', roles: ['Admin', 'Doctor', 'Receptionist'] },
   { label: 'Appointments', path: '/appointments', icon: 'appointments', roles: ['Admin', 'Doctor', 'Receptionist'] },
+  { label: 'Invoices', path: '/invoices', icon: 'invoices', roles: ['Admin', 'Doctor', 'Receptionist'] },
   { label: 'Inventory', path: '/inventory', icon: 'inventory', roles: ['Admin', 'Doctor', 'Receptionist'] },
   { label: 'Forms', path: '/forms', icon: 'forms', roles: ['Admin', 'Doctor', 'Receptionist'] },
   { label: 'Reports', path: '/reports', icon: 'reports', roles: ['Admin'] },

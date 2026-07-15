@@ -292,6 +292,52 @@ export interface ClinicSettings {
   defaultIntakeTemplate: IntakeTemplate;
 }
 
+// ---------- Invoices (patient billing) ----------
+
+export type InvoiceStatus = 'Unpaid' | 'Paid' | 'Cancelled';
+
+export interface InvoiceDto {
+  id: string;
+  /** Shown as INV-000042. */
+  invoiceNumber: number;
+  patientId: string;
+  patientName: string;
+  patientPhone: string;
+  status: InvoiceStatus;
+  items: InvoiceItemDto[];
+  subtotalRupees: number;
+  discountRupees: number;
+  totalRupees: number;
+  paymentMethod: PaymentMethod | null;
+  paidAt: string | null;
+  notes: string | null;
+  createdByName: string;
+  createdAt: string;
+}
+
+export interface InvoiceItemDto {
+  description: string;
+  quantity: number;
+  unitPriceRupees: number;
+  lineTotalRupees: number;
+}
+
+export interface CreateInvoiceRequest {
+  patientId: string;
+  items: { description: string; quantity: number; unitPriceRupees: number }[];
+  discountRupees: number;
+  notes?: string | null;
+  markPaid: boolean;
+  paymentMethod?: string | null;
+}
+
+export interface InvoiceStats {
+  todayCollectedRupees: number;
+  monthCollectedRupees: number;
+  unpaidCount: number;
+  unpaidTotalRupees: number;
+}
+
 // ---------- Forms (intake form builder) ----------
 
 export type FormSectionKind = 'box' | 'lines' | 'checklist';
@@ -362,7 +408,7 @@ export interface PlatformTenant {
   createdAt: string;
 }
 
-export type PaymentMethod = 'Upi' | 'BankTransfer' | 'Cash' | 'Other';
+export type PaymentMethod = 'Upi' | 'BankTransfer' | 'Cash' | 'Card' | 'Other';
 
 export interface RecordPaymentRequest {
   amountRupees: number;

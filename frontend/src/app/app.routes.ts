@@ -65,6 +65,11 @@ export const routes: Routes = [
           import('./features/appointments/appointments').then((m) => m.Appointments),
       },
       {
+        // Patient billing — Admin/Reception manage, Doctors can look up
+        path: 'invoices',
+        loadComponent: () => import('./features/invoices/invoices').then((m) => m.Invoices),
+      },
+      {
         path: 'inventory',
         loadComponent: () => import('./features/inventory/inventory').then((m) => m.Inventory),
       },

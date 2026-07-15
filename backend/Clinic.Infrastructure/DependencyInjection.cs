@@ -66,6 +66,7 @@ public static class DependencyInjection
         services.AddScoped<Clinic.Application.Features.Inventory.Services.IInventoryService, InventoryService>();
         services.AddScoped<Clinic.Application.Features.Settings.Services.IClinicSettingsService, ClinicSettingsService>();
         services.AddScoped<Clinic.Application.Features.Forms.Services.IFormsService, FormsService>();
+        services.AddScoped<Clinic.Application.Features.Invoices.Services.IInvoiceService, InvoiceService>();
         return services;
     }
 }

@@ -79,6 +79,17 @@ reception checks patients in.
     (*after food, before food, at bedtime, with warm water*)
   - Save & complete → a **designer PDF prescription** to print or share.
 
+### 🧾 Invoices (patient billing)
+- **New invoice**: pick the patient, add items (description × qty × rate — totals
+  compute live), optional discount and note.
+- **"Payment collected now"** with UPI/Cash/Card/Bank chips — create and collect
+  in one step; the **letterhead receipt PDF opens automatically**, ready to print.
+- Or leave it **Unpaid** and mark it paid later (the ▾ menu picks the method).
+- Per-clinic numbers like **INV-000042**; paid invoices can't be cancelled
+  (record a correction instead).
+- The money strip on top shows **collected today, this month, and the unpaid
+  backlog** — the owner's daily glance.
+
 ### 💊 Inventory *(Clinic plan and above)*
 - Track **medicines, consumables and equipment**: unit, price, stock count,
   reorder level, expiry date.
@@ -143,6 +154,7 @@ thumbs. After app updates, one extra refresh picks up the newest version.
 |---|---|---|---|
 | Doctors / staff | 1 / 2 | 5 / 10 | Unlimited |
 | Patients, appointments, prescriptions, forms | ✅ | ✅ | ✅ |
+| Patient billing & invoices | ✅ | ✅ | ✅ |
 | Pharmacy & inventory | — | ✅ | ✅ |
 | Reports & analytics | ✅* | ✅ | ✅ |
 | Multiple clinics (branches) | — | — | ✅ |
@@ -203,7 +215,6 @@ appears in the sidebar:
 |---|---|
 | Online payments for subscriptions | Manual UPI/bank/cash + owner console today; Razorpay planned |
 | WhatsApp/SMS **to patients** | Reminders are in-app today; WhatsApp channel planned |
-| Patient billing / invoices | Planned — next major module |
 | Patient portal / online booking | Planned |
 | Clinic logo upload | Planned (needs file storage) |
 | Dental chart (odontogram), treatment plans, attachments | Planned |

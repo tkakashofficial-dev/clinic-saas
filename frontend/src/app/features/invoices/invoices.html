@@ -1,0 +1,251 @@
+<header class="page-header">
+  <div>
+    <h1>Invoices</h1>
+    <p class="sub">Patient billing — bill, collect, print the receipt</p>
+  </div>
+  @if (canManage()) {
+    <button type="button" class="btn btn-primary" (click)="openCreate()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New invoice
+    </button>
+  }
+</header>
+
+@if (notice()) {
+  <div class="alert-success" style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
+    <span>{{ notice() }}</span>
+    <button type="button" class="btn btn-ghost" style="padding:2px 8px;" (click)="notice.set('')" aria-label="Dismiss">✕</button>
+  </div>
+}
+@if (error()) {
+  <div class="alert-error" style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
+    <span>{{ error() }}</span>
+    <button type="button" class="btn btn-ghost" style="padding:2px 8px;" (click)="error.set('')" aria-label="Dismiss">✕</button>
+  </div>
+}
+
+@if (stats(); as s) {
+  <div class="money-strip">
+    <div class="money-card accent">
+      <span class="money-value">₹{{ s.todayCollectedRupees | number: '1.0-0' }}</span>
+      <span class="money-label">Collected today</span>
+    </div>
+    <div class="money-card">
+      <span class="money-value">₹{{ s.monthCollectedRupees | number: '1.0-0' }}</span>
+      <span class="money-label">This month</span>
+    </div>
+    <div class="money-card" [class.warn]="s.unpaidCount > 0">
+      <span class="money-value">₹{{ s.unpaidTotalRupees | number: '1.0-0' }}</span>
+      <span class="money-label">{{ s.unpaidCount }} unpaid</span>
+    </div>
+  </div>
+}
+
+<div class="toolbar">
+  @for (filter of statusFilters; track filter) {
+    <button type="button" class="filter-chip" [class.active]="status() === filter"
+            (click)="setStatus(filter)">{{ filter }}</button>
+  }
+</div>
+
+<section class="card">
+  @if (loading()) {
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
+  } @else if ((result()?.items ?? []).length === 0) {
+    <div class="empty-state">
+      <div class="icon">🧾</div>
+      <h3>No invoices {{ status() === 'All' ? 'yet' : 'with this status' }}</h3>
+      <p>Bill a patient in seconds — items, discount, collect, print.</p>
+      @if (canManage()) {
+        <button type="button" class="btn btn-secondary" (click)="openCreate()">Create the first invoice</button>
+      }
+    </div>
+  } @else {
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Invoice</th>
+            <th>Patient</th>
+            <th>Date</th>
+            <th style="text-align:right">Total</th>
+            <th>Status</th>
+            <th style="text-align:right"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (invoice of result()!.items; track invoice.id) {
+            <tr>
+              <td>
+                <div class="cell-main">{{ invoiceCode(invoice) }}</div>
+                <div class="cell-sub">{{ invoice.items.length }}
+                  {{ invoice.items.length === 1 ? 'item' : 'items' }} · {{ invoice.createdByName }}</div>
+              </td>
+              <td>
+                <div class="cell-main">{{ invoice.patientName }}</div>
+                <div class="cell-sub">{{ invoice.patientPhone }}</div>
+              </td>
+              <td class="muted">{{ invoice.createdAt | date: 'd MMM y' }}</td>
+              <td class="num" style="text-align:right; font-weight:700;">
+                ₹{{ invoice.totalRupees | number: '1.0-2' }}
+              </td>
+              <td>
+                <span class="chip"
+                      [class.chip-completed]="invoice.status === 'Paid'"
+                      [class.chip-inprogress]="invoice.status === 'Unpaid'"
+                      [class.chip-cancelled]="invoice.status === 'Cancelled'">
+                  {{ invoice.status }}
+                  @if (invoice.status === 'Paid' && invoice.paymentMethod) {
+                    · {{ invoice.paymentMethod === 'BankTransfer' ? 'Bank' :
+                         invoice.paymentMethod === 'Upi' ? 'UPI' : invoice.paymentMethod }}
+                  }
+                </span>
+              </td>
+              <td style="text-align:right; white-space:nowrap; position:relative;">
+                <button type="button" class="btn btn-ghost" (click)="downloadPdf(invoice)">📄 PDF</button>
+                @if (canManage() && invoice.status === 'Unpaid') {
+                  <button type="button" class="btn btn-ghost" [disabled]="busy() === invoice.id"
+                          (click)="togglePayMenu(invoice)">💰 Mark paid ▾</button>
+                  <button type="button" class="btn btn-ghost danger-text" [disabled]="busy() === invoice.id"
+                          (click)="cancelInvoice(invoice)">Cancel</button>
+                  @if (payMenuFor() === invoice.id) {
+                    <div class="pay-menu">
+                      @for (method of payMethods; track method.key) {
+                        <button type="button" class="pay-option" (click)="markPaid(invoice, method.key)">
+                          {{ method.label }}
+                        </button>
+                      }
+                    </div>
+                  }
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <footer class="paginator">
+      <span>Page {{ result()!.page }} of {{ result()!.totalPages }} · {{ result()!.totalCount }} total</span>
+      <div class="pages">
+        <button type="button" class="btn btn-secondary" [disabled]="!result()!.hasPreviousPage"
+                (click)="goToPage(result()!.page - 1)">Previous</button>
+        <button type="button" class="btn btn-secondary" [disabled]="!result()!.hasNextPage"
+                (click)="goToPage(result()!.page + 1)">Next</button>
+      </div>
+    </footer>
+  }
+</section>
+
+<!-- ============ Create invoice drawer ============ -->
+@if (createOpen()) {
+  <div class="drawer-backdrop" (click)="createOpen.set(false)"></div>
+  <aside class="drawer drawer-wide" role="dialog" aria-label="New invoice">
+    <div class="drawer-header">
+      <h2>New invoice</h2>
+      <button type="button" class="btn btn-ghost" (click)="createOpen.set(false)" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="drawer-body">
+      @if (formError()) {
+        <div class="alert-error">{{ formError() }}</div>
+      }
+
+      <div class="field">
+        <label>Patient</label>
+        @if (selectedPatient(); as patient) {
+          <div class="picked-patient">
+            <div>
+              <div class="cell-main">{{ patient.fullName }}</div>
+              <div class="cell-sub">{{ patient.phone }}</div>
+            </div>
+            <button type="button" class="btn btn-ghost" (click)="selectedPatient.set(null)">Change</button>
+          </div>
+        } @else {
+          <input type="text" class="input" placeholder="Search patient by name or phone…"
+                 (input)="searchPatients($any($event.target).value)">
+          @if (patientResults().length > 0) {
+            <div class="patient-options">
+              @for (patient of patientResults(); track patient.id) {
+                <button type="button" class="patient-option" (click)="selectedPatient.set(patient); patientResults.set([])">
+                  <span class="cell-main">{{ patient.fullName }}</span>
+                  <span class="cell-sub">{{ patient.phone }}</span>
+                </button>
+              }
+            </div>
+          }
+        }
+      </div>
+
+      <div class="field">
+        <label>Items</label>
+        @for (item of draftItems; track $index) {
+          <div class="item-row">
+            <input class="input" placeholder="e.g. Consultation / Filling / X-ray"
+                   [(ngModel)]="item.description">
+            <input class="input qty" type="number" min="1" placeholder="Qty"
+                   [(ngModel)]="item.quantity">
+            <input class="input rate" type="number" min="0" placeholder="₹ Rate"
+                   [(ngModel)]="item.unitPriceRupees">
+            <span class="line-total">₹{{ lineTotal(item) | number: '1.0-0' }}</span>
+            @if (draftItems.length > 1) {
+              <button type="button" class="btn btn-ghost danger-text" (click)="removeItem($index)"
+                      aria-label="Remove item">✕</button>
+            }
+          </div>
+        }
+        <button type="button" class="btn btn-secondary" style="align-self:flex-start" (click)="addItem()">
+          + Add item
+        </button>
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label for="inv-discount">Discount (₹) <span class="opt">Optional</span></label>
+          <input id="inv-discount" class="input" type="number" min="0" [(ngModel)]="draftDiscount">
+        </div>
+        <div class="field">
+          <label for="inv-notes">Notes <span class="opt">Optional</span></label>
+          <input id="inv-notes" class="input" [(ngModel)]="draftNotes"
+                 placeholder="e.g. Next sitting on Monday">
+        </div>
+      </div>
+
+      <!-- Live totals -->
+      <div class="totals-box">
+        <div class="totals-line"><span>Subtotal</span><span>₹{{ subtotal | number: '1.0-2' }}</span></div>
+        @if ((draftDiscount || 0) > 0) {
+          <div class="totals-line"><span>Discount</span><span>− ₹{{ draftDiscount | number: '1.0-2' }}</span></div>
+        }
+        <div class="totals-line grand"><span>Total</span><span>₹{{ total | number: '1.0-2' }}</span></div>
+      </div>
+
+      <div class="field">
+        <label class="collect-toggle">
+          <input type="checkbox" [(ngModel)]="collectNow">
+          Payment collected now
+        </label>
+        @if (collectNow) {
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;">
+            @for (method of payMethods; track method.key) {
+              <button type="button" class="filter-chip" [class.active]="draftMethod === method.key"
+                      (click)="draftMethod = method.key">{{ method.label }}</button>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="drawer-footer">
+      <button type="button" class="btn btn-secondary" (click)="createOpen.set(false)">Cancel</button>
+      <button type="button" class="btn btn-primary" [disabled]="saving() || !draftValid" (click)="save()">
+        @if (saving()) { <span class="inline-spinner" aria-hidden="true"></span> }
+        {{ saving() ? 'Creating…' : collectNow ? 'Create & print receipt' : 'Create invoice' }}
+      </button>
+    </div>
+  </aside>
+}
