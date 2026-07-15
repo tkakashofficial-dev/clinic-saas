@@ -27,3 +27,11 @@ public class PlatformSetActiveRequest
 {
     public bool IsActive { get; set; }
 }
+
+/// <summary>Outcome of the production email self-test.</summary>
+public class PlatformEmailTestResult
+{
+    public bool Sent { get; set; }
+    public string To { get; set; } = default!;
+    public string Detail { get; set; } = default!;
+}

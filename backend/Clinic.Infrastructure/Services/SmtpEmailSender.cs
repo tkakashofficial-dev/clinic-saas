@@ -34,13 +34,13 @@ public class SmtpEmailSender : IEmailSender
         _logger = logger;
     }
 
-    public async Task SendAsync(
+    public async Task<bool> SendAsync(
         string to, string subject, string htmlBody, CancellationToken cancellationToken = default)
     {
         if (!_settings.IsConfigured)
         {
             _logger.LogInformation("Email not configured — skipping '{Subject}' to {To}", subject, to);
-            return;
+            return false;
         }
 
         try
@@ -62,11 +62,13 @@ public class SmtpEmailSender : IEmailSender
 
             await client.SendMailAsync(message, cancellationToken);
             _logger.LogInformation("Email '{Subject}' sent to {To}", subject, to);
+            return true;
         }
         catch (Exception ex)
         {
             // Email must never break a business flow
             _logger.LogError(ex, "Failed to send email '{Subject}' to {To}", subject, to);
+            return false;
         }
     }
 }

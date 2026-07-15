@@ -280,6 +280,18 @@ export interface SaveInventoryItemRequest {
   expiryDate?: string | null;
 }
 
+// ---------- Clinic settings ----------
+
+export type IntakeTemplate = 'dental' | 'general';
+
+export interface ClinicSettings {
+  name: string;
+  phone: string | null;
+  address: string | null;
+  /** Which seeded intake-form design this clinic prints by default. */
+  defaultIntakeTemplate: IntakeTemplate;
+}
+
 // ---------- Platform (SaaS owner console) ----------
 
 export interface PlatformTenant {
@@ -296,6 +308,12 @@ export interface PlatformTenant {
   ownerEmail: string | null;
   clinicPhone: string | null;
   createdAt: string;
+}
+
+export interface PlatformEmailTestResult {
+  sent: boolean;
+  to: string;
+  detail: string;
 }
 
 // ---------- Errors (RFC 7807) ----------

@@ -119,7 +119,7 @@ public class AuthServiceTests : IDisposable
     {
         private readonly TaskCompletionSource<bool> _gate = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public Task SendAsync(string to, string subject, string htmlBody, CancellationToken cancellationToken = default)
+        public Task<bool> SendAsync(string to, string subject, string htmlBody, CancellationToken cancellationToken = default)
             => _gate.Task;
 
         public void Release() => _gate.SetResult(true);

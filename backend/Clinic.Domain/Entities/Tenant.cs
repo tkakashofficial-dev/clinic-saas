@@ -10,6 +10,10 @@ public class Tenant : BaseEntity
     public string? Address { get; private set; }
     public bool IsActive { get; private set; } = true;
 
+    /// <summary>Which seeded intake-form design this clinic prints by default
+    /// ("dental" | "general") — the Admin picks it in Settings.</summary>
+    public string DefaultIntakeTemplate { get; private set; } = "dental";
+
     // Subscription: every new clinic starts on a full-featured Clinic trial,
     // then picks (or is downgraded to) a paid tier
     public PlanType Plan { get; private set; } = PlanType.Clinic;
@@ -52,6 +56,9 @@ public class Tenant : BaseEntity
         Phone = phone;
         Address = address;
     }
+
+    public void SetDefaultIntakeTemplate(string template) =>
+        DefaultIntakeTemplate = template ?? throw new ArgumentNullException(nameof(template));
 
     public void Deactivate() => IsActive = false;
     public void Activate() => IsActive = true;

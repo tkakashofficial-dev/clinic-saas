@@ -1,0 +1,86 @@
+<header class="page-header">
+  <div>
+    <h1>Clinic settings</h1>
+    <p class="sub">Your letterhead & intake-form templates — Admin manages, the team uses</p>
+  </div>
+</header>
+
+@if (notice()) {
+  <div class="alert-success" style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
+    <span>{{ notice() }}</span>
+    <button type="button" class="btn btn-ghost" style="padding:2px 8px;" (click)="notice.set('')" aria-label="Dismiss">✕</button>
+  </div>
+}
+@if (error()) {
+  <div class="alert-error">{{ error() }}</div>
+}
+
+@if (loading()) {
+  <div class="skeleton-row"></div>
+  <div class="skeleton-row"></div>
+} @else {
+  <form [formGroup]="form" (ngSubmit)="save()">
+
+    <section class="card card-pad settings-block">
+      <h2>Clinic profile</h2>
+      <p class="muted block-sub">
+        These details print at the top of every prescription and intake form —
+        your clinic's letterhead.
+      </p>
+
+      <div class="field">
+        <label for="s-name">Clinic name *</label>
+        <input id="s-name" class="input" formControlName="name" placeholder="Smile Dental Care, Kozhikode">
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="s-phone">Clinic phone</label>
+          <input id="s-phone" class="input" formControlName="phone" placeholder="+91 98765 43210">
+        </div>
+        <div class="field">
+          <label for="s-address">Address</label>
+          <input id="s-address" class="input" formControlName="address" placeholder="Main Road, Nadapuram, Kozhikode">
+        </div>
+      </div>
+    </section>
+
+    <section class="card card-pad settings-block">
+      <h2>Intake form template</h2>
+      <p class="muted block-sub">
+        The design your team prints by default from a patient's record — both stay
+        available, this just picks which one leads. A full custom form builder is
+        coming as an add-on.
+      </p>
+
+      <div class="template-grid">
+        @for (template of templates; track template.key) {
+          <button type="button" class="template-card"
+                  [class.selected]="selectedTemplate() === template.key"
+                  (click)="selectedTemplate.set(template.key)">
+            <div class="template-head">
+              <span class="template-emoji">{{ template.emoji }}</span>
+              <span class="template-title">{{ template.title }}</span>
+              @if (selectedTemplate() === template.key) {
+                <span class="template-check">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </span>
+              }
+            </div>
+            <ul class="template-sections">
+              @for (section of template.sections; track section) {
+                <li>{{ section }}</li>
+              }
+            </ul>
+          </button>
+        }
+      </div>
+    </section>
+
+    <div class="settings-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="saving()">
+        @if (saving()) { <span class="inline-spinner" aria-hidden="true"></span> }
+        {{ saving() ? 'Saving…' : 'Save settings' }}
+      </button>
+    </div>
+  </form>
+}

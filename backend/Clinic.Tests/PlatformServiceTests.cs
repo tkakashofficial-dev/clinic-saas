@@ -18,8 +18,10 @@ public class PlatformServiceTests : IDisposable
 
     private readonly TestDb _db = new();
 
+    private readonly NoOpEmailSender _emails = new();
+
     private PlatformService CreatePlatformService() =>
-        new(_db.CreateContext(), _db.CurrentUser,
+        new(_db.CreateContext(), _db.CurrentUser, _emails,
             Options.Create(new PlatformSettings { AdminEmails = [OwnerEmail] }));
 
     private AuthService CreateAuthService(string? platformAdmin = OwnerEmail) =>
@@ -121,6 +123,18 @@ public class PlatformServiceTests : IDisposable
             session.TenantId, new PlatformSetActiveRequest { IsActive = true });
         var restored = await auth.LoginAsync(login);
         Assert.Equal(session.TenantId, restored.TenantId);
+    }
+
+    [Fact]
+    public async Task TestEmail_GoesToThePlatformAdmin_AndReportsOutcome()
+    {
+        ActAsPlatformOwner();
+
+        var result = await CreatePlatformService().SendTestEmailAsync();
+
+        Assert.True(result.Sent);
+        Assert.Equal(OwnerEmail, result.To);
+        Assert.Contains(_emails.Sent, m => m.To == OwnerEmail);
     }
 
     [Fact]

@@ -54,6 +54,27 @@ export class Platform {
     });
   }
 
+  // ---- production email self-test ----
+  readonly testingEmail = signal(false);
+
+  sendTestEmail(): void {
+    this.testingEmail.set(true);
+    this.error.set('');
+    this.notice.set('');
+
+    this.api.testEmail().subscribe({
+      next: (result) => {
+        this.testingEmail.set(false);
+        if (result.sent) this.notice.set(`✅ ${result.detail}`);
+        else this.error.set(result.detail);
+      },
+      error: (err) => {
+        this.testingEmail.set(false);
+        this.error.set(parseApiError(err).message);
+      },
+    });
+  }
+
   togglePlanMenu(tenant: PlatformTenant): void {
     this.planMenuFor.update((id) => (id === tenant.tenantId ? null : tenant.tenantId));
   }

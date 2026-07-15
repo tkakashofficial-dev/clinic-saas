@@ -34,9 +34,18 @@
   color: var(--ink-500, #5b6f68);
 }
 
+.payment-note-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 16px;
+
+  .btn { flex: none; white-space: nowrap; }
+}
+
 .payment-note {
   font-size: 13px;
-  margin-bottom: 16px;
+  flex: 1;
 }
 
 .plan-cell {

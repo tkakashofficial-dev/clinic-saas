@@ -13,4 +13,8 @@ public interface IPlatformService
     Task<List<PlatformTenantDto>> GetTenantsAsync(CancellationToken cancellationToken = default);
     Task<PlatformTenantDto> ChangePlanAsync(Guid tenantId, PlatformChangePlanRequest request, CancellationToken cancellationToken = default);
     Task<PlatformTenantDto> SetActiveAsync(Guid tenantId, PlatformSetActiveRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Sends a real email to the platform admin — proves production
+    /// SMTP works end-to-end (or reports that it doesn't, with a reason).</summary>
+    Task<PlatformEmailTestResult> SendTestEmailAsync(CancellationToken cancellationToken = default);
 }

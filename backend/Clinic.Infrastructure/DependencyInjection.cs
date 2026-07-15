@@ -53,6 +53,7 @@ public static class DependencyInjection
         services.AddScoped<IReportsService, ReportsService>();
         services.AddScoped<Clinic.Application.Features.Billing.Services.IBillingService, BillingService>();
         services.AddScoped<Clinic.Application.Features.Inventory.Services.IInventoryService, InventoryService>();
+        services.AddScoped<Clinic.Application.Features.Settings.Services.IClinicSettingsService, ClinicSettingsService>();
         return services;
     }
 }

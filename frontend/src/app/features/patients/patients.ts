@@ -1,11 +1,12 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { parseApiError } from '../../core/api/api-error';
 import { AppointmentsService } from '../../core/api/appointments.service';
 import { PatientsService } from '../../core/api/patients.service';
+import { SettingsService } from '../../core/api/settings.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { PagedResult, PatientDto, PatientHistory } from '../../core/models/api.models';
 import { DateField } from '../../shared/ui/date-field';
@@ -36,8 +37,21 @@ export class Patients {
 
   // ---- patient history drawer ----
   private readonly appointmentsApi = inject(AppointmentsService);
+  private readonly settingsApi = inject(SettingsService);
   readonly historyOpen = signal(false);
   readonly historyLoading = signal(false);
+
+  /** Print buttons ordered so the clinic's chosen template leads (★). */
+  readonly intakeTemplates = computed(() => {
+    const defaultTemplate = this.settingsApi.settings()?.defaultIntakeTemplate ?? 'dental';
+    const all = [
+      { key: 'dental' as const, emoji: '🦷', label: 'Dental intake form' },
+      { key: 'general' as const, emoji: '🩺', label: 'General intake form' },
+    ];
+    return all
+      .map((t) => ({ ...t, isDefault: t.key === defaultTemplate }))
+      .sort((a, b) => Number(b.isDefault) - Number(a.isDefault));
+  });
   readonly history = signal<PatientHistory | null>(null);
   /** Which template is currently downloading ('dental' | 'general'), or null. */
   readonly downloadingForm = signal<string | null>(null);
@@ -53,6 +67,16 @@ export class Patients {
       },
       error: () => this.historyLoading.set(false),
     });
+  }
+
+  initialsOf(name: string): string {
+    return name
+      .split(' ')
+      .filter(Boolean)
+      .map((part) => part[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase();
   }
 
   editFromHistory(): void {
@@ -119,6 +143,11 @@ export class Patients {
         this.page.set(1);
         this.load();
       });
+
+    // Clinic settings drive which intake template leads in the drawer
+    if (!this.settingsApi.settings()) {
+      this.settingsApi.get().subscribe({ error: () => {} });
+    }
 
     this.load();
   }

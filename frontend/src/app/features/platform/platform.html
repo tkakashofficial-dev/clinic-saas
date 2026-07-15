@@ -35,12 +35,19 @@
   </div>
 </div>
 
-<p class="muted payment-note">
-  💡 Collecting payment: call or WhatsApp the owner (contact below) → they pay by
-  <strong>UPI, bank transfer or cash</strong> → once it lands, set their plan here.
-  Suspend stops sign-in for non-payment; nothing is deleted. Razorpay checkout
-  automates this later.
-</p>
+<div class="payment-note-row">
+  <p class="muted payment-note">
+    💡 Collecting payment: call or WhatsApp the owner (contact below) → they pay by
+    <strong>UPI, bank transfer or cash</strong> → once it lands, set their plan here.
+    Suspend stops sign-in for non-payment; nothing is deleted. Razorpay checkout
+    automates this later.
+  </p>
+  <button type="button" class="btn btn-secondary" (click)="sendTestEmail()"
+          [disabled]="testingEmail()"
+          title="Sends a real email to your platform-admin address — proves production SMTP works">
+    ✉️ {{ testingEmail() ? 'Sending…' : 'Test production email' }}
+  </button>
+</div>
 
 <section class="card">
   @if (loading()) {

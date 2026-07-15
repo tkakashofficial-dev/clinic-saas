@@ -83,6 +83,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/billing/billing').then((m) => m.Billing),
       },
       {
+        path: 'settings',
+        canActivate: [roleGuard],
+        data: { roles: ['Admin'] },
+        loadComponent: () => import('./features/settings/settings').then((m) => m.Settings),
+      },
+      {
         // SaaS owner's back office — hidden for everyone else
         path: 'platform',
         canActivate: [platformGuard],

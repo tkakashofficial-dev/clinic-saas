@@ -7,9 +7,9 @@ public class NoOpEmailSender : IEmailSender
 {
     public List<(string To, string Subject, string Body)> Sent { get; } = new();
 
-    public Task SendAsync(string to, string subject, string htmlBody, CancellationToken cancellationToken = default)
+    public Task<bool> SendAsync(string to, string subject, string htmlBody, CancellationToken cancellationToken = default)
     {
         Sent.Add((to, subject, htmlBody));
-        return Task.CompletedTask;
+        return Task.FromResult(true);
     }
 }

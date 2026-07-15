@@ -34,4 +34,9 @@ public class PlatformController : ControllerBase
     public async Task<ActionResult<PlatformTenantDto>> SetActive(
         Guid id, [FromBody] PlatformSetActiveRequest request, CancellationToken cancellationToken)
         => Ok(await _platformService.SetActiveAsync(id, request, cancellationToken));
+
+    /// <summary>Proves production SMTP works: sends a real mail to the caller.</summary>
+    [HttpPost("test-email")]
+    public async Task<ActionResult<PlatformEmailTestResult>> TestEmail(CancellationToken cancellationToken)
+        => Ok(await _platformService.SendTestEmailAsync(cancellationToken));
 }

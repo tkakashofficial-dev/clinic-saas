@@ -399,6 +399,9 @@ textarea.input { resize: vertical; min-height: 72px; }
 .drawer {
   position: fixed; top: 0; right: 0; bottom: 0;
   width: min(480px, 96vw);
+
+  /* Content-rich drawers (patient record) get more room on desktop */
+  &.drawer-wide { width: min(560px, 96vw); }
   background: var(--color-surface);
   box-shadow: var(--shadow-drawer);
   z-index: 50;

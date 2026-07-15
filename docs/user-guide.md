@@ -62,10 +62,13 @@ One person can hold several roles — a doctor-owner is Admin **and** Doctor.
   template the clinic uses; doctors just print and fill.
 
 ### Running the clinic (Admin)
+- **Settings** — your clinic's letterhead (name, phone, address — printed on every
+  prescription and intake form) and the **default intake template** (dental or
+  general; the team's print button leads with your choice)
 - **Reports** — patients, busiest days, doctor performance; **Download PDF** to print or send to a partner
 - **Staff** — add doctors/receptionists; roles combine (a partner who practices = Admin + Doctor)
 - **Plan & billing** — see usage vs. your plan's limits; upgrade in one click
-- **Multiple clinics?** Click your clinic's name (top of sidebar) → *＋ New clinic* — each clinic is completely separate
+- **Multiple clinics?** Click your clinic's name (top of sidebar) → *＋ New clinic* — each clinic is completely separate (Growth plan)
 
 ### Running the PLATFORM (Klivia owner only)
 Sign in with a platform-admin email (configured on the server) and a

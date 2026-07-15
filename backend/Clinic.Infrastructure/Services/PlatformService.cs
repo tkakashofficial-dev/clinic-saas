@@ -20,15 +20,18 @@ public class PlatformService : IPlatformService
 {
     private readonly ClinicDbContext _context;
     private readonly ICurrentUserService _currentUser;
+    private readonly IEmailSender _emailSender;
     private readonly PlatformSettings _settings;
 
     public PlatformService(
         ClinicDbContext context,
         ICurrentUserService currentUser,
+        IEmailSender emailSender,
         IOptions<PlatformSettings> settings)
     {
         _context = context;
         _currentUser = currentUser;
+        _emailSender = emailSender;
         _settings = settings.Value;
     }
 
@@ -129,6 +132,34 @@ public class PlatformService : IPlatformService
 
         await _context.SaveChangesAsync(cancellationToken);
         return await GetOneAsync(tenantId, cancellationToken);
+    }
+
+    public async Task<PlatformEmailTestResult> SendTestEmailAsync(
+        CancellationToken cancellationToken = default)
+    {
+        EnsurePlatformAdmin();
+        var to = _currentUser.Email!;
+
+        var sent = await _emailSender.SendAsync(
+            to,
+            "Klivia — production email test ✅",
+            EmailTemplates.Branded(
+                "Production email works",
+                $"<p>This test was sent from the live server at " +
+                $"{DateTime.UtcNow:dd MMM yyyy HH:mm} UTC.</p>" +
+                "<p>Welcome mails, staff invites and password resets are using " +
+                "this same pipeline.</p>"),
+            cancellationToken);
+
+        return new PlatformEmailTestResult
+        {
+            Sent = sent,
+            To = to,
+            Detail = sent
+                ? $"Handed to the mail server — check {to} (and its spam folder)."
+                : "Not sent: SMTP is unconfigured or the server rejected it — " +
+                  "check Email__User / Email__Password env vars and the server logs."
+        };
     }
 
     /// <summary>Platform access = configured emails only. Roles don't apply here:

@@ -97,12 +97,16 @@ demand. Phased plan:
   clinical sections stay blank for the doctor's pen — the paper→digital
   bridge clinics actually adopt. Human patient numbers (P-000123, per-clinic
   sequence) shipped with it.
-- **v2 (partially SHIPPED 2026-07-14)**: two seeded template designs available
+- **v2 (SHIPPED 2026-07-14)**: two seeded template designs available
   to every clinic — **dental** (oral health, ortho, intra/extra oral exam) and
   **general** (vitals strip, general + systemic examination). Picked per print
-  from the patient history drawer (`?template=` on the API). Editing rights:
-  clinic ADMIN manages templates, doctors use them. Still to come: per-clinic
-  default template, toggleable sections, clinic logo, Malayalam consent text.
+  from the patient record drawer (`?template=` on the API), and the clinic's
+  **default template** is chosen by the Admin in **Settings** (template picker
+  cards; stored as `Tenant.DefaultIntakeTemplate`; the default leads with a ★
+  in the drawer). Settings is also the clinic's LETTERHEAD: name/phone/address
+  printed on every prescription and intake form. Editing rights: clinic ADMIN
+  manages templates, doctors use them. Still to come: toggleable sections,
+  clinic logo, Malayalam consent text.
 - **v3**: full form BUILDER — custom fields, digital filling on tablet,
   versioned templates, stored submissions. Sellable add-on (eka.care charges
   ₹9,999/yr for exactly this).
