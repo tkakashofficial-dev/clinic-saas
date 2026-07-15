@@ -183,7 +183,7 @@ export class Invoices {
 
   openCreate(): void {
     this.selectedPatient.set(null);
-    this.patientResults.set([]);
+    this.loadRecentPatients();   // dropdown works without remembering names
     this.draftItems = [this.blankItem()];
     this.draftDiscount = null;
     this.draftNotes = '';
@@ -193,8 +193,18 @@ export class Invoices {
     this.createOpen.set(true);
   }
 
+  /** Empty field shows the most recent patients; typing filters everyone. */
+  private loadRecentPatients(): void {
+    this.patientsApi.getAll('', 1, 8).subscribe({
+      next: (result) => this.patientResults.set(result.items),
+      error: () => {},
+    });
+  }
+
   searchPatients(term: string): void {
-    if (term.trim().length >= 2) this.patientSearch$.next(term.trim());
+    const trimmed = term.trim();
+    if (trimmed.length >= 2) this.patientSearch$.next(trimmed);
+    else if (trimmed.length === 0) this.loadRecentPatients();
   }
 
   addItem(): void {

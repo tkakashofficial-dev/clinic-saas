@@ -69,14 +69,14 @@
     <div class="table-wrap">
       <table class="table">
         <thead>
+          <!-- Slim on purpose: staff/patient counts, email and address live in
+               the detail drawer — the table must fit a laptop without scroll -->
           <tr>
             <th>Clinic</th>
-            <th>Owner / contact</th>
+            <th>Contact</th>
             <th>Plan</th>
             <th>Subscription</th>
             <th>Status</th>
-            <th>Staff</th>
-            <th>Patients</th>
             <th style="text-align:right"></th>
           </tr>
         </thead>
@@ -99,13 +99,11 @@
                         📞 {{ tenant.clinicPhone }}
                       </a>
                       <a class="contact-line wa" [href]="waLink(tenant.clinicPhone)" target="_blank"
-                         rel="noopener" title="WhatsApp them">💬 WhatsApp</a>
+                         rel="noopener" title="WhatsApp them">💬</a>
                     </span>
+                  } @else if (!tenant.ownerName) {
+                    <span class="muted">—</span>
                   }
-                  @if (tenant.ownerEmail) {
-                    <a class="contact-line" href="mailto:{{ tenant.ownerEmail }}">✉️ {{ tenant.ownerEmail }}</a>
-                  }
-                  @if (!tenant.ownerEmail && !tenant.clinicPhone) { <span class="muted">—</span> }
                 </div>
               </td>
               <td>
@@ -159,8 +157,6 @@
                   {{ tenant.isActive ? 'Active' : 'Suspended' }}
                 </span>
               </td>
-              <td>{{ tenant.staffCount }}</td>
-              <td>{{ tenant.patientCount }}</td>
               <td style="text-align:right; white-space:nowrap;">
                 <button type="button" class="btn btn-ghost"
                         [disabled]="busy() === tenant.tenantId"

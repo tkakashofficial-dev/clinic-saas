@@ -220,7 +220,7 @@ export class Appointments {
   openBook(): void {
     this.bookForm.reset({ doctorTenantUserId: '', date: this.date() || todayIso(), time: '09:00', notes: '' });
     this.selectedPatient.set(null);
-    this.patientResults.set([]);
+    this.loadRecentPatients();   // dropdown works without remembering names
     this.formError.set('');
     this.bookOpen.set(true);
 
@@ -234,8 +234,17 @@ export class Appointments {
     }
   }
 
+  /** Empty field shows the most recent patients; typing filters everyone. */
+  private loadRecentPatients(): void {
+    this.patientsApi.getAll('', 1, 8).subscribe({
+      next: (result) => this.patientResults.set(result.items),
+      error: () => {},
+    });
+  }
+
   searchPatients(term: string): void {
-    this.patientSearch$.next(term);
+    if (term.trim().length === 0) this.loadRecentPatients();
+    else this.patientSearch$.next(term);
   }
 
   pickPatient(patient: PatientDto): void {
