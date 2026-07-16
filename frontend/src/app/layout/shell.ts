@@ -6,6 +6,7 @@ import { parseApiError } from '../core/api/api-error';
 import { BillingService } from '../core/api/billing.service';
 import { NotificationsService } from '../core/api/notifications.service';
 import { AuthService } from '../core/auth/auth.service';
+import { PwaInstallService } from '../core/pwa-install.service';
 import { NotificationDto, Role } from '../core/models/api.models';
 import { NEW_CLINIC_HINT, OnboardingTour } from '../shared/ui/onboarding-tour';
 import { ProvisioningOverlay } from '../shared/ui/provisioning-overlay';
@@ -45,6 +46,7 @@ export class Shell {
   readonly auth = inject(AuthService);
   readonly notifications = inject(NotificationsService);
   readonly billing = inject(BillingService);
+  readonly pwa = inject(PwaInstallService);
   private readonly router = inject(Router);
 
   readonly navItems = computed(() => {
@@ -215,6 +217,23 @@ export class Shell {
 
   toggleProfile(): void {
     this.profileOpen.update((open) => !open);
+  }
+
+  // ---- PWA install ----
+  /** Manual instructions for browsers without a prompt API (iOS Safari…). */
+  readonly installHelpOpen = signal(false);
+
+  installApp(): void {
+    this.profileOpen.set(false);
+    this.moreOpen.set(false);
+
+    // Chrome/Edge handed us a real prompt — show it right now.
+    // Otherwise (iOS, Firefox, or Chrome not ready yet) show the steps.
+    if (this.pwa.canInstall()) {
+      void this.pwa.promptInstall();
+    } else {
+      this.installHelpOpen.set(true);
+    }
   }
 
   replayTour(): void {

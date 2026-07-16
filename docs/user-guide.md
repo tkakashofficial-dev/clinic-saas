@@ -143,10 +143,29 @@ changed).
 
 ## 5. On your phone 📱
 
-Klivia is a **PWA** — in Chrome on Android: menu → **Add to Home screen /
-Install app**. It opens full-screen with the Klivia icon, and the bottom tab
-bar (Dashboard · Patients · Appointments · Inventory · More) is built for
-thumbs. After app updates, one extra refresh picks up the newest version.
+Klivia is a **PWA (Progressive Web App)** — it installs from the browser like
+a real app, no Play Store or App Store needed. Once installed it opens
+full-screen from its own Klivia icon, loads instantly, and the bottom tab bar
+(Dashboard · Patients · Appointments · Invoices · More) is built for thumbs.
+
+**The easy way — the built-in Install button.** Sign in, then:
+
+- **On a phone:** tap **More** (bottom-right) → **Install Klivia on this
+  phone** → confirm.
+- **On a computer:** click your **avatar** (top-right) → **Install Klivia
+  app**.
+
+Chrome and Edge show the install prompt immediately. If your browser can't
+prompt (iPhone Safari, Firefox), the button shows you the exact steps instead:
+
+- **iPhone / iPad (Safari):** tap **Share** (the square with an arrow) →
+  **Add to Home Screen** → **Add**.
+- **Android (Chrome):** ⋮ menu → **Add to Home screen / Install app**.
+- **Desktop (Chrome/Edge):** click the small **install icon** at the right
+  end of the address bar.
+
+The button disappears once the app is installed. After app updates, one extra
+refresh picks up the newest version.
 
 ## 6. Plans — what's included where
 

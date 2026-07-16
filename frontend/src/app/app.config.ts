@@ -1,4 +1,10 @@
-import { ApplicationConfig, isDevMode, provideBrowserGlobalErrorListeners } from '@angular/core';
+import {
+  ApplicationConfig,
+  inject,
+  isDevMode,
+  provideAppInitializer,
+  provideBrowserGlobalErrorListeners,
+} from '@angular/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { PreloadAllModules, provideRouter, withPreloading, withViewTransitions } from '@angular/router';
 import { provideServiceWorker } from '@angular/service-worker';
@@ -6,6 +12,7 @@ import { provideServiceWorker } from '@angular/service-worker';
 import { routes } from './app.routes';
 import { loadingInterceptor } from './core/api/loading.service';
 import { authInterceptor } from './core/auth/auth.interceptor';
+import { PwaInstallService } from './core/pwa-install.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -24,6 +31,11 @@ export const appConfig: ApplicationConfig = {
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000',
+    }),
+    // Chrome fires beforeinstallprompt very early — the listener must
+    // exist at bootstrap or the "Install app" button never activates
+    provideAppInitializer(() => {
+      inject(PwaInstallService);
     }),
   ],
 };

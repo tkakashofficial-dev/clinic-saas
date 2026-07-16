@@ -50,8 +50,8 @@ export class Landing {
     },
     {
       icon: 'device',
-      title: 'Works on anything',
-      text: 'Laptop at reception, tablet in the consult room, phone on the go - one calm interface everywhere.',
+      title: 'Installs like an app',
+      text: 'Laptop, tablet or phone - one calm interface everywhere. Add Klivia to your home screen and it opens full-screen from its own icon, no app store needed.',
     },
   ];
 
@@ -77,6 +77,10 @@ export class Landing {
     {
       q: 'The owner of our clinic is not a doctor. Does that work?',
       a: 'Absolutely. Ownership and being a doctor are separate things here. An owner manages the clinic; only people with the Doctor role appear in the booking list. Partners? Add as many owners as you need.',
+    },
+    {
+      q: 'Is there a mobile app?',
+      a: 'Yes - Klivia installs straight from your browser, no app store needed. Open klivia.vercel.app on your phone, tap "Install Klivia" from the menu, and it appears on your home screen like a regular app: its own icon, full-screen, and fast.',
     },
     {
       q: 'Can we move from paper or another software?',

@@ -152,6 +152,12 @@
                 Replay the tour
               </button>
             }
+            @if (!pwa.isInstalled()) {
+              <button type="button" class="profile-item install" (click)="installApp()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Install Klivia app
+              </button>
+            }
             <button type="button" class="profile-item danger" (click)="logout()">
               Sign out
             </button>
@@ -255,6 +261,48 @@
         </button>
       }
     }
+
+    @if (!pwa.isInstalled()) {
+      <div class="sheet-divider">App</div>
+      <button type="button" class="sheet-item accent" (click)="installApp()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Install Klivia on this phone
+      </button>
+    }
+  </div>
+}
+
+<!-- ============ PWA install instructions (iOS & browsers without a prompt) ============ -->
+@if (installHelpOpen()) {
+  <div class="modal-backdrop" (click)="installHelpOpen.set(false)"></div>
+  <div class="modal-card" role="dialog" aria-label="Install Klivia">
+    <div class="modal-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg>
+    </div>
+    <h3>Install Klivia on this device</h3>
+    <p class="modal-sub">Get a home-screen icon, full-screen view and instant loading — no app store needed.</p>
+
+    @if (pwa.isIos) {
+      <ol class="install-steps">
+        <li>Open Klivia in <strong>Safari</strong></li>
+        <li>Tap the <strong>Share</strong> button
+          <svg class="inline-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          (bottom of the screen)</li>
+        <li>Scroll down and tap <strong>Add to Home Screen</strong></li>
+        <li>Tap <strong>Add</strong> — Klivia appears like a regular app</li>
+      </ol>
+    } @else {
+      <ol class="install-steps">
+        <li>Open Klivia in <strong>Chrome</strong> or <strong>Edge</strong></li>
+        <li>On a phone: tap the <strong>⋮ menu</strong> → <strong>Add to Home screen</strong> / <strong>Install app</strong></li>
+        <li>On a computer: click the <strong>install icon</strong> at the right end of the address bar</li>
+        <li>Confirm — Klivia opens in its own window from now on</li>
+      </ol>
+    }
+
+    <button type="button" class="btn btn-primary" style="width:100%" (click)="installHelpOpen.set(false)">
+      Got it
+    </button>
   </div>
 }
 
