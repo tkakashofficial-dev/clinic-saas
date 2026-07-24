@@ -1,6 +1,30 @@
 # Klivia UI audit — findings backlog
 
-Recovered from the 89-agent audit (run wf_8d8adaf3). 3 criticals already fixed in 53cf6b1. This file is the working list for the remaining polish fixes.
+Recovered from the 89-agent audit (run wf_8d8adaf3). This file is the working list for the polish fixes.
+
+## Progress
+
+**3 criticals — FIXED (53cf6b1):** wrong-patient record race · payment 500 · multi-clinic refresh.
+
+**Batches 1–6 — FIXED (8e21f16, e5f8a4c, bbbaf72, 9502bb6, 3d7a5af + a11y):**
+- Globals: en-IN locale (₹ grouping + "Rs"→"₹"), scroll restoration, SW new-version toast, viewport-fit=cover, og:image, Google-fonts caching, `.chip-danger`, `.sr-only`, mobile 40px tap targets, drawer overscroll containment.
+- Silent failures surfaced with retry: appointments (+ status-change errors, cancel confirm, IST "today" bug), reports (blank→error), staff (errors out of the green banner + resend busy state), inventory (drawer closes on delete, error clears, min-0 price), forgot-password (no false "check inbox" on network error), patients (error state gated).
+- Overlays: invoice last-page clamp, fill-drawer template re-filter (data correctness), Escape closes overlays.
+- Mobile: invoice item-row collapses, More-sheet scrolls, topbar shrink guards, line-fill/note-row wrap.
+- Auth/forms: password pattern validators, Enter-to-continue on register, `type=tel` phone, cross-tab session sync, logout clears cached tenant state + stops polling, iOS-safe PDF download.
+- a11y: keyboard-reachable password toggle.
+
+**DEFERRED to a focused next-session batch (higher effort / lower visible risk):**
+- In-table menu + calendar-pop + custom-select + inventory-adjust popover clipping (needs position:fixed + getBoundingClientRect per component).
+- Android hardware-back closes overlays (history.pushState integration).
+- Full body scroll-lock while overlays open (partial: overscroll-behavior done).
+- reset-password / accept-invite: confirm-password feedback + expired-link "request new link" CTA.
+- Remaining ARIA: aria-pressed on all filter chips, aria-live on every alert, label associations on custom controls, segmented/select roving-tabindex + arrow keys, notification unread sr-only marker.
+- switchClinic error handler; forms.ts error-clear; legal page email (left as-is: taveperz@ was explicitly authorized as public contact).
+
+The per-file list below is the full original backlog for reference.
+
+---
 
 
 ## frontend/src/app/features/appointments/appointments.ts (7)
