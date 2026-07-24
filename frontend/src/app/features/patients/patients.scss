@@ -327,10 +327,14 @@ a.profile-value:hover { color: var(--color-primary-700); }
 
 .line-fill {
   display: grid;
-  grid-template-columns: 130px 1fr;
+  grid-template-columns: minmax(90px, 130px) minmax(0, 1fr);
   gap: 10px;
   align-items: center;
   margin-bottom: 8px;
 
   .line-label { font-size: 13px; color: var(--color-text-muted); }
+  .input { min-width: 0; }
+
+  /* Very narrow phones: stack label over input rather than crush both */
+  @media (max-width: 380px) { grid-template-columns: 1fr; gap: 4px; }
 }

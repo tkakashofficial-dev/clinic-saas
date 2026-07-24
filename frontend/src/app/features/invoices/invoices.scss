@@ -75,12 +75,22 @@
   align-items: center;
   margin-bottom: 8px;
 
+  /* Without this the description input keeps its ~170px intrinsic width and
+     the fixed qty/rate/total columns overflow a phone-width drawer */
+  .input { min-width: 0; }
+
   .qty, .rate { text-align: right; }
   .line-total {
     font-size: 13px;
     font-weight: 700;
     text-align: right;
     font-variant-numeric: tabular-nums;
+  }
+
+  /* Phones: description spans the full first row, controls sit under it */
+  @media (max-width: 560px) {
+    grid-template-columns: 64px 1fr 76px auto;
+    .input:first-child { grid-column: 1 / -1; }
   }
 }
 

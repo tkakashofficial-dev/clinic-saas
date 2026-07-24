@@ -46,6 +46,7 @@
   align-items: flex-start;
   gap: 14px;
   margin-bottom: 16px;
+  flex-wrap: wrap;   /* button drops to its own line instead of crushing the note on 320px */
 
   .btn { flex: none; white-space: nowrap; }
 }

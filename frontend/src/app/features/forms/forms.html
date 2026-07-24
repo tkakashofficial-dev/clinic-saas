@@ -158,7 +158,7 @@
 
       <div class="field">
         <label>Appears on</label>
-        <div style="display:flex; gap:8px;">
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button type="button" class="filter-chip" [class.active]="newTemplate === 'both'"
                   (click)="newTemplate = 'both'">Both templates</button>
           <button type="button" class="filter-chip" [class.active]="newTemplate === 'dental'"

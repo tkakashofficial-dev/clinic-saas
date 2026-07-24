@@ -294,12 +294,16 @@
   background: var(--color-primary-100);
   border-radius: 999px;
   padding: 5px 14px;
+  /* Only the clinic name (ellipsised) absorbs shrink — the chip stays whole */
+  white-space: nowrap;
+  flex: none;
 
   &:hover { background: var(--color-primary-200); text-decoration: none; }
 }
 
 .topbar-icon {
   position: relative;
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -329,7 +333,7 @@
 }
 
 /* Profile menu (top-right) */
-.profile { position: relative; }
+.profile { position: relative; flex: none; }
 
 .profile-trigger {
   border: none;
@@ -542,6 +546,11 @@
   padding: 8px 14px calc(16px + env(safe-area-inset-bottom));
   box-shadow: 0 -12px 40px rgb(12 43 35 / .2);
   animation: sheetUp .22s cubic-bezier(.25, .8, .35, 1);
+  /* On short phones the full nav + clinic list overflowed off the top with
+     no way to reach it — cap the height and scroll inside */
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 @keyframes sheetUp { from { transform: translateY(40px); opacity: 0; } }
 
