@@ -79,6 +79,7 @@ export class Forms {
   }
 
   load(): void {
+    this.error.set('');   // otherwise a past failure lingers forever
     this.api.getSections().subscribe({
       next: (sections) => {
         this.sections.set(sections);
@@ -97,14 +98,23 @@ export class Forms {
 
   preview(template: IntakeTemplate): void {
     this.previewing.set(template);
+    this.error.set('');
     this.api.preview(template).subscribe({
       next: (blob) => {
+        // Anchor-download, not window.open — iOS Safari blocks popups opened
+        // from an async callback, so the preview never appeared on iPhone
         const url = URL.createObjectURL(blob);
-        window.open(url, '_blank');
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `intake-${template}-preview.pdf`;
+        link.click();
         setTimeout(() => URL.revokeObjectURL(url), 60_000);
         this.previewing.set(null);
       },
-      error: () => this.previewing.set(null),
+      error: (err) => {
+        this.error.set(parseApiError(err).message);
+        this.previewing.set(null);
+      },
     });
   }
 
@@ -112,6 +122,7 @@ export class Forms {
     const settings = this.settingsApi.settings();
     if (!settings || settings.defaultIntakeTemplate === template) return;
 
+    this.error.set('');
     this.settingDefault.set(true);
     this.settingsApi.update({ ...settings, defaultIntakeTemplate: template }).subscribe({
       next: () => {
@@ -163,6 +174,7 @@ export class Forms {
   }
 
   move(section: IntakeFormSection, direction: 1 | -1): void {
+    this.error.set('');
     this.api.moveSection(section.id, direction).subscribe({
       next: (sections) => this.sections.set(sections),
       error: (err) => this.error.set(parseApiError(err).message),
@@ -171,6 +183,7 @@ export class Forms {
 
   remove(section: IntakeFormSection): void {
     if (!confirm(`Remove "${section.title}" from your form?`)) return;
+    this.error.set('');
     this.api.deleteSection(section.id).subscribe({
       next: () => {
         this.notice.set(`"${section.title}" removed.`);

@@ -40,14 +40,18 @@
                                 autocomplete="new-password"
                                 [invalid]="form.controls.password.invalid && form.controls.password.touched" />
             @if (form.controls.password.invalid && form.controls.password.touched) {
-              <span class="field-error">At least 8 characters.</span>
+              <span class="field-error">At least 8 characters, with a letter and a digit.</span>
             }
           </div>
 
           <div class="field">
             <label for="ai-confirm">Confirm password</label>
             <app-password-input inputId="ai-confirm" formControlName="confirm"
-                                placeholder="Same password again" autocomplete="new-password" />
+                                placeholder="Same password again" autocomplete="new-password"
+                                [invalid]="mismatch()" />
+            @if (mismatch()) {
+              <span class="field-error">Passwords do not match.</span>
+            }
           </div>
 
           <button type="submit" class="btn btn-primary" [disabled]="saving()">

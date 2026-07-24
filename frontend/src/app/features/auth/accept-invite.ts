@@ -39,9 +39,16 @@ export class AcceptInvite {
   readonly error = signal('');
 
   readonly form = this.fb.nonNullable.group({
-    password: ['', [Validators.required, Validators.minLength(8)]],
+    password: ['', [Validators.required, Validators.minLength(8),
+      Validators.pattern(/^(?=.*[A-Za-z])(?=.*[0-9]).*$/)]],
     confirm: ['', Validators.required],
   });
+
+  /** Show mismatch only after the user has typed a confirm value. */
+  mismatch(): boolean {
+    const { password, confirm } = this.form.getRawValue();
+    return !!confirm && this.form.controls.confirm.touched && password !== confirm;
+  }
 
   constructor() {
     if (!this.token) {

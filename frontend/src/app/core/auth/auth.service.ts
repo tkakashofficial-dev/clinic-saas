@@ -54,16 +54,13 @@ export class AuthService {
     return this.roles().some((role) => allowed.includes(role));
   }
 
-  /** Re-scopes the session to another clinic, then fully reloads the app. */
-  switchClinic(tenantId: string): void {
-    this.http
+  /** Re-scopes the session to another clinic. Callers reload the app on
+   *  success and reset their own spinner on error (previously this swallowed
+   *  failures, leaving the Clinics-page spinner stuck forever). */
+  switchClinic(tenantId: string): Observable<AuthResponse> {
+    return this.http
       .post<AuthResponse>(`${environment.apiUrl}/auth/switch-clinic`, { tenantId })
-      .subscribe({
-        next: (response) => {
-          this.storeSession(response);
-          location.assign('/'); // full reload: every screen refetches for the new clinic
-        },
-      });
+      .pipe(tap((response) => this.storeSession(response)));
   }
 
   /** Opens an additional clinic (caller becomes its Admin) and lands in it. */

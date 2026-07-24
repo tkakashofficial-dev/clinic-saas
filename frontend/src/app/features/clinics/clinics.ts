@@ -57,7 +57,14 @@ export class Clinics {
   switchTo(tenantId: string): void {
     if (tenantId === this.auth.currentTenantId()) return;
     this.switchingTo.set(tenantId);
-    this.auth.switchClinic(tenantId); // full reload on success
+    this.error.set('');
+    this.auth.switchClinic(tenantId).subscribe({
+      next: () => location.assign('/'), // full reload: every screen refetches
+      error: (err) => {
+        this.switchingTo.set(null);   // was stuck on the spinner before
+        this.error.set(parseApiError(err).message);
+      },
+    });
   }
 
   openCreate(): void {

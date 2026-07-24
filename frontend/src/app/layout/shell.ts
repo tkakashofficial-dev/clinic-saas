@@ -144,8 +144,12 @@ export class Shell {
 
   switchTo(tenantId: string): void {
     this.switcherOpen.set(false);
+    this.moreOpen.set(false);
     if (tenantId !== this.auth.currentTenantId()) {
-      this.auth.switchClinic(tenantId);
+      this.auth.switchClinic(tenantId).subscribe({
+        next: () => location.assign('/'),   // full reload into the new clinic
+        error: () => {},                    // switcher stays open; the user can retry
+      });
     }
   }
 
