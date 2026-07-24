@@ -58,6 +58,10 @@ export class Appointments {
   // ---- list state ----
   readonly loading = signal(true);
   readonly result = signal<PagedResult<AppointmentDto> | null>(null);
+  /** Page-level failures (list load, status change) — shown, never silent. */
+  readonly error = signal('');
+  /** Row whose status action is in flight — disables its buttons. */
+  readonly busy = signal<string | null>(null);
   readonly date = signal(todayIso());
   /** Branded calendar popover on the day navigator. */
   readonly calOpen = signal(false);
@@ -177,6 +181,7 @@ export class Appointments {
 
   load(): void {
     this.loading.set(true);
+    this.error.set('');
     this.api
       .getAll({
         date: this.date() || undefined,
@@ -192,7 +197,10 @@ export class Appointments {
           this.result.set(result);
           this.loading.set(false);
         },
-        error: () => this.loading.set(false),
+        error: (err) => {
+          this.error.set(parseApiError(err).message);
+          this.loading.set(false);
+        },
       });
   }
 
@@ -204,9 +212,9 @@ export class Appointments {
 
   /** Day navigator: ‹ yesterday · today · tomorrow › */
   shiftDate(days: number): void {
-    const current = this.date() ? new Date(this.date()) : new Date();
+    const current = this.date() ? new Date(this.date() + 'T00:00:00') : new Date();
     current.setDate(current.getDate() + days);
-    this.setDate(current.toISOString().split('T')[0]);
+    this.setDate(localIso(current));
   }
 
   goToday(): void {
@@ -234,8 +242,26 @@ export class Appointments {
     this.load();
   }
 
+  /** Cancel is destructive — confirm first, like every other destructive action. */
+  confirmCancel(appointment: AppointmentDto): void {
+    if (!confirm(`Cancel ${appointment.patientName}'s appointment?`)) return;
+    this.updateStatus(appointment, 'Cancelled');
+  }
+
   updateStatus(appointment: AppointmentDto, status: string): void {
-    this.api.updateStatus(appointment.id, status).subscribe({ next: () => this.load() });
+    this.busy.set(appointment.id);
+    this.error.set('');
+    this.api.updateStatus(appointment.id, status).subscribe({
+      next: () => {
+        this.busy.set(null);
+        this.load();
+      },
+      // Was silent: a failed check-in/cancel looked like nothing happened
+      error: (err) => {
+        this.busy.set(null);
+        this.error.set(parseApiError(err).message);
+      },
+    });
   }
 
   // ---------- booking ----------
@@ -428,6 +454,12 @@ export class Appointments {
   }
 }
 
+/** LOCAL calendar date as yyyy-MM-dd. toISOString() is UTC, so before
+ *  5:30 AM IST it returned yesterday and booked the wrong day. */
 function todayIso(): string {
-  return new Date().toISOString().split('T')[0];
+  return localIso(new Date());
+}
+
+function localIso(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }

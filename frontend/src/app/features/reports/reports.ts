@@ -1,5 +1,6 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
+import { parseApiError } from '../../core/api/api-error';
 import { InvoicesService } from '../../core/api/invoices.service';
 import { ReportsService } from '../../core/api/reports.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -19,6 +20,8 @@ export class Reports {
   readonly loading = signal(true);
   readonly overview = signal<PracticeOverview | null>(null);
   readonly downloading = signal(false);
+  /** Overview-load failure — without it the page renders blank on error. */
+  readonly error = signal('');
 
   // ---- collections: who owes money ----
   readonly dues = signal<DuesReport | null>(null);
@@ -35,7 +38,10 @@ export class Reports {
         this.overview.set(overview);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: (err) => {
+        this.error.set(parseApiError(err).message + ' Refresh the page to retry.');
+        this.loading.set(false);
+      },
     });
 
     this.invoicesApi.getDues().subscribe({

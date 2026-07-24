@@ -17,6 +17,10 @@ export class Staff {
 
   readonly loading = signal(true);
   readonly staff = signal<StaffDto[]>([]);
+  /** Page-level failures (load, resend) — shown red, never in the green banner. */
+  readonly error = signal('');
+  /** Member id whose invite is currently resending — blocks double-sends. */
+  readonly resendingId = signal<string | null>(null);
 
   readonly drawerOpen = signal(false);
   readonly saving = signal(false);
@@ -69,12 +73,16 @@ export class Staff {
 
   load(): void {
     this.loading.set(true);
+    this.error.set('');
     this.api.getAll().subscribe({
       next: (result) => {
         this.staff.set(result.items);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: (err) => {
+        this.error.set(parseApiError(err).message);
+        this.loading.set(false);
+      },
     });
   }
 
@@ -135,10 +143,18 @@ export class Staff {
   }
 
   resendInvite(member: StaffDto): void {
+    if (this.resendingId()) return;   // one send at a time — each fires an email
+    this.resendingId.set(member.id);
+    this.error.set('');
     this.api.resendInvite(member.id).subscribe({
-      next: () => this.notice.set(
-        `A fresh invite (valid 7 days) was emailed to ${member.email}.`),
-      error: (err) => this.notice.set(parseApiError(err).message),
+      next: () => {
+        this.resendingId.set(null);
+        this.notice.set(`A fresh invite (valid 7 days) was emailed to ${member.email}.`);
+      },
+      error: (err) => {
+        this.resendingId.set(null);
+        this.error.set(parseApiError(err).message);   // red banner, not the green one
+      },
     });
   }
 

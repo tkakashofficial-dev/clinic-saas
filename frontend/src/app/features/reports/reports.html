@@ -11,6 +11,8 @@
 
 @if (loading()) {
   <div class="card"><div class="skeleton-row"></div><div class="skeleton-row"></div><div class="skeleton-row"></div></div>
+} @else if (error()) {
+  <div class="alert-error" role="alert">{{ error() }}</div>
 } @else if (overview(); as data) {
 
   <div class="report-stats">

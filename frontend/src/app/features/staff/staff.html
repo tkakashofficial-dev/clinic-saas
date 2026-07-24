@@ -15,6 +15,12 @@
     <button type="button" class="btn btn-ghost" style="padding:2px 8px;" (click)="notice.set('')" aria-label="Dismiss">✕</button>
   </div>
 }
+@if (error()) {
+  <div class="alert-error" role="alert" style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
+    <span>{{ error() }}</span>
+    <button type="button" class="btn btn-ghost" style="padding:2px 8px;" (click)="error.set('')" aria-label="Dismiss">✕</button>
+  </div>
+}
 
 <section class="card">
   @if (loading()) {
@@ -57,8 +63,9 @@
               <td class="muted">{{ member.createdAt | date: 'd MMM y' }}</td>
               <td style="text-align:right">
                 <button type="button" class="btn btn-ghost" (click)="resendInvite(member)"
+                        [disabled]="resendingId() === member.id"
                         title="Email a fresh set-your-password link (valid 7 days)">
-                  Resend invite
+                  {{ resendingId() === member.id ? 'Sending…' : 'Resend invite' }}
                 </button>
               </td>
             </tr>

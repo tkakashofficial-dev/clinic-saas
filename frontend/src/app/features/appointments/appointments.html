@@ -11,6 +11,13 @@
   }
 </header>
 
+@if (error()) {
+  <div class="alert-error" role="alert" style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
+    <span>{{ error() }}</span>
+    <button type="button" class="btn btn-ghost" style="padding:2px 8px;" (click)="error.set('')" aria-label="Dismiss">✕</button>
+  </div>
+}
+
 <div class="toolbar">
   <div class="date-nav">
     <button type="button" class="date-arrow" (click)="shiftDate(-1)" aria-label="Previous day">
@@ -101,20 +108,20 @@
                   }
                   <!-- Front desk: patient has arrived -->
                   @if (canManage()) {
-                    <button type="button" class="btn btn-ghost" (click)="updateStatus(a, 'CheckedIn')">Check in</button>
+                    <button type="button" class="btn btn-ghost" [disabled]="busy() === a.id" (click)="updateStatus(a, 'CheckedIn')">Check in</button>
                   }
                   @if (canConsult()) {
                     <button type="button" class="btn btn-ghost" (click)="openRecord(a)">Consult</button>
                   }
-                  <button type="button" class="btn btn-danger-ghost" (click)="updateStatus(a, 'Cancelled')">Cancel</button>
+                  <button type="button" class="btn btn-danger-ghost" [disabled]="busy() === a.id" (click)="confirmCancel(a)">Cancel</button>
                 } @else if (a.status === 'CheckedIn') {
                   <!-- Patient is in the waiting room -->
                   @if (canConsult()) {
-                    <button type="button" class="btn btn-ghost" (click)="updateStatus(a, 'InProgress')">Start</button>
+                    <button type="button" class="btn btn-ghost" [disabled]="busy() === a.id" (click)="updateStatus(a, 'InProgress')">Start</button>
                     <button type="button" class="btn btn-ghost" (click)="openRecord(a)">Consult</button>
                   }
                   @if (canManage()) {
-                    <button type="button" class="btn btn-danger-ghost" (click)="updateStatus(a, 'Cancelled')">Cancel</button>
+                    <button type="button" class="btn btn-danger-ghost" [disabled]="busy() === a.id" (click)="confirmCancel(a)">Cancel</button>
                   }
                 } @else if (a.status === 'InProgress') {
                   @if (canConsult()) {

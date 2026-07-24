@@ -52,7 +52,7 @@ export class Inventory {
     unit: ['strip', [Validators.required, Validators.maxLength(30)]],
     stockQuantity: [0, [Validators.required, Validators.min(0)]],
     reorderLevel: [5, [Validators.required, Validators.min(0)]],
-    unitPriceRupees: [null as number | null],
+    unitPriceRupees: [null as number | null, Validators.min(0)],
     expiryDate: [null as string | null],
   });
 
@@ -71,6 +71,7 @@ export class Inventory {
   }
 
   load(): void {
+    this.error.set('');
     this.api.getAll(this.searchTerm.trim() || undefined).subscribe({
       next: (items) => {
         this.items.set(items);
@@ -152,6 +153,10 @@ export class Inventory {
     if (!confirm(`Remove "${item.name}" from inventory?`)) return;
     this.api.delete(item.id).subscribe({
       next: () => {
+        // Close the drawer — the Remove button lives in it, and a stale
+        // drawer would let "Save changes" hit a now-deleted record
+        this.drawerOpen.set(false);
+        this.editing.set(null);
         this.notice.set(`${item.name} removed.`);
         this.load();
       },
