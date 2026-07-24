@@ -7,6 +7,7 @@ import { BillingService } from '../core/api/billing.service';
 import { NotificationsService } from '../core/api/notifications.service';
 import { AuthService } from '../core/auth/auth.service';
 import { PwaInstallService } from '../core/pwa-install.service';
+import { PwaUpdateService } from '../core/pwa-update.service';
 import { NotificationDto, Role } from '../core/models/api.models';
 import { NEW_CLINIC_HINT, OnboardingTour } from '../shared/ui/onboarding-tour';
 import { ProvisioningOverlay } from '../shared/ui/provisioning-overlay';
@@ -47,6 +48,7 @@ export class Shell {
   readonly notifications = inject(NotificationsService);
   readonly billing = inject(BillingService);
   readonly pwa = inject(PwaInstallService);
+  readonly pwaUpdate = inject(PwaUpdateService);
   private readonly router = inject(Router);
 
   readonly navItems = computed(() => {

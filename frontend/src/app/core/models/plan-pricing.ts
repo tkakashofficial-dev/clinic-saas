@@ -71,7 +71,7 @@ export const PLAN_PRICING: PlanPricing[] = [
 ];
 
 export function formatInr(amount: number): string {
-  return `Rs ${amount.toLocaleString('en-IN')}`;
+  return `₹${amount.toLocaleString('en-IN')}`;
 }
 
 /** What a yearly subscriber effectively pays per month (the "save" hook). */

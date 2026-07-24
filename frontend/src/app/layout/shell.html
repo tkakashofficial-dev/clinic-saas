@@ -399,6 +399,14 @@
   </aside>
 }
 
+<!-- ============ New-version toast ============ -->
+@if (pwaUpdate.updateReady()) {
+  <div class="update-toast" role="status">
+    <span>A new version of Klivia is ready.</span>
+    <button type="button" class="btn btn-primary" (click)="pwaUpdate.reload()">Refresh</button>
+  </div>
+}
+
 <!-- ============ Clinic provisioning experience ============ -->
 @if (provisioningClinic(); as name) {
   <app-provisioning-overlay [clinicName]="name" />

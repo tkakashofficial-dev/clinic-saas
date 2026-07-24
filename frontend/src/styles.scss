@@ -58,6 +58,17 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
+/* Screen-reader-only text — announces state (unread, etc.) without visual noise */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 html, body { height: 100%; }
 
 html {
@@ -368,6 +379,8 @@ textarea.input { resize: vertical; min-height: 72px; }
 .chip-inprogress { color: var(--status-inprogress); background: rgb(217 119 6 / .10); }
 .chip-completed  { color: var(--status-completed);  background: rgb(22 163 74 / .10); }
 .chip-cancelled  { color: var(--status-cancelled);  background: rgb(148 163 184 / .14); }
+/* Genuine warnings (low stock, overdue) — red, not the grey "cancelled" chip */
+.chip-danger     { color: var(--color-error);       background: rgb(220 38 38 / .10); }
 
 /* Filter chips (clickable) */
 .filter-chip {
@@ -387,6 +400,9 @@ textarea.input { resize: vertical; min-height: 72px; }
     border-color: var(--color-ink-900);
     color: var(--color-text-invert);
   }
+
+  /* Chips are the primary mobile filter control — hit the 40px+ tap target */
+  @media (max-width: 640px) { padding: 9px 16px; }
 }
 
 /* ---------- Pagination ---------- */
@@ -443,8 +459,10 @@ textarea.input { resize: vertical; min-height: 72px; }
   }
 
   /* min-height:0 — a flex child refuses to shrink without it, so long
-     forms grew past the screen and pushed the footer away */
-  .drawer-body { flex: 1; min-height: 0; overflow-y: auto; padding: 24px; }
+     forms grew past the screen and pushed the footer away.
+     overscroll-behavior: contain — scrolling the drawer to its end doesn't
+     bleed into (and scroll) the page underneath on touch devices */
+  .drawer-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 24px; }
 
   .drawer-footer {
     display: flex;
@@ -539,6 +557,33 @@ textarea.input { resize: vertical; min-height: 72px; }
 
 @keyframes modalPop {
   from { transform: translate(-50%, -46%); opacity: 0; }
+}
+
+/* ---------- New-version toast ---------- */
+
+.update-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 72;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: calc(100vw - 24px);
+  padding: 12px 12px 12px 18px;
+  background: var(--color-ink-900);
+  color: var(--color-text-invert);
+  border-radius: 999px;
+  box-shadow: var(--shadow-drawer);
+  font-size: 13.5px;
+  font-weight: 500;
+  animation: modalPop .22s cubic-bezier(.32,.72,.35,1);
+
+  .btn { padding: 7px 16px; }
+
+  /* Clear of the mobile tab bar */
+  @media (max-width: 640px) { bottom: calc(72px + env(safe-area-inset-bottom)); }
 }
 
 /* ---------- Empty & loading states ---------- */
