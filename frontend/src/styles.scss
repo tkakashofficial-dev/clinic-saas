@@ -666,6 +666,7 @@ textarea.input { resize: vertical; min-height: 72px; }
   &.notif-checkin { background: var(--status-checkedin); }
   &.notif-reminder { background: var(--color-warning); }
   &.notif-billing { background: var(--color-primary-500); }
+  &.notif-inventory { background: var(--color-error); }
 }
 
 .notif-content { min-width: 0; }

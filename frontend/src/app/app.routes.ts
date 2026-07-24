@@ -17,6 +17,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/legal/legal').then((m) => m.Legal),
   },
   {
+    // Patient-facing booking page — anonymous, shared as a link/QR by clinics
+    path: 'book/:slug',
+    loadComponent: () => import('./features/book/book').then((m) => m.Book),
+  },
+  {
     path: 'login',
     canActivate: [guestGuard],
     loadComponent: () => import('./features/auth/login').then((m) => m.Login),

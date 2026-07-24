@@ -40,6 +40,24 @@ public class InvoicesController : ControllerBase
     public async Task<ActionResult<InvoiceStatsDto>> Stats(CancellationToken cancellationToken)
         => Ok(await _invoiceService.GetStatsAsync(cancellationToken));
 
+    /// <summary>Outstanding dues per patient — the collections worklist.</summary>
+    [HttpGet("dues")]
+    [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Receptionist}")]
+    public async Task<ActionResult<DuesReportDto>> Dues(CancellationToken cancellationToken)
+        => Ok(await _invoiceService.GetDuesAsync(cancellationToken));
+
+    /// <summary>All invoices as CSV — Excel/accountant-friendly.</summary>
+    [HttpGet("export.csv")]
+    [Authorize(Roles = RoleNames.Admin)]
+    public async Task<IActionResult> ExportCsv(CancellationToken cancellationToken)
+    {
+        var csv = await _invoiceService.ExportCsvAsync(cancellationToken);
+        // BOM so Excel opens it as UTF-8 (₹ and Indian names stay intact)
+        var bytes = System.Text.Encoding.UTF8.GetPreamble()
+            .Concat(System.Text.Encoding.UTF8.GetBytes(csv)).ToArray();
+        return File(bytes, "text/csv", $"invoices-{DateTime.UtcNow:yyyy-MM-dd}.csv");
+    }
+
     [HttpGet("{id}")]
     [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Doctor},{RoleNames.Receptionist}")]
     public async Task<ActionResult<InvoiceDto>> GetById(Guid id, CancellationToken cancellationToken)

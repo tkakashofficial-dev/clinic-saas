@@ -35,4 +35,17 @@ public interface IPatientService
         Guid patientId,
         string template = "dental",
         CancellationToken cancellationToken = default);
+
+    /// <summary>The seeded condition list (allergies, diabetes…) that the
+    /// register/edit forms render as tick-boxes.</summary>
+    Task<List<MedicalConditionDto>> GetMedicalConditionsAsync(
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Every patient as CSV — "your data is exportable" made true.</summary>
+    Task<string> ExportCsvAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Bulk import from CSV (paper/Excel migration). Forgiving on
+    /// optional fields, strict on name+phone, skips duplicates by phone.</summary>
+    Task<ImportResultDto> ImportCsvAsync(
+        string csvText, CancellationToken cancellationToken = default);
 }

@@ -16,5 +16,10 @@ public class TenantConfiguration : IEntityTypeConfiguration<Tenant>
         builder.Property(x => x.Plan).HasConversion<string>().HasMaxLength(20);
         builder.Property(x => x.DefaultIntakeTemplate).IsRequired().HasMaxLength(20)
                .HasDefaultValue("dental");
+        builder.Property(x => x.UpiId).HasMaxLength(100);
+        builder.Property(x => x.Slug).HasMaxLength(80);
+
+        // One slug = one clinic, forever (public booking URLs must never collide)
+        builder.HasIndex(x => x.Slug).IsUnique();
     }
 }

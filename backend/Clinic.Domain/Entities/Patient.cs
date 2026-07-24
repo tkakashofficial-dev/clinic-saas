@@ -20,6 +20,10 @@ public class Patient : BaseEntity, IMustHaveTenant
     public Gender Gender { get; private set; }
     public DateOnly? DateOfBirth { get; private set; }
 
+    /// <summary>"A+", "O-", … — asked once at registration, life-saving in an
+    /// emergency. Free-form is invalid; the validator holds the allowed set.</summary>
+    public string? BloodGroup { get; private set; }
+
     public Tenant Tenant { get; private set; } = default!;
     public TenantUser RegisteredBy { get; private set; } = default!;
 
@@ -38,7 +42,8 @@ public class Patient : BaseEntity, IMustHaveTenant
         Gender gender,
         DateOnly? dateOfBirth,
         string? email = null,
-        string? address = null)
+        string? address = null,
+        string? bloodGroup = null)
     {
         TenantId = tenantId;
         RegisteredByTenantUserId = registeredByTenantUserId;
@@ -49,6 +54,7 @@ public class Patient : BaseEntity, IMustHaveTenant
         DateOfBirth = dateOfBirth;
         Email = email;
         Address = address;
+        BloodGroup = bloodGroup;
     }
 
     public void AssignNumber(int patientNumber) => PatientNumber = patientNumber;
@@ -61,7 +67,8 @@ public class Patient : BaseEntity, IMustHaveTenant
         Gender gender,
         DateOnly? dateOfBirth,
         string? email,
-        string? address)
+        string? address,
+        string? bloodGroup)
     {
         FirstName = firstName ?? throw new ArgumentNullException(nameof(firstName));
         LastName = lastName ?? throw new ArgumentNullException(nameof(lastName));
@@ -70,5 +77,6 @@ public class Patient : BaseEntity, IMustHaveTenant
         DateOfBirth = dateOfBirth;
         Email = email;
         Address = address;
+        BloodGroup = bloodGroup;
     }
 }

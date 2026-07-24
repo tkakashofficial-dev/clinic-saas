@@ -53,6 +53,16 @@ export class Landing {
       title: 'Installs like an app',
       text: 'Laptop, tablet or phone - one calm interface everywhere. Add Klivia to your home screen and it opens full-screen from its own icon, no app store needed.',
     },
+    {
+      icon: 'globe',
+      title: 'Patients book themselves',
+      text: 'Your own booking page - share the link on WhatsApp status or print the QR at reception. Bookings appear in your app instantly.',
+    },
+    {
+      icon: 'chat',
+      title: 'WhatsApp & UPI built in',
+      text: 'One-tap WhatsApp appointment reminders and payment nudges. Unpaid bills show a UPI QR - patients scan and pay your clinic directly, zero fees.',
+    },
   ];
 
   readonly plans = PLAN_PRICING.map((plan) => ({
@@ -81,6 +91,10 @@ export class Landing {
     {
       q: 'Is there a mobile app?',
       a: 'Yes - Klivia installs straight from your browser, no app store needed. Open klivia.vercel.app on your phone, tap "Install Klivia" from the menu, and it appears on your home screen like a regular app: its own icon, full-screen, and fast.',
+    },
+    {
+      q: 'Can my patients book appointments online?',
+      a: 'Yes - switch on online booking in Settings and you get a personal page like klivia.vercel.app/book/your-clinic. Share it on WhatsApp status or print the QR at reception; patients pick a doctor, day and time in 30 seconds, and the booking pops up in your app instantly.',
     },
     {
       q: 'Can we move from paper or another software?',

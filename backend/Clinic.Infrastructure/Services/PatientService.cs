@@ -58,15 +58,17 @@ public class PatientService : IPatientService
             gender,
             request.DateOfBirth,
             request.Email,
-            request.Address);
+            request.Address,
+            NormalizeBloodGroup(request.BloodGroup));
         patient.AssignNumber(nextNumber + 1);
 
         _context.Patients.Add(patient);
 
         // 4. Attach medical conditions if any
+        var conditions = new List<MedicalCondition>();
         if (request.MedicalConditionCodes.Any())
         {
-            var conditions = await _context.MedicalConditions
+            conditions = await _context.MedicalConditions
                 .Where(mc => request.MedicalConditionCodes.Contains(mc.Code))
                 .ToListAsync(cancellationToken);
 
@@ -80,7 +82,7 @@ public class PatientService : IPatientService
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        return MapToDto(patient, request.MedicalConditionCodes);
+        return MapToDto(patient, conditions);
     }
 
     public async Task<PatientDto> UpdatePatientAsync(
@@ -114,7 +116,27 @@ public class PatientService : IPatientService
             gender,
             request.DateOfBirth,
             request.Email,
-            request.Address);
+            request.Address,
+            NormalizeBloodGroup(request.BloodGroup));
+
+        // Sync conditions to EXACTLY the submitted set: the edit form always
+        // sends every checked code, so missing = unchecked = remove
+        var submitted = await _context.MedicalConditions
+            .Where(mc => request.MedicalConditionCodes.Contains(mc.Code))
+            .Select(mc => mc.Id)
+            .ToListAsync(cancellationToken);
+
+        var existing = await _context.PatientMedicalConditions
+            .Where(pc => pc.PatientId == patientId)
+            .ToListAsync(cancellationToken);
+
+        _context.PatientMedicalConditions.RemoveRange(
+            existing.Where(pc => !submitted.Contains(pc.MedicalConditionId)));
+
+        var known = existing.Select(pc => pc.MedicalConditionId).ToHashSet();
+        foreach (var conditionId in submitted.Where(id => !known.Contains(id)))
+            _context.PatientMedicalConditions.Add(
+                new PatientMedicalCondition(patientId, conditionId));
 
         await _context.SaveChangesAsync(cancellationToken);
 
@@ -157,8 +179,12 @@ public class PatientService : IPatientService
                 Gender = p.Gender.ToString(),
                 DateOfBirth = p.DateOfBirth,
                 Age = CalculateAge(p.DateOfBirth),
+                BloodGroup = p.BloodGroup,
                 MedicalConditions = p.MedicalConditions
                     .Select(mc => mc.MedicalCondition.Name)
+                    .ToList(),
+                MedicalConditionCodes = p.MedicalConditions
+                    .Select(mc => mc.MedicalCondition.Code)
                     .ToList(),
                 RegisteredAt = p.CreatedAt
             })
@@ -187,8 +213,12 @@ public class PatientService : IPatientService
                 Gender = p.Gender.ToString(),
                 DateOfBirth = p.DateOfBirth,
                 Age = CalculateAge(p.DateOfBirth),
+                BloodGroup = p.BloodGroup,
                 MedicalConditions = p.MedicalConditions
                     .Select(mc => mc.MedicalCondition.Name)
+                    .ToList(),
+                MedicalConditionCodes = p.MedicalConditions
+                    .Select(mc => mc.MedicalCondition.Code)
                     .ToList(),
                 RegisteredAt = p.CreatedAt
             })
@@ -253,7 +283,195 @@ public class PatientService : IPatientService
         return (pdf, $"intake-{template}-P{patient.PatientNumber:D6}.pdf");
     }
 
-    private static PatientDto MapToDto(Patient patient, List<string> conditionCodes)
+    /// <summary>Every clinic shares the same seeded condition list — the
+    /// register/edit forms render these as tick-boxes.</summary>
+    public async Task<List<MedicalConditionDto>> GetMedicalConditionsAsync(
+        CancellationToken cancellationToken = default)
+        => await _context.MedicalConditions
+            .AsNoTracking()
+            .OrderBy(mc => mc.Name)
+            .Select(mc => new MedicalConditionDto { Name = mc.Name, Code = mc.Code })
+            .ToListAsync(cancellationToken);
+
+    public async Task<string> ExportCsvAsync(CancellationToken cancellationToken = default)
+    {
+        var patients = await _context.Patients
+            .AsNoTracking()
+            .OrderBy(p => p.PatientNumber)
+            .Select(p => new
+            {
+                p.PatientNumber,
+                p.FirstName,
+                p.LastName,
+                p.Phone,
+                p.Email,
+                p.Address,
+                Gender = p.Gender.ToString(),
+                p.DateOfBirth,
+                p.BloodGroup,
+                Conditions = p.MedicalConditions
+                    .Select(mc => mc.MedicalCondition.Name).ToList(),
+                p.CreatedAt,
+            })
+            .ToListAsync(cancellationToken);
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine(CsvUtil.Row(
+            "PatientNumber", "FirstName", "LastName", "Phone", "Email", "Address",
+            "Gender", "DateOfBirth", "BloodGroup", "MedicalConditions", "RegisteredAt"));
+
+        foreach (var p in patients)
+            sb.AppendLine(CsvUtil.Row(
+                $"P-{p.PatientNumber:D6}",
+                p.FirstName,
+                p.LastName,
+                p.Phone,
+                p.Email,
+                p.Address,
+                p.Gender,
+                p.DateOfBirth?.ToString("yyyy-MM-dd"),
+                p.BloodGroup,
+                string.Join("; ", p.Conditions),
+                p.CreatedAt.ToString("yyyy-MM-dd")));
+
+        return sb.ToString();
+    }
+
+    public async Task<ImportResultDto> ImportCsvAsync(
+        string csvText, CancellationToken cancellationToken = default)
+    {
+        var rows = CsvUtil.Parse(csvText);
+        if (rows.Count < 2)
+            throw new BadRequestException(
+                "The file needs a header row plus at least one patient row.");
+        if (rows.Count > 2001)
+            throw new BadRequestException(
+                "Maximum 2,000 patients per import — split larger files.");
+
+        // Header is matched by NAME, not position, so column order is free.
+        // "First Name", "first_name" and "FirstName" all match firstname.
+        var header = rows[0]
+            .Select((h, i) => (Key: NormalizeHeader(h), Index: i))
+            .Where(h => h.Key.Length > 0)
+            .GroupBy(h => h.Key)
+            .ToDictionary(g => g.Key, g => g.First().Index);
+
+        if (!header.ContainsKey("firstname") || !header.ContainsKey("phone"))
+            throw new BadRequestException(
+                "The header row must contain at least FirstName and Phone columns.");
+
+        string? Cell(string[] row, string key)
+        {
+            if (!header.TryGetValue(key, out var idx) || idx >= row.Length) return null;
+            var value = row[idx].Trim();
+            return value.Length == 0 ? null : value;
+        }
+
+        var tenantId = _currentUser.TenantId;
+        var tenantUserId = _currentUser.TenantUserId;
+
+        var existingPhones = (await _context.Patients
+                .Where(p => p.TenantId == tenantId)
+                .Select(p => p.Phone)
+                .ToListAsync(cancellationToken))
+            .ToHashSet();
+
+        var nextNumber = (await _context.Patients
+            .Where(p => p.TenantId == tenantId)
+            .Select(p => (int?)p.PatientNumber)
+            .MaxAsync(cancellationToken) ?? 0) + 1;
+
+        var result = new ImportResultDto();
+
+        for (var r = 1; r < rows.Count; r++)
+        {
+            var row = rows[r];
+            var rowNumber = r + 1;   // 1-based, header included — matches Excel
+
+            var firstName = Cell(row, "firstname");
+            var phone = Cell(row, "phone");
+
+            if (firstName is null || phone is null)
+            {
+                result.Errors.Add(new ImportRowError
+                { Row = rowNumber, Message = "Missing first name or phone — row skipped." });
+                result.Skipped++;
+                continue;
+            }
+            if (!System.Text.RegularExpressions.Regex.IsMatch(phone, @"^\+?[0-9 ()\-]{7,20}$"))
+            {
+                result.Errors.Add(new ImportRowError
+                { Row = rowNumber, Message = $"'{phone}' is not a valid phone number — row skipped." });
+                result.Skipped++;
+                continue;
+            }
+            if (!existingPhones.Add(phone))
+            {
+                result.Errors.Add(new ImportRowError
+                { Row = rowNumber, Message = $"Phone {phone} already exists — row skipped." });
+                result.Skipped++;
+                continue;
+            }
+
+            // Optional fields are best-effort: a bad date or blood group
+            // becomes blank rather than blocking the whole migration
+            var gender = Enum.TryParse<Gender>(Cell(row, "gender"), true, out var g)
+                && Enum.IsDefined(g) ? g : Gender.Other;
+
+            var bloodGroup = NormalizeBloodGroup(Cell(row, "bloodgroup"));
+            if (bloodGroup is not null && !Domain.Constants.BloodGroups.IsValid(bloodGroup))
+                bloodGroup = null;
+
+            var lastName = Cell(row, "lastname") ?? "";
+
+            var patient = new Patient(
+                tenantId,
+                tenantUserId,
+                Truncate(firstName, 100)!,
+                Truncate(lastName, 100)!,
+                phone,
+                gender,
+                ParseFlexibleDate(Cell(row, "dateofbirth")),
+                Truncate(Cell(row, "email"), 256),
+                Truncate(Cell(row, "address"), 500),
+                bloodGroup);
+            patient.AssignNumber(nextNumber++);
+
+            _context.Patients.Add(patient);
+            result.Imported++;
+        }
+
+        if (result.Imported > 0)
+            await _context.SaveChangesAsync(cancellationToken);
+
+        return result;
+    }
+
+    /// <summary>"First Name" / "first_name" / "FIRSTNAME" → "firstname".</summary>
+    private static string NormalizeHeader(string header)
+        => new string(header.Where(char.IsLetter).ToArray()).ToLowerInvariant();
+
+    /// <summary>Clips to the DB column limit instead of failing the row.</summary>
+    private static string? Truncate(string? value, int max)
+        => value is null || value.Length <= max ? value : value[..max];
+
+    /// <summary>Accepts the formats Indian Excel sheets actually contain.</summary>
+    private static DateOnly? ParseFlexibleDate(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        string[] formats = ["yyyy-MM-dd", "dd-MM-yyyy", "dd/MM/yyyy", "d/M/yyyy", "d-M-yyyy"];
+        foreach (var format in formats)
+            if (DateOnly.TryParseExact(value.Trim(), format, out var date)
+                && date <= DateOnly.FromDateTime(DateTime.UtcNow))
+                return date;
+        return null;
+    }
+
+    /// <summary>Trim + uppercase so "o+" and "O+ " match the canonical set.</summary>
+    private static string? NormalizeBloodGroup(string? bloodGroup)
+        => string.IsNullOrWhiteSpace(bloodGroup) ? null : bloodGroup.Trim().ToUpperInvariant();
+
+    private static PatientDto MapToDto(Patient patient, List<MedicalCondition> conditions)
     {
         return new PatientDto
         {
@@ -268,7 +486,9 @@ public class PatientService : IPatientService
             Gender = patient.Gender.ToString(),
             DateOfBirth = patient.DateOfBirth,
             Age = CalculateAge(patient.DateOfBirth),
-            MedicalConditions = conditionCodes,
+            BloodGroup = patient.BloodGroup,
+            MedicalConditions = conditions.Select(c => c.Name).ToList(),
+            MedicalConditionCodes = conditions.Select(c => c.Code).ToList(),
             RegisteredAt = patient.CreatedAt
         };
     }

@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable, tap } from 'rxjs';
+import { Observable, finalize, shareReplay, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   AuthResponse,
@@ -76,12 +76,26 @@ export class AuthService {
       .pipe(tap((response) => this.storeSession(response)));
   }
 
+  /** In-flight refresh, shared by every 401 that hits at the same moment. */
+  private refreshInFlight$: Observable<AuthResponse> | null = null;
+
   refresh(): Observable<AuthResponse> {
-    return this.http
+    // Single-flight: the refresh token is SINGLE-USE (rotation), so two
+    // concurrent 401s racing separate refreshes would revoke each other
+    // and randomly log the user out. Everyone shares one rotation.
+    this.refreshInFlight$ ??= this.http
       .post<AuthResponse>(`${environment.apiUrl}/auth/refresh`, {
         refreshToken: this._session()?.refreshToken ?? '',
+        // Stay in the clinic being worked in — without this, multi-clinic
+        // owners were silently flipped back to their first clinic mid-task
+        tenantId: this.currentTenantId() || null,
       })
-      .pipe(tap((response) => this.storeSession(response)));
+      .pipe(
+        tap((response) => this.storeSession(response)),
+        finalize(() => (this.refreshInFlight$ = null)),
+        shareReplay({ bufferSize: 1, refCount: false }),
+      );
+    return this.refreshInFlight$;
   }
 
   logout(): void {

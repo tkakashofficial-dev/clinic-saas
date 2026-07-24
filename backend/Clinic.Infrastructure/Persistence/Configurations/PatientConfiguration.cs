@@ -20,6 +20,7 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
         // DateOfBirth is optional — the entity (DateOnly?), DTO and age
         // calculation all treat it as nullable, so the column must match
         builder.Property(x => x.DateOfBirth);
+        builder.Property(x => x.BloodGroup).HasMaxLength(3);   // longest is "AB+"
 
         builder.HasOne(x => x.Tenant)
                .WithMany()

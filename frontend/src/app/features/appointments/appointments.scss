@@ -188,3 +188,11 @@
   margin-bottom: 8px;
   background: var(--color-surface);
 }
+
+/* WhatsApp reminder — brand-green so it reads as WhatsApp at a glance */
+.wa-remind {
+  color: #16A34A;
+
+  &:hover:not(:disabled) { background: #F0FDF4; color: #15803D; }
+  svg { flex: none; }
+}

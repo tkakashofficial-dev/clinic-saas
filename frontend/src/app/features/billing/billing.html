@@ -88,6 +88,35 @@
     }
   </div>
 
+  <!-- ============ Pay by UPI ============ -->
+  <section class="card card-pad pay-card">
+    <h2>Pay your subscription — UPI</h2>
+    <p class="muted pay-sub">
+      Scan with any UPI app, then send the payment screenshot on WhatsApp —
+      your plan is activated within hours.
+    </p>
+
+    <div class="pay-row">
+      <div class="pay-qr">
+        <app-qr-img [value]="payUpiLink()" [size]="160" alt="Klivia payment QR" />
+      </div>
+      <div class="pay-meta">
+        <div class="pay-cycle">
+          <button type="button" class="filter-chip" [class.active]="payCycle() === 'monthly'"
+                  (click)="payCycle.set('monthly')">Monthly</button>
+          <button type="button" class="filter-chip" [class.active]="payCycle() === 'yearly'"
+                  (click)="payCycle.set('yearly')">Yearly — 2 months free</button>
+        </div>
+        <div class="pay-amount">{{ priceLabel(payAmount()) }}
+          <span>· {{ payPlan().key }} plan</span></div>
+        <p class="muted pay-note">Paying to <strong>6238456205&#64;upi</strong> (Klivia)</p>
+        <a class="btn btn-primary" [href]="payConfirmLink()" target="_blank" rel="noopener">
+          ✅ I've paid — send screenshot on WhatsApp
+        </a>
+      </div>
+    </div>
+  </section>
+
   <p class="muted beta-note">
     All prices are in Indian Rupees. Pay monthly, or choose yearly and get 2 months free.
     Switch plans any time — your clinic's data always stays yours.

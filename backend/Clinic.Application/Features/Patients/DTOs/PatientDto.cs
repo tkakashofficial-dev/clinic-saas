@@ -13,6 +13,10 @@ public class PatientDto
     public string Gender { get; set; } = default!;
     public DateOnly? DateOfBirth { get; set; }
     public int? Age { get; set; }
+    public string? BloodGroup { get; set; }
+    /// <summary>Display names ("Drug Allergy") — for chips and PDFs.</summary>
     public List<string> MedicalConditions { get; set; } = new();
+    /// <summary>Stable codes ("DRUG_ALLERGY") — for pre-ticking the edit form.</summary>
+    public List<string> MedicalConditionCodes { get; set; } = new();
     public DateTime RegisteredAt { get; set; }
 }

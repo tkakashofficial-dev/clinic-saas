@@ -3,12 +3,24 @@
     <h1>Patients</h1>
     <p class="sub">{{ result()?.totalCount ?? '—' }} registered</p>
   </div>
-  @if (auth.hasRole('Admin', 'Receptionist')) {
-    <button type="button" class="btn btn-primary" (click)="openDrawer()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Register patient
-    </button>
-  }
+  <div class="header-actions">
+    @if (auth.hasRole('Admin')) {
+      <button type="button" class="btn btn-secondary" (click)="exportCsv()" [disabled]="exporting()"
+              title="Download every patient as a CSV file (Excel-friendly)">
+        {{ exporting() ? 'Preparing…' : '⬇ Export CSV' }}
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="openImport()"
+              title="Bulk-import patients from a CSV file (paper/Excel migration)">
+        ⬆ Import
+      </button>
+    }
+    @if (auth.hasRole('Admin', 'Receptionist')) {
+      <button type="button" class="btn btn-primary" (click)="openDrawer()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Register patient
+      </button>
+    }
+  </div>
 </header>
 
 <div class="toolbar">
@@ -139,6 +151,29 @@
       </div>
 
       <div class="field">
+        <label for="p-blood">Blood group <span class="opt">Optional</span></label>
+        <select id="p-blood" class="input" formControlName="bloodGroup">
+          <option value="">Not recorded</option>
+          @for (group of bloodGroups; track group) {
+            <option [value]="group">{{ group }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Medical conditions <span class="opt">Optional</span></label>
+        <div class="disease-grid">
+          @for (condition of conditions(); track condition.code) {
+            <button type="button" class="filter-chip"
+                    [class.active]="checkedConditions().has(condition.code)"
+                    (click)="toggleCondition(condition.code)">
+              {{ checkedConditions().has(condition.code) ? '✓ ' : '' }}{{ condition.name }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="field">
         <label for="p-email">Email <span class="opt">Optional</span></label>
         <input id="p-email" type="email" class="input" formControlName="email" placeholder="muhammed.ashraf@gmail.com"
                [class.invalid]="!!errorFor('email')">
@@ -193,6 +228,7 @@
                 <span class="p-chip accent">{{ patientCode(h.patient) }}</span>
                 <span class="p-chip">{{ h.patient.gender }}</span>
                 @if (h.patient.age !== null) { <span class="p-chip">{{ h.patient.age }} yrs</span> }
+                @if (h.patient.bloodGroup) { <span class="p-chip blood">🩸 {{ h.patient.bloodGroup }}</span> }
               </div>
             </div>
             @if (auth.hasRole('Admin', 'Receptionist')) {
@@ -224,7 +260,9 @@
                 <span class="profile-label">Medical conditions</span>
                 <div class="profile-conditions">
                   @for (condition of h.patient.medicalConditions; track condition) {
-                    <span class="condition-chip">⚠ {{ condition }}</span>
+                    <span class="condition-chip" [class.alert]="isAlertCondition(condition)">
+                      ⚠ {{ condition }}
+                    </span>
                   }
                 </div>
               </div>
@@ -434,4 +472,63 @@
       </button>
     </div>
   </aside>
+}
+
+<!-- ============ Import patients from CSV ============ -->
+@if (importOpen()) {
+  <div class="modal-backdrop" (click)="importOpen.set(false)"></div>
+  <div class="modal-card" role="dialog" aria-label="Import patients">
+    <div class="modal-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    </div>
+    <h3>Import patients from CSV</h3>
+    <p class="modal-sub">
+      Moving from paper or Excel? Upload a CSV with at least
+      <strong>FirstName</strong> and <strong>Phone</strong> columns.
+      LastName, Email, Address, Gender, DateOfBirth and BloodGroup
+      are picked up when present — column order doesn't matter.
+    </p>
+
+    @if (importError()) {
+      <div class="alert-error">{{ importError() }}</div>
+    }
+
+    @if (importResult(); as res) {
+      <div class="alert-success">
+        ✅ {{ res.imported }} {{ res.imported === 1 ? 'patient' : 'patients' }} imported{{
+          res.skipped > 0 ? ' · ' + res.skipped + ' skipped' : '' }}.
+      </div>
+      @if (res.errors.length > 0) {
+        <div class="import-errors">
+          @for (err of res.errors.slice(0, 8); track err.row) {
+            <div class="import-error-row">Row {{ err.row }}: {{ err.message }}</div>
+          }
+          @if (res.errors.length > 8) {
+            <div class="import-error-row">…and {{ res.errors.length - 8 }} more.</div>
+          }
+        </div>
+      }
+      <button type="button" class="btn btn-primary" style="width:100%"
+              (click)="importOpen.set(false)">Done</button>
+    } @else {
+      <label class="import-drop">
+        <input type="file" accept=".csv,text/csv" (change)="onImportFile($event)" hidden>
+        @if (importFile) {
+          📄 {{ importFile.name }}
+        } @else {
+          Tap to choose a .csv file
+        }
+      </label>
+
+      <div style="display:flex; gap:10px;">
+        <button type="button" class="btn btn-secondary" style="flex:1"
+                (click)="importOpen.set(false)">Cancel</button>
+        <button type="button" class="btn btn-primary" style="flex:1"
+                [disabled]="!importFile || importing()" (click)="runImport()">
+          @if (importing()) { <span class="inline-spinner" aria-hidden="true"></span> }
+          {{ importing() ? 'Importing…' : 'Import' }}
+        </button>
+      </div>
+    }
+  </div>
 }

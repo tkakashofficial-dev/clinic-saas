@@ -122,7 +122,10 @@ public class AuthService : IAuthService
         // Rotation: every refresh token is single-use
         storedToken.Revoke();
 
-        return await IssueForUserAsync(storedToken.SystemUser, preferredTenantId: null, cancellationToken);
+        // Keep the user in the clinic they were working in (multi-clinic
+        // owners) — the membership check inside IssueForUserAsync makes an
+        // arbitrary/revoked tenant id fall back safely to their first clinic
+        return await IssueForUserAsync(storedToken.SystemUser, request.TenantId, cancellationToken);
     }
 
     public async Task<AuthResponse> CreateClinicAsync(

@@ -1,6 +1,7 @@
 using Clinic.Application.Features.Auth.DTOs;
 using Clinic.Infrastructure.Services;
 using Clinic.Tests.TestInfrastructure;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace Clinic.Tests;
@@ -39,6 +40,49 @@ public class RefreshTokenTests : IDisposable
         });
 
         Assert.False(string.IsNullOrWhiteSpace(response.RefreshToken));
+    }
+
+    [Fact]
+    public async Task Refresh_KeepsTheClinicTheUserWasWorkingIn()
+    {
+        // Multi-clinic owner working in clinic B: a silent token refresh
+        // must NOT flip the session back to clinic A (their first clinic)
+        var registered = await RegisterAsync("rt-multi@clinic.com");
+
+        // Multi-clinic needs Growth
+        await using (var context = _db.CreateContext())
+        {
+            var tenant = await context.Tenants.FirstAsync(t => t.Id == registered.TenantId);
+            tenant.ChangePlan(Clinic.Domain.Enums.PlanType.Growth);
+            await context.SaveChangesAsync();
+        }
+
+        var systemUserId = GetSystemUserId(registered);
+        _db.CurrentUser.ActAs(registered.TenantId, registered.TenantUserId, systemUserId);
+
+        var clinicB = await CreateService().CreateClinicAsync(
+            systemUserId,
+            new CreateClinicRequest { Name = "Second Branch", OwnerIsDoctor = false });
+        Assert.NotEqual(registered.TenantId, clinicB.TenantId);
+
+        var refreshed = await CreateService().RefreshAsync(new RefreshRequest
+        {
+            RefreshToken = clinicB.RefreshToken,
+            TenantId = clinicB.TenantId,
+        });
+
+        Assert.Equal(clinicB.TenantId, refreshed.TenantId);
+    }
+
+    private static Guid GetSystemUserId(AuthResponse response)
+    {
+        // The JWT nameid claim carries the SystemUserId; decode the payload
+        var payload = response.AccessToken.Split('.')[1];
+        var padded = payload.PadRight(payload.Length + (4 - payload.Length % 4) % 4, '=')
+            .Replace('-', '+').Replace('_', '/');
+        var json = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(padded));
+        var start = json.IndexOf("nameidentifier\":\"", StringComparison.Ordinal) + 17;
+        return Guid.Parse(json.Substring(start, 36));
     }
 
     [Fact]

@@ -99,6 +99,8 @@ public class InventoryService : IInventoryService
 
         var item = await GetItemAsync(itemId, cancellationToken);
 
+        var wasAboveReorder = item.StockQuantity > item.ReorderLevel;
+
         try
         {
             item.AdjustStock(request.Delta);
@@ -108,8 +110,30 @@ public class InventoryService : IInventoryService
             throw new BadRequestException(ex.Message);
         }
 
+        // Alert exactly ONCE — on the crossing, not on every dispense after it
+        if (wasAboveReorder && item.StockQuantity <= item.ReorderLevel)
+            await NotifyAdminsLowStockAsync(item, cancellationToken);
+
         await _context.SaveChangesAsync(cancellationToken);
         return MapToDto(item);
+    }
+
+    /// <summary>Rings the bell for every Admin: this item just went low.</summary>
+    private async Task NotifyAdminsLowStockAsync(InventoryItem item, CancellationToken ct)
+    {
+        var adminIds = await _context.TenantUsers
+            .Where(tu => tu.IsActive && tu.Roles.Any(r => r.Role.Name == RoleNames.Admin))
+            .Select(tu => tu.Id)
+            .ToListAsync(ct);
+
+        foreach (var adminId in adminIds)
+            _context.Notifications.Add(new Notification(
+                _currentUser.TenantId,
+                adminId,
+                NotificationTypes.Inventory,
+                "Low stock — time to reorder",
+                $"{item.Name}: only {item.StockQuantity} {item.Unit} left " +
+                $"(reorder level {item.ReorderLevel})."));
     }
 
     public async Task DeleteAsync(Guid itemId, CancellationToken cancellationToken = default)

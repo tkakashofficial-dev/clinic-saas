@@ -132,3 +132,39 @@
 }
 
 .beta-note { font-size: 12.5px; margin-top: 18px; text-align: center; }
+
+/* ---- Pay by UPI ---- */
+
+.pay-card { margin-top: 20px; }
+
+.pay-sub { margin: 4px 0 18px; }
+
+.pay-row {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+
+  @media (max-width: 640px) { flex-direction: column; text-align: center; }
+}
+
+.pay-qr {
+  flex: none;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.pay-meta { display: flex; flex-direction: column; gap: 10px; align-items: flex-start;
+  @media (max-width: 640px) { align-items: center; }
+}
+
+.pay-cycle { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.pay-amount {
+  font: 700 26px var(--font-heading);
+
+  span { font: 500 13.5px var(--font-body); color: var(--color-text-muted); }
+}
+
+.pay-note { font-size: 12.5px; }

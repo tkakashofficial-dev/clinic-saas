@@ -51,6 +51,42 @@ public class PatientController : ControllerBase
         CancellationToken cancellationToken)
         => Ok(await _patientService.GetPatientByIdAsync(id, cancellationToken));
 
+    /// <summary>Every patient as CSV — the "your data is yours" promise.</summary>
+    [HttpGet("export.csv")]
+    [Authorize(Roles = RoleNames.Admin)]
+    public async Task<IActionResult> ExportCsv(CancellationToken cancellationToken)
+    {
+        var csv = await _patientService.ExportCsvAsync(cancellationToken);
+        // BOM so Excel opens it as UTF-8 (Indian names survive intact)
+        var bytes = System.Text.Encoding.UTF8.GetPreamble()
+            .Concat(System.Text.Encoding.UTF8.GetBytes(csv)).ToArray();
+        return File(bytes, "text/csv", $"patients-{DateTime.UtcNow:yyyy-MM-dd}.csv");
+    }
+
+    /// <summary>Bulk CSV import for paper/Excel migration. Needs FirstName +
+    /// Phone columns; everything else is best-effort.</summary>
+    [HttpPost("import")]
+    [Authorize(Roles = RoleNames.Admin)]
+    [RequestSizeLimit(2 * 1024 * 1024)]   // 2 MB ≈ far beyond 2,000 rows
+    public async Task<ActionResult<ImportResultDto>> ImportCsv(
+        IFormFile file, CancellationToken cancellationToken)
+    {
+        if (file is null || file.Length == 0)
+            return BadRequest(new { message = "Choose a CSV file to import." });
+
+        using var reader = new StreamReader(file.OpenReadStream());
+        var text = await reader.ReadToEndAsync(cancellationToken);
+        return Ok(await _patientService.ImportCsvAsync(text, cancellationToken));
+    }
+
+    /// <summary>Seeded medical-condition list for the register/edit tick-boxes.
+    /// Static per deployment — the frontend may cache it for the session.</summary>
+    [HttpGet("medical-conditions")]
+    [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Doctor},{RoleNames.Receptionist}")]
+    public async Task<ActionResult<List<MedicalConditionDto>>> GetMedicalConditions(
+        CancellationToken cancellationToken)
+        => Ok(await _patientService.GetMedicalConditionsAsync(cancellationToken));
+
     /// <summary>The patient's clinical story — every consultation, newest first.</summary>
     [HttpGet("{id}/history")]
     [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Doctor},{RoleNames.Receptionist}")]

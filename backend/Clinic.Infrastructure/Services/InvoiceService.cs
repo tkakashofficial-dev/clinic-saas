@@ -192,6 +192,74 @@ public class InvoiceService : IInvoiceService
         return (pdf, $"invoice-INV{invoice.InvoiceNumber:D6}.pdf");
     }
 
+    public async Task<DuesReportDto> GetDuesAsync(CancellationToken cancellationToken = default)
+    {
+        // One row per patient with unpaid bills, biggest debtor first —
+        // grouped in SQL so it stays fast at thousands of invoices
+        var rows = await _context.Invoices
+            .AsNoTracking()
+            .Where(i => i.Status == InvoiceStatuses.Unpaid)
+            .GroupBy(i => new
+            {
+                i.PatientId,
+                i.Patient.FirstName,
+                i.Patient.LastName,
+                i.Patient.Phone,
+            })
+            .Select(g => new PatientDuesDto
+            {
+                PatientId = g.Key.PatientId,
+                PatientName = g.Key.FirstName + " " + g.Key.LastName,
+                PatientPhone = g.Key.Phone,
+                UnpaidCount = g.Count(),
+                OutstandingRupees = g.Sum(i => i.TotalRupees),
+                OldestUnpaidAt = g.Min(i => i.CreatedAt),
+            })
+            .OrderByDescending(r => r.OutstandingRupees)
+            .ToListAsync(cancellationToken);
+
+        return new DuesReportDto
+        {
+            TotalOutstandingRupees = rows.Sum(r => r.OutstandingRupees),
+            PatientsWithDues = rows.Count,
+            Rows = rows,
+        };
+    }
+
+    public async Task<string> ExportCsvAsync(CancellationToken cancellationToken = default)
+    {
+        var invoices = await _context.Invoices
+            .AsNoTracking()
+            .Include(i => i.Items)
+            .Include(i => i.Patient)
+            .OrderBy(i => i.InvoiceNumber)
+            .ToListAsync(cancellationToken);
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine(CsvUtil.Row(
+            "Invoice", "Date", "Patient", "Phone", "Items",
+            "SubtotalRupees", "DiscountRupees", "TotalRupees",
+            "Status", "PaymentMethod", "PaidAt", "Notes"));
+
+        foreach (var i in invoices)
+            sb.AppendLine(CsvUtil.Row(
+                $"INV-{i.InvoiceNumber:D6}",
+                i.CreatedAt.ToString("yyyy-MM-dd"),
+                $"{i.Patient.FirstName} {i.Patient.LastName}",
+                i.Patient.Phone,
+                string.Join("; ", i.Items.Select(x =>
+                    $"{x.Description} x{x.Quantity} @{x.UnitPriceRupees}")),
+                i.SubtotalRupees.ToString("0.##"),
+                i.DiscountRupees.ToString("0.##"),
+                i.TotalRupees.ToString("0.##"),
+                i.Status,
+                i.PaymentMethod,
+                i.PaidAt?.ToString("yyyy-MM-dd HH:mm"),
+                i.Notes));
+
+        return sb.ToString();
+    }
+
     private async Task<Invoice> GetInvoiceAsync(
         Guid invoiceId, CancellationToken ct, bool track = false)
     {

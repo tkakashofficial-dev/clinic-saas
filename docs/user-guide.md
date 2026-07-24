@@ -52,11 +52,20 @@ reception checks patients in.
 ### 👥 Patients
 - **Register**: name + phone is enough (other fields are optional). The
   patient gets an automatic clinic number like **P-000123**.
+- **Medical profile**: blood group (one dropdown) and condition tick-boxes —
+  diabetes, hypertension, **drug/latex allergy**, pregnancy, cardiac. Allergies
+  and pregnancy show as **red chips** on the record so the doctor catches them
+  in one glance before prescribing.
 - **Search** by name or phone — instant.
 - **Click any patient** (or the *View →* button) to open their full record:
-  profile card, contact details, medical-condition chips, and the **visit
+  profile card, contact details, blood group, condition chips, and the **visit
   timeline** (every diagnosis, vitals and prescription, newest first).
-- **Edit** fixes typos any time.
+- **Edit** fixes typos any time — including conditions and blood group.
+- **⬇ Export CSV** *(Admin)*: every patient as an Excel-friendly file — your
+  data is always yours.
+- **⬆ Import** *(Admin)*: moving from paper or Excel? Upload a CSV with
+  FirstName + Phone columns (others optional) — up to 2,000 patients at once,
+  with a per-row report of anything skipped.
 - **Intake form, two ways:**
   - **🖨 Print** (dental or general button — ★ marks your clinic default):
     a pre-filled, letterhead PDF. The *patient* ticks the medical checklist
@@ -69,6 +78,10 @@ reception checks patients in.
 
 ### 📅 Appointments
 - **Book**: search the patient, pick the doctor, date (branded calendar) and time.
+- **💬 Remind on WhatsApp** (green button on every scheduled visit): opens
+  WhatsApp with the reminder already written — patient name, date, time,
+  doctor. Reception just taps send. **Completely free** — it goes from the
+  clinic's own WhatsApp.
 - **Check in** when the patient arrives — the doctor instantly sees them and
   gets a 🔔 notification.
 - Statuses flow: *Scheduled → Waiting → In progress → Completed* (or *Cancelled*).
@@ -85,10 +98,15 @@ reception checks patients in.
 - **"Payment collected now"** with UPI/Cash/Card/Bank chips — create and collect
   in one step; the **letterhead receipt PDF opens automatically**, ready to print.
 - Or leave it **Unpaid** and mark it paid later (the ▾ menu picks the method).
+- **📱 Collect via UPI**: once your UPI ID is set in Settings, every unpaid
+  invoice gets a UPI button → a QR pops up with the exact amount. The patient
+  scans with GPay/PhonePe/Paytm and pays **your clinic directly — zero fees,
+  no middleman**. When the money lands, tap *Payment received*.
 - Per-clinic numbers like **INV-000042**; paid invoices can't be cancelled
   (record a correction instead).
 - The money strip on top shows **collected today, this month, and the unpaid
   backlog** — the owner's daily glance.
+- **⬇ Export CSV** *(Admin)*: every invoice for Excel or your accountant.
 
 ### 💊 Inventory *(Clinic plan and above)*
 - Track **medicines, consumables and equipment**: unit, price, stock count,
@@ -112,6 +130,11 @@ The intake form's home:
 Patients over time, busiest days, status mix, per-doctor booked-vs-completed.
 **Download PDF** for records or partners.
 
+**Outstanding dues** — the answer to "who owes me money?": one row per
+patient with unpaid bills, total owed, and how long the oldest bill has
+waited (30+ days turns red). The **💬 Remind** button opens WhatsApp with a
+polite payment nudge already written.
+
 ### 🧑‍⚕️ Staff *(Admin)*
 - **Invite by email** (they set their own password via a 7-day link) or set a
   **temporary password** in person — both work.
@@ -124,9 +147,22 @@ Patients over time, busiest days, status mix, per-doctor booked-vs-completed.
 Current plan, trial state, staff/doctor usage vs limits, and plan cards to
 upgrade. Hitting a limit anywhere in the app shows an upgrade prompt.
 
+**Paying for Klivia** is one scan: the page shows a UPI QR for your plan
+(monthly or yearly — 2 months free). Pay, then tap *I've paid* to send the
+screenshot on WhatsApp — your plan is activated within hours.
+
 ### ⚙️ Settings *(Admin)*
 Your clinic's **letterhead** — name, phone, address printed on every PDF —
-plus a link to the Forms builder.
+plus:
+- **UPI ID**: add it once (e.g. `smiledental@okaxis`) and invoices grow the
+  *Collect via UPI* QR.
+- **Online booking**: flip the toggle and your clinic gets a permanent public
+  page like `klivia.vercel.app/book/smile-dental`. Copy the link into your
+  WhatsApp status or Google Business profile, or **print the QR** for the
+  reception desk. Patients pick a doctor, day and time in 30 seconds — the
+  booking appears in your Appointments instantly, with a 🔔 for the doctor
+  and admins. New phone numbers are registered as patients automatically.
+- A link to the Forms builder.
 
 ### 🏥 My clinics *(Growth plan)*
 Click your clinic's name (top of sidebar) → switch between clinics or open a
@@ -135,9 +171,10 @@ clinic's patients, staff, stock and billing are completely separate.
 On Solo/Clinic plans this option shows locked (🔒) — tapping explains Growth.
 
 ### 🔔 Notifications
-The bell collects what matters to **you**: bookings made for you, check-ins,
-24-hour appointment reminders, and billing messages (payment received, plan
-changed).
+The bell collects what matters to **you**: bookings made for you (including
+**online bookings** from your public page), check-ins, 24-hour appointment
+reminders, **low-stock alerts** (an item crossed its reorder level), and
+billing messages (payment received, plan changed).
 
 ---
 

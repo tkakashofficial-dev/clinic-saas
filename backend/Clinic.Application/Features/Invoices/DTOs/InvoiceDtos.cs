@@ -59,3 +59,22 @@ public class InvoiceStatsDto
     public int UnpaidCount { get; set; }
     public decimal UnpaidTotalRupees { get; set; }
 }
+
+/// <summary>"Who owes me money?" — the owner's daily question, answered.</summary>
+public class DuesReportDto
+{
+    public decimal TotalOutstandingRupees { get; set; }
+    public int PatientsWithDues { get; set; }
+    public List<PatientDuesDto> Rows { get; set; } = new();
+}
+
+public class PatientDuesDto
+{
+    public Guid PatientId { get; set; }
+    public string PatientName { get; set; } = default!;
+    public string PatientPhone { get; set; } = default!;
+    public int UnpaidCount { get; set; }
+    public decimal OutstandingRupees { get; set; }
+    /// <summary>How long the oldest bill has been waiting — the aging signal.</summary>
+    public DateTime OldestUnpaidAt { get; set; }
+}

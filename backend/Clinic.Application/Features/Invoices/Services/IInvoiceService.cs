@@ -28,4 +28,10 @@ public interface IInvoiceService
     /// <summary>The branded invoice/receipt PDF the patient takes home.</summary>
     Task<(byte[] Content, string FileName)> GetPdfAsync(
         Guid invoiceId, CancellationToken cancellationToken = default);
+
+    /// <summary>Outstanding dues grouped per patient, biggest debtor first.</summary>
+    Task<DuesReportDto> GetDuesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Every invoice as CSV — for Excel, the accountant, or backup.</summary>
+    Task<string> ExportCsvAsync(CancellationToken cancellationToken = default);
 }

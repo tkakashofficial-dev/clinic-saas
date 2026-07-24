@@ -1,0 +1,143 @@
+<div class="book-page">
+  @if (loading()) {
+    <div class="book-card">
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+    </div>
+  } @else if (notFound()) {
+    <div class="book-card center">
+      <div class="big-emoji">🔍</div>
+      <h1>Booking page not found</h1>
+      <p class="muted">This link may be old, or the clinic has switched
+        online booking off. Please call the clinic directly.</p>
+    </div>
+  } @else if (done(); as booking) {
+
+    <!-- ============ Success ============ -->
+    <div class="book-card center">
+      <div class="success-ring">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h1>Booking requested!</h1>
+      <p class="success-detail">
+        <strong>{{ booking.clinicName }}</strong><br>
+        {{ booking.doctorName }}<br>
+        {{ booking.appointmentAt | date: 'EEEE, d MMMM' }} at
+        {{ booking.appointmentAt | date: 'h:mm a' }}
+      </p>
+      <p class="muted">
+        The clinic sees your booking instantly. If anything changes,
+        they'll reach you on the phone number you gave.
+      </p>
+      @if (clinic()?.phone; as phone) {
+        <a class="btn btn-secondary" href="tel:{{ phone }}">📞 Call the clinic</a>
+      }
+    </div>
+
+  } @else if (clinic(); as c) {
+
+    <!-- ============ Clinic header ============ -->
+    <header class="clinic-head">
+      <span class="clinic-badge">{{ clinicInitials() }}</span>
+      <h1>{{ c.name }}</h1>
+      @if (c.address) { <p class="clinic-addr">{{ c.address }}</p> }
+      <p class="head-hint">Book your visit — takes 30 seconds, no app needed</p>
+    </header>
+
+    <div class="book-card">
+      @if (error()) {
+        <div class="alert-error">{{ error() }}</div>
+      }
+
+      <!-- 1. Doctor -->
+      <div class="step">
+        <h2><span class="step-num">1</span> Choose your doctor</h2>
+        <div class="doctor-list">
+          @for (doctor of c.doctors; track doctor.id) {
+            <button type="button" class="doctor-option" [class.active]="doctorId() === doctor.id"
+                    (click)="doctorId.set(doctor.id)">
+              <span class="doc-avatar">{{ initials(doctor.name) }}</span>
+              <span class="doc-name">{{ doctor.name }}</span>
+              @if (doctorId() === doctor.id) {
+                <svg class="doc-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              }
+            </button>
+          }
+          @if (c.doctors.length === 0) {
+            <p class="muted">No doctors are open for online booking right now —
+              please call the clinic.</p>
+          }
+        </div>
+      </div>
+
+      <!-- 2. Day -->
+      <div class="step">
+        <h2><span class="step-num">2</span> Pick a day</h2>
+        <div class="day-strip">
+          @for (day of days; track day.iso) {
+            <button type="button" class="day-chip" [class.active]="dateIso() === day.iso"
+                    (click)="dateIso.set(day.iso); time.set('')">
+              <span class="day-label">{{ day.label }}</span>
+              <span class="day-num">{{ day.dayNum }}</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- 3. Time -->
+      <div class="step">
+        <h2><span class="step-num">3</span> Pick a time</h2>
+        @for (group of visibleSlotGroups(); track group.label) {
+          <div class="slot-group">
+            <span class="slot-group-label">{{ group.label }}</span>
+            <div class="slot-grid">
+              @for (slot of group.slots; track slot) {
+                <button type="button" class="slot-chip" [class.active]="time() === slot"
+                        (click)="time.set(slot)">{{ slot }}</button>
+              }
+            </div>
+          </div>
+        }
+        @if (visibleSlotGroups().length === 0) {
+          <p class="muted">No more slots today — pick another day.</p>
+        }
+        <p class="slot-note">The clinic will confirm your exact time if their
+          schedule is tight.</p>
+      </div>
+
+      <!-- 4. You -->
+      <div class="step">
+        <h2><span class="step-num">4</span> Your details</h2>
+        <div class="field">
+          <label for="b-name">Full name</label>
+          <input id="b-name" class="input" [(ngModel)]="name" autocomplete="name"
+                 placeholder="Muhammed Ashraf">
+        </div>
+        <div class="field">
+          <label for="b-phone">Phone (WhatsApp preferred)</label>
+          <input id="b-phone" type="tel" class="input" [(ngModel)]="phone"
+                 autocomplete="tel" placeholder="98765 43210">
+        </div>
+        <div class="field">
+          <label for="b-note">Anything the doctor should know? <span class="opt">Optional</span></label>
+          <textarea id="b-note" class="input" rows="2" [(ngModel)]="note"
+                    placeholder="Tooth pain since Monday…"></textarea>
+        </div>
+        <!-- Honeypot: invisible to humans, irresistible to bots -->
+        <input class="hp-field" type="text" [(ngModel)]="website" name="website"
+               tabindex="-1" autocomplete="off" aria-hidden="true">
+      </div>
+
+      <button type="button" class="btn btn-primary btn-lg book-cta"
+              [disabled]="submitting()" (click)="submit()">
+        @if (submitting()) { <span class="inline-spinner" aria-hidden="true"></span> }
+        {{ submitting() ? 'Booking…' : 'Book my visit' }}
+      </button>
+    </div>
+  }
+
+  <footer class="book-footer">
+    <a href="/" target="_blank" rel="noopener">Powered by <strong>+ Klivia</strong></a>
+  </footer>
+</div>

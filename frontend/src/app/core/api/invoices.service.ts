@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   CreateInvoiceRequest,
+  DuesReport,
   InvoiceDto,
   InvoiceStats,
   PagedResult,
@@ -47,5 +48,14 @@ export class InvoicesService {
 
   pdf(id: string): Observable<Blob> {
     return this.http.get(`${this.baseUrl}/${id}/pdf`, { responseType: 'blob' });
+  }
+
+  /** Outstanding dues per patient — the collections worklist. */
+  getDues(): Observable<DuesReport> {
+    return this.http.get<DuesReport>(`${this.baseUrl}/dues`);
+  }
+
+  exportCsv(): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/export.csv`, { responseType: 'blob' });
   }
 }

@@ -119,6 +119,29 @@ export class Appointments {
     return STATUS_LABELS[status] ?? status;
   }
 
+  /**
+   * Free WhatsApp reminder: opens WhatsApp with the message pre-written —
+   * the receptionist just hits send. Zero cost (it's the clinic's own
+   * WhatsApp), unlike the automated Business API.
+   */
+  whatsappReminder(appointment: AppointmentDto): string {
+    // 10-digit Indian numbers need the country code for wa.me
+    let digits = appointment.patientPhone.replace(/\D/g, '');
+    if (digits.length === 10) digits = `91${digits}`;
+
+    const when = new Date(appointment.appointmentDate);
+    const message =
+      `Hi ${appointment.patientName.split(' ')[0]}! Reminder from ` +
+      `${this.auth.clinicName() || 'your clinic'}: your appointment with ` +
+      `${appointment.doctorName} is on ${when.toLocaleDateString('en-IN', {
+        weekday: 'short', day: 'numeric', month: 'short',
+      })} at ${when.toLocaleTimeString('en-IN', {
+        hour: '2-digit', minute: '2-digit',
+      })}. Reply here if you need to reschedule. 🙏`;
+
+    return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
+  }
+
   constructor() {
     this.patientSearch$
       .pipe(

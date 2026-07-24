@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { parseApiError } from '../../core/api/api-error';
 import { BillingService } from '../../core/api/billing.service';
+import { AuthService } from '../../core/auth/auth.service';
 import { BillingSummary } from '../../core/models/api.models';
 import {
   PLAN_PRICING,
@@ -9,15 +10,21 @@ import {
   formatInr,
   monthlyEquivalent,
 } from '../../core/models/plan-pricing';
+import { QrImg } from '../../shared/ui/qr-img';
+
+/** Klivia's own UPI ID — where subscription payments land. */
+const KLIVIA_UPI = '6238456205@upi';
+const KLIVIA_WHATSAPP = '916238456205';
 
 @Component({
   selector: 'app-billing',
-  imports: [DatePipe],
+  imports: [DatePipe, QrImg],
   templateUrl: './billing.html',
   styleUrl: './billing.scss',
 })
 export class Billing {
   private readonly api = inject(BillingService);
+  private readonly auth = inject(AuthService);
 
   readonly planCards = PLAN_PRICING;
   readonly loading = signal(true);
@@ -89,4 +96,34 @@ export class Billing {
     if (max >= 2000000000) return 8; // unlimited: show a sliver
     return Math.min(100, Math.round((used / max) * 100));
   }
+
+  // ---- pay by UPI (manual flow: scan → pay → WhatsApp the screenshot) ----
+  readonly payCycle = signal<'monthly' | 'yearly'>('monthly');
+
+  readonly payPlan = computed(() => {
+    const current = this.summary()?.plan;
+    return PLAN_PRICING.find((p) => p.key === current) ?? PLAN_PRICING[1];
+  });
+
+  readonly payAmount = computed(() => {
+    const plan = this.payPlan();
+    return this.payCycle() === 'yearly' ? plan.yearlyPrice : plan.monthlyPrice;
+  });
+
+  /** upi://pay deep link with plan + clinic in the note for reconciliation. */
+  readonly payUpiLink = computed(() =>
+    'upi://pay'
+    + `?pa=${encodeURIComponent(KLIVIA_UPI)}`
+    + '&pn=Klivia'
+    + `&am=${this.payAmount()}`
+    + '&cu=INR'
+    + `&tn=${encodeURIComponent(`Klivia ${this.payPlan().key} ${this.payCycle()} — ${this.auth.clinicName()}`)}`);
+
+  readonly payConfirmLink = computed(() => {
+    const message =
+      `Hi Klivia! I've paid ${formatInr(this.payAmount())} for the ` +
+      `${this.payPlan().key} plan (${this.payCycle()}) — clinic: ` +
+      `${this.auth.clinicName()}. Screenshot attached.`;
+    return `https://wa.me/${KLIVIA_WHATSAPP}?text=${encodeURIComponent(message)}`;
+  });
 }

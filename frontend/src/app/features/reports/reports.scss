@@ -53,3 +53,29 @@
 }
 
 .rate-value { font-size: 12.5px; font-weight: 600; }
+
+/* ---- Outstanding dues (collections worklist) ---- */
+
+.dues-card { margin-bottom: 20px; }
+
+.dues-total {
+  font: 700 13.5px var(--font-body);
+  color: var(--color-warning);
+}
+
+.aging-chip {
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 3px 10px;
+  color: #92400E;
+  background: #FEF3C7;
+
+  /* Over a month old = trouble — turns red */
+  &.overdue { color: #991B1B; background: #FEF2F2; }
+}
+
+.wa-nudge {
+  color: #16A34A;
+  &:hover:not(:disabled) { background: #F0FDF4; color: #15803D; }
+}

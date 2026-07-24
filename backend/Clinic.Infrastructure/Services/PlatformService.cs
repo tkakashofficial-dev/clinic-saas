@@ -210,8 +210,11 @@ public class PlatformService : IPlatformService
             ?? throw new NotFoundException("Clinic not found.");
 
         // When did the money actually arrive? Recording can lag the payment.
+        // SpecifyKind: the client sends a bare date (Kind=Unspecified) and
+        // Npgsql refuses to write that into timestamptz — every recording
+        // with a date filled in was a 500 without this
         var now = DateTime.UtcNow;
-        var paidAt = request.PaidAt ?? now;
+        var paidAt = DateTime.SpecifyKind(request.PaidAt ?? now, DateTimeKind.Utc);
         if (paidAt > now.AddDays(1))
             throw new BadRequestException("Payment date cannot be in the future.");
         if (paidAt < now.AddYears(-1))

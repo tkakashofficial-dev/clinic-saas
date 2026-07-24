@@ -68,7 +68,11 @@ export interface PatientDto {
   gender: string;
   dateOfBirth: string | null;
   age: number | null;
+  bloodGroup: string | null;
+  /** Display names ("Drug Allergy") — for chips and history. */
   medicalConditions: string[];
+  /** Stable codes ("DRUG_ALLERGY") — pre-tick the edit form. */
+  medicalConditionCodes: string[];
   registeredAt: string;
 }
 
@@ -80,7 +84,19 @@ export interface RegisterPatientRequest {
   address?: string | null;
   gender: string;
   dateOfBirth?: string | null;
+  bloodGroup?: string | null;
   medicalConditionCodes: string[];
+}
+
+export interface MedicalCondition {
+  name: string;
+  code: string;
+}
+
+export interface ImportResult {
+  imported: number;
+  skipped: number;
+  errors: { row: number; message: string }[];
 }
 
 export interface PatientHistory {
@@ -110,6 +126,9 @@ export interface UpdatePatientRequest {
   address?: string | null;
   gender: string;
   dateOfBirth?: string | null;
+  bloodGroup?: string | null;
+  /** Full replacement set — the service syncs the join table to match. */
+  medicalConditionCodes: string[];
 }
 
 // ---------- Appointments ----------
@@ -216,7 +235,7 @@ export interface RecordConsultationRequest {
 
 export interface NotificationDto {
   id: string;
-  type: 'Booking' | 'CheckIn' | 'Reminder' | 'Billing';
+  type: 'Booking' | 'CheckIn' | 'Reminder' | 'Billing' | 'Inventory';
   title: string;
   message: string;
   isRead: boolean;
@@ -290,6 +309,20 @@ export interface ClinicSettings {
   address: string | null;
   /** Which seeded intake-form design this clinic prints by default. */
   defaultIntakeTemplate: IntakeTemplate;
+  /** Clinic's own UPI ID — unlocks "Collect via UPI" QR on invoices. */
+  upiId: string | null;
+  /** Public booking handle — the page lives at /book/{slug}. */
+  slug: string | null;
+  publicBookingEnabled: boolean;
+}
+
+export interface UpdateClinicSettingsRequest {
+  name: string;
+  phone?: string | null;
+  address?: string | null;
+  defaultIntakeTemplate: IntakeTemplate;
+  upiId?: string | null;
+  publicBookingEnabled: boolean;
 }
 
 // ---------- Invoices (patient billing) ----------
@@ -336,6 +369,22 @@ export interface InvoiceStats {
   monthCollectedRupees: number;
   unpaidCount: number;
   unpaidTotalRupees: number;
+}
+
+export interface DuesReport {
+  totalOutstandingRupees: number;
+  patientsWithDues: number;
+  rows: PatientDues[];
+}
+
+export interface PatientDues {
+  patientId: string;
+  patientName: string;
+  patientPhone: string;
+  unpaidCount: number;
+  outstandingRupees: number;
+  /** How long the oldest bill has waited — the aging signal. */
+  oldestUnpaidAt: string;
 }
 
 // ---------- Forms (intake form builder) ----------
@@ -436,6 +485,32 @@ export interface PlatformEmailTestResult {
   sent: boolean;
   to: string;
   detail: string;
+}
+
+// ---------- Public booking (anonymous, /book/:slug) ----------
+
+export interface PublicClinic {
+  name: string;
+  address: string | null;
+  phone: string | null;
+  doctors: { id: string; name: string }[];
+}
+
+export interface PublicBookingRequest {
+  doctorId: string;
+  /** UTC ISO instant. */
+  appointmentAt: string;
+  patientName: string;
+  phone: string;
+  note?: string | null;
+  /** Honeypot — always empty for humans. */
+  website?: string;
+}
+
+export interface PublicBookingResult {
+  clinicName: string;
+  doctorName: string;
+  appointmentAt: string;
 }
 
 // ---------- Errors (RFC 7807) ----------

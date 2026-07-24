@@ -3,6 +3,8 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
+  ImportResult,
+  MedicalCondition,
   PagedResult,
   PatientDto,
   PatientHistory,
@@ -43,5 +45,20 @@ export class PatientsService {
       params: { template },
       responseType: 'blob',
     });
+  }
+
+  /** Seeded tick-box list (allergies, diabetes…) — static per deployment. */
+  getMedicalConditions(): Observable<MedicalCondition[]> {
+    return this.http.get<MedicalCondition[]>(`${this.baseUrl}/medical-conditions`);
+  }
+
+  exportCsv(): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/export.csv`, { responseType: 'blob' });
+  }
+
+  importCsv(file: File): Observable<ImportResult> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<ImportResult>(`${this.baseUrl}/import`, form);
   }
 }

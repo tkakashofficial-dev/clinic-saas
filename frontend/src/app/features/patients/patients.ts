@@ -1,7 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Subject, catchError, debounceTime, distinctUntilChanged, of, switchMap, tap } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { parseApiError } from '../../core/api/api-error';
 import { AppointmentsService } from '../../core/api/appointments.service';
@@ -10,9 +10,11 @@ import { PatientsService } from '../../core/api/patients.service';
 import { SettingsService } from '../../core/api/settings.service';
 import { AuthService } from '../../core/auth/auth.service';
 import {
+  ImportResult,
   IntakeFormResponse,
   IntakeFormSection,
   IntakeTemplate,
+  MedicalCondition,
   PagedResult,
   PatientDto,
   PatientHistory,
@@ -33,6 +35,8 @@ export class Patients {
 
   readonly loading = signal(true);
   readonly result = signal<PagedResult<PatientDto> | null>(null);
+  /** List-load failure — without it a dropped connection reads as "No patients yet". */
+  readonly error = signal('');
   readonly search = signal('');
   readonly page = signal(1);
 
@@ -42,6 +46,27 @@ export class Patients {
   readonly fieldErrors = signal<Record<string, string>>({});
   /** Non-null while editing an existing patient (drawer doubles as edit form). */
   readonly editing = signal<PatientDto | null>(null);
+
+  // ---- medical profile (blood group + condition tick-boxes) ----
+  readonly bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+  /** Seeded tick-box list, loaded once per session. */
+  readonly conditions = signal<MedicalCondition[]>([]);
+  /** Codes ticked in the open drawer. */
+  readonly checkedConditions = signal<Set<string>>(new Set());
+
+  toggleCondition(code: string): void {
+    this.checkedConditions.update((set) => {
+      const next = new Set(set);
+      if (next.has(code)) next.delete(code);
+      else next.add(code);
+      return next;
+    });
+  }
+
+  /** Conditions that must scream at the doctor, not whisper. */
+  isAlertCondition(name: string): boolean {
+    return /allerg|pregnan|cardiac/i.test(name);
+  }
 
   // ---- patient history drawer ----
   private readonly appointmentsApi = inject(AppointmentsService);
@@ -64,21 +89,35 @@ export class Patients {
   /** Which template is currently downloading ('dental' | 'general'), or null. */
   readonly downloadingForm = signal<string | null>(null);
 
+  /** Which patient the record drawer is showing — stale-response guard. */
+  private historyPatientId: string | null = null;
+
   openHistory(patient: PatientDto): void {
+    // Guard against the race: open A (slow), open B (fast) — A's response
+    // must NOT land in B's drawer, or staff could read (and via the intake
+    // fill, even SAVE) the wrong patient's medical record
+    this.historyPatientId = patient.id;
     this.historyOpen.set(true);
     this.historyLoading.set(true);
     this.history.set(null);
     this.latestFill.set(null);
     this.api.getHistory(patient.id).subscribe({
       next: (history) => {
+        if (this.historyPatientId !== patient.id) return;   // stale — drop it
         this.history.set(history);
         this.historyLoading.set(false);
       },
-      error: () => this.historyLoading.set(false),
+      error: () => {
+        if (this.historyPatientId !== patient.id) return;
+        this.historyLoading.set(false);
+      },
     });
     // In parallel: has this patient's form been filled digitally?
     this.formsApi.latestResponse(patient.id).subscribe({
-      next: (response) => this.latestFill.set(response),
+      next: (response) => {
+        if (this.historyPatientId !== patient.id) return;   // stale — drop it
+        this.latestFill.set(response);
+      },
       error: () => {},
     });
   }
@@ -241,6 +280,7 @@ export class Patients {
   }
 
   private readonly searchInput$ = new Subject<string>();
+  private readonly reload$ = new Subject<void>();
 
   readonly form = this.fb.nonNullable.group({
     firstName: ['', Validators.required],
@@ -250,6 +290,7 @@ export class Patients {
     address: [''],
     gender: ['Male', Validators.required],
     dateOfBirth: [''],
+    bloodGroup: [''],
   });
 
   constructor() {
@@ -263,10 +304,41 @@ export class Patients {
         this.load();
       });
 
+    // All list loads flow through switchMap so a newer request cancels the
+    // in-flight one — a slow stale response must never overwrite the results
+    // for what the search box currently says
+    this.reload$
+      .pipe(
+        tap(() => {
+          this.loading.set(true);
+          this.error.set('');
+        }),
+        switchMap(() =>
+          this.api.getAll(this.search(), this.page()).pipe(
+            // catch INSIDE switchMap — one failed request must not kill the stream
+            catchError((err) => {
+              this.error.set(parseApiError(err).message);
+              return of(null);
+            }),
+          ),
+        ),
+        takeUntilDestroyed(),
+      )
+      .subscribe((result) => {
+        if (result) this.result.set(result);
+        this.loading.set(false);
+      });
+
     // Clinic settings drive which intake template leads in the drawer
     if (!this.settingsApi.settings()) {
       this.settingsApi.get().subscribe({ error: () => {} });
     }
+
+    // The tick-box list is static per deployment — one fetch per session
+    this.api.getMedicalConditions().subscribe({
+      next: (conditions) => this.conditions.set(conditions),
+      error: () => {},
+    });
 
     this.load();
   }
@@ -276,14 +348,7 @@ export class Patients {
   }
 
   load(): void {
-    this.loading.set(true);
-    this.api.getAll(this.search(), this.page()).subscribe({
-      next: (result) => {
-        this.result.set(result);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
-    });
+    this.reload$.next();
   }
 
   goToPage(page: number): void {
@@ -294,6 +359,7 @@ export class Patients {
   openDrawer(): void {
     this.editing.set(null);
     this.form.reset({ gender: 'Male' });
+    this.checkedConditions.set(new Set());
     this.formError.set('');
     this.fieldErrors.set({});
     this.drawerOpen.set(true);
@@ -309,7 +375,9 @@ export class Patients {
       address: patient.address ?? '',
       gender: patient.gender,
       dateOfBirth: patient.dateOfBirth ?? '',
+      bloodGroup: patient.bloodGroup ?? '',
     });
+    this.checkedConditions.set(new Set(patient.medicalConditionCodes));
     this.formError.set('');
     this.fieldErrors.set({});
     this.drawerOpen.set(true);
@@ -338,12 +406,14 @@ export class Patients {
       address: value.address || null,
       gender: value.gender,
       dateOfBirth: value.dateOfBirth || null,
+      bloodGroup: value.bloodGroup || null,
+      medicalConditionCodes: [...this.checkedConditions()],
     };
 
     const editing = this.editing();
     const request = editing
       ? this.api.update(editing.id, payload)
-      : this.api.register({ ...payload, medicalConditionCodes: [] });
+      : this.api.register(payload);
 
     request
       .subscribe({
@@ -365,5 +435,60 @@ export class Patients {
     const c = this.form.get(control);
     if (c?.invalid && c.touched && c.errors?.['required']) return 'This field is required.';
     return this.fieldErrors()[control] ?? '';
+  }
+
+  // ---- CSV export / import (Admin) ----
+  readonly exporting = signal(false);
+  readonly importOpen = signal(false);
+  readonly importing = signal(false);
+  readonly importError = signal('');
+  readonly importResult = signal<ImportResult | null>(null);
+  importFile: File | null = null;
+
+  exportCsv(): void {
+    this.exporting.set(true);
+    this.api.exportCsv().subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `patients-${new Date().toISOString().slice(0, 10)}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+        this.exporting.set(false);
+      },
+      error: () => this.exporting.set(false),
+    });
+  }
+
+  openImport(): void {
+    this.importFile = null;
+    this.importError.set('');
+    this.importResult.set(null);
+    this.importOpen.set(true);
+  }
+
+  onImportFile(event: Event): void {
+    this.importFile = (event.target as HTMLInputElement).files?.[0] ?? null;
+    this.importError.set('');
+  }
+
+  runImport(): void {
+    const file = this.importFile;
+    if (!file) return;
+
+    this.importing.set(true);
+    this.importError.set('');
+    this.api.importCsv(file).subscribe({
+      next: (result) => {
+        this.importing.set(false);
+        this.importResult.set(result);
+        if (result.imported > 0) this.load();
+      },
+      error: (err) => {
+        this.importing.set(false);
+        this.importError.set(parseApiError(err).message);
+      },
+    });
   }
 }

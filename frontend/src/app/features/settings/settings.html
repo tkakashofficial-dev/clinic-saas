@@ -45,6 +45,53 @@
     </section>
 
     <section class="card card-pad settings-block">
+      <h2>Payments — UPI</h2>
+      <p class="muted block-sub">
+        Add your clinic's UPI ID and every unpaid invoice gets a
+        <strong>Collect via UPI</strong> QR — the patient scans, pays your
+        clinic directly, reception marks it paid. No gateway, no fees.
+      </p>
+      <div class="field">
+        <label for="s-upi">Clinic UPI ID <span class="opt">Optional</span></label>
+        <input id="s-upi" class="input" formControlName="upiId"
+               placeholder="smiledental@okaxis" autocomplete="off">
+      </div>
+    </section>
+
+    <section class="card card-pad settings-block">
+      <h2>Online booking</h2>
+      <p class="muted block-sub">
+        A public page where patients book themselves — share it on WhatsApp
+        status, your Google Business profile, or print the QR at reception.
+        Every booking pops up in your notifications.
+      </p>
+
+      <label class="booking-toggle">
+        <input type="checkbox" [checked]="bookingEnabled()"
+               (change)="bookingEnabled.set($any($event.target).checked)">
+        <span>Patients can book online</span>
+      </label>
+
+      @if (bookingEnabled() && bookingUrl(); as url) {
+        <div class="booking-share">
+          <div class="booking-link-row">
+            <a class="booking-link" [href]="url" target="_blank" rel="noopener">{{ url }}</a>
+            <button type="button" class="btn btn-secondary" (click)="copyBookingLink()">
+              {{ linkCopied() ? '✓ Copied' : 'Copy link' }}
+            </button>
+          </div>
+          <div class="booking-qr">
+            <app-qr-img [value]="url" [size]="140" alt="Booking page QR code" />
+            <p class="muted">Print this QR and stick it at the reception desk —
+              patients scan it to book their next visit.</p>
+          </div>
+        </div>
+      } @else if (bookingEnabled()) {
+        <p class="muted">Your booking link appears here after you save.</p>
+      }
+    </section>
+
+    <section class="card card-pad settings-block">
       <h2>Intake form</h2>
       <p class="muted block-sub">
         Templates, your own custom sections, and a live PDF preview all moved to

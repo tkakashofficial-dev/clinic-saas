@@ -74,3 +74,47 @@
   display: flex;
   justify-content: flex-end;
 }
+
+/* ---- Online booking share panel ---- */
+
+.booking-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 14px;
+
+  input { width: 18px; height: 18px; accent-color: var(--color-primary-500); }
+}
+
+.booking-share {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-input);
+  padding: 14px 16px;
+  background: var(--color-bg);
+}
+
+.booking-link-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.booking-link {
+  font: 600 13.5px var(--font-body);
+  color: var(--color-primary-700);
+  word-break: break-all;
+}
+
+.booking-qr {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  p { font-size: 12.5px; max-width: 320px; }
+
+  @media (max-width: 560px) { flex-direction: column; text-align: center; }
+}

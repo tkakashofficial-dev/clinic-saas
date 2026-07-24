@@ -6,6 +6,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { parseApiError } from '../../core/api/api-error';
 import { InvoicesService } from '../../core/api/invoices.service';
 import { PatientsService } from '../../core/api/patients.service';
+import { SettingsService } from '../../core/api/settings.service';
 import { AuthService } from '../../core/auth/auth.service';
 import {
   InvoiceDto,
@@ -14,6 +15,7 @@ import {
   PatientDto,
   PaymentMethod,
 } from '../../core/models/api.models';
+import { QrImg } from '../../shared/ui/qr-img';
 
 interface DraftItem {
   description: string;
@@ -28,13 +30,14 @@ interface DraftItem {
  */
 @Component({
   selector: 'app-invoices',
-  imports: [DatePipe, DecimalPipe, FormsModule],
+  imports: [DatePipe, DecimalPipe, FormsModule, QrImg],
   templateUrl: './invoices.html',
   styleUrl: './invoices.scss',
 })
 export class Invoices {
   private readonly api = inject(InvoicesService);
   private readonly patientsApi = inject(PatientsService);
+  private readonly settingsApi = inject(SettingsService);
   readonly auth = inject(AuthService);
 
   readonly statusFilters = ['All', 'Unpaid', 'Paid', 'Cancelled'];
@@ -84,6 +87,33 @@ export class Invoices {
 
     this.load();
     if (this.canManage()) this.loadStats();
+
+    // Clinic UPI id unlocks the "Collect via UPI" QR on unpaid invoices
+    if (!this.settingsApi.settings()) {
+      this.settingsApi.get().subscribe({ error: () => {} });
+    }
+  }
+
+  // ---- collect via UPI (zero-fee direct payment to the clinic) ----
+  readonly upiInvoice = signal<InvoiceDto | null>(null);
+
+  readonly clinicUpiId = computed(() => this.settingsApi.settings()?.upiId ?? null);
+
+  /** upi://pay deep link — any UPI app opens it with everything pre-filled. */
+  upiLink(invoice: InvoiceDto): string {
+    const upiId = this.clinicUpiId();
+    const clinic = this.settingsApi.settings()?.name ?? 'Clinic';
+    return 'upi://pay'
+      + `?pa=${encodeURIComponent(upiId ?? '')}`
+      + `&pn=${encodeURIComponent(clinic)}`
+      + `&am=${invoice.totalRupees}`
+      + '&cu=INR'
+      + `&tn=${encodeURIComponent(this.invoiceCode(invoice))}`;
+  }
+
+  markPaidFromUpi(invoice: InvoiceDto): void {
+    this.upiInvoice.set(null);
+    this.markPaid(invoice, 'Upi');
   }
 
   private blankItem(): DraftItem {

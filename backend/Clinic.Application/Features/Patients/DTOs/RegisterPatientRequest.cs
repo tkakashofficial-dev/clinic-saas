@@ -9,6 +9,7 @@ public class RegisterPatientRequest
     public string? Address { get; set; }
     public string Gender { get; set; } = default!;
     public DateOnly? DateOfBirth { get; set; }
+    public string? BloodGroup { get; set; }
 
     // List of medical condition codes the patient has
     // Example: ["DIABETES", "HYPERTENSION"]

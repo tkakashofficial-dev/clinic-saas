@@ -1,9 +1,10 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { parseApiError } from '../../core/api/api-error';
 import { SettingsService } from '../../core/api/settings.service';
 import { IntakeTemplate } from '../../core/models/api.models';
+import { QrImg } from '../../shared/ui/qr-img';
 
 interface TemplateOption {
   key: IntakeTemplate;
@@ -20,7 +21,7 @@ interface TemplateOption {
  */
 @Component({
   selector: 'app-settings',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, QrImg],
   templateUrl: './settings.html',
   styleUrl: './settings.scss',
 })
@@ -63,10 +64,20 @@ export class Settings {
   readonly notice = signal('');
   readonly selectedTemplate = signal<IntakeTemplate>('dental');
 
+  // ---- online booking + UPI ----
+  readonly bookingEnabled = signal(false);
+  readonly slug = signal<string | null>(null);
+  readonly linkCopied = signal(false);
+
+  /** The shareable patient-facing URL — WhatsApp status, Google profile… */
+  readonly bookingUrl = computed(() =>
+    this.slug() ? `${location.origin}/book/${this.slug()}` : null);
+
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(200)]],
     phone: ['' as string | null],
     address: ['' as string | null],
+    upiId: ['' as string | null],
   });
 
   constructor() {
@@ -76,14 +87,26 @@ export class Settings {
           name: settings.name,
           phone: settings.phone ?? '',
           address: settings.address ?? '',
+          upiId: settings.upiId ?? '',
         });
         this.selectedTemplate.set(settings.defaultIntakeTemplate);
+        this.bookingEnabled.set(settings.publicBookingEnabled);
+        this.slug.set(settings.slug);
         this.loading.set(false);
       },
       error: (err) => {
         this.error.set(parseApiError(err).message);
         this.loading.set(false);
       },
+    });
+  }
+
+  copyBookingLink(): void {
+    const url = this.bookingUrl();
+    if (!url) return;
+    navigator.clipboard.writeText(url).then(() => {
+      this.linkCopied.set(true);
+      setTimeout(() => this.linkCopied.set(false), 2000);
     });
   }
 
@@ -102,9 +125,14 @@ export class Settings {
       phone: value.phone || null,
       address: value.address || null,
       defaultIntakeTemplate: this.selectedTemplate(),
+      upiId: value.upiId || null,
+      publicBookingEnabled: this.bookingEnabled(),
+      // slug is server-minted and write-once; sent back only for the signal
+      slug: this.slug(),
     }).subscribe({
-      next: () => {
+      next: (settings) => {
         this.saving.set(false);
+        this.slug.set(settings.slug);
         this.notice.set('Settings saved — new PDFs use the updated details.');
       },
       error: (err) => {

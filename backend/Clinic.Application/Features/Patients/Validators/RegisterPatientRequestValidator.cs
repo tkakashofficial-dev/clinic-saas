@@ -1,4 +1,5 @@
 using Clinic.Application.Features.Patients.DTOs;
+using Clinic.Domain.Constants;
 using Clinic.Domain.Enums;
 using FluentValidation;
 
@@ -39,6 +40,11 @@ public class RegisterPatientRequestValidator : AbstractValidator<RegisterPatient
             .LessThanOrEqualTo(_ => DateOnly.FromDateTime(DateTime.UtcNow))
             .WithMessage("Date of birth cannot be in the future.")
             .When(x => x.DateOfBirth.HasValue);
+
+        RuleFor(x => x.BloodGroup)
+            .Must(bg => BloodGroups.IsValid(bg!))
+            .WithMessage($"Blood group must be one of: {string.Join(", ", BloodGroups.All)}.")
+            .When(x => !string.IsNullOrWhiteSpace(x.BloodGroup));
 
         RuleForEach(x => x.MedicalConditionCodes)
             .NotEmpty().WithMessage("Medical condition codes cannot be empty.");
