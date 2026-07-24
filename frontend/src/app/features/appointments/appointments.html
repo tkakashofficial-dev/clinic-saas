@@ -46,12 +46,14 @@
 
   @for (filter of statusFilters; track filter) {
     <button type="button" class="filter-chip" [class.active]="status() === filter"
+            [attr.aria-pressed]="status() === filter"
             (click)="setStatus(filter)">{{ filter === 'All' ? 'All' : statusLabel(filter) }}</button>
   }
 
   @if (auth.hasRole('Doctor', 'Admin')) {
     <span class="spacer"></span>
-    <button type="button" class="filter-chip" [class.active]="onlyMine()" (click)="toggleMine()">
+    <button type="button" class="filter-chip" [class.active]="onlyMine()"
+            [attr.aria-pressed]="onlyMine()" (click)="toggleMine()">
       My patients only
     </button>
   }

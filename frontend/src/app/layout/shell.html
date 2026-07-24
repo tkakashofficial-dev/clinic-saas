@@ -386,9 +386,12 @@
       } @else {
         @for (notification of notifItems(); track notification.id) {
           <div class="notif-row" [class.unread]="!notification.isRead">
-            <span class="notif-dot notif-{{ notification.type.toLowerCase() }}"></span>
+            <span class="notif-dot notif-{{ notification.type.toLowerCase() }}" aria-hidden="true"></span>
             <div class="notif-content">
-              <div class="notif-title">{{ notification.title }}</div>
+              <div class="notif-title">
+                @if (!notification.isRead) { <span class="sr-only">Unread — </span> }
+                {{ notification.title }}
+              </div>
               <div class="notif-message">{{ notification.message }}</div>
               <div class="notif-time">{{ notification.createdAt | date: 'd MMM, HH:mm' }}</div>
             </div>

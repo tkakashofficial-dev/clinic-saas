@@ -44,6 +44,7 @@
 <div class="toolbar">
   @for (filter of statusFilters; track filter) {
     <button type="button" class="filter-chip" [class.active]="status() === filter"
+            [attr.aria-pressed]="status() === filter"
             (click)="setStatus(filter)">{{ filter }}</button>
   }
 </div>
