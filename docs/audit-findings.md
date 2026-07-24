@@ -14,13 +14,17 @@ Recovered from the 89-agent audit (run wf_8d8adaf3). This file is the working li
 - Auth/forms: password pattern validators, Enter-to-continue on register, `type=tel` phone, cross-tab session sync, logout clears cached tenant state + stops polling, iOS-safe PDF download.
 - a11y: keyboard-reachable password toggle.
 
-**DEFERRED to a focused next-session batch (higher effort / lower visible risk):**
-- In-table menu + calendar-pop + custom-select + inventory-adjust popover clipping (needs position:fixed + getBoundingClientRect per component).
-- Android hardware-back closes overlays (history.pushState integration).
+**Batch 7–8 — also FIXED (5982717, 4c33b0c):**
+- reset-password / accept-invite: confirm-password feedback + expired-link "request new link" CTA + password pattern.
+- switchClinic error handling (no more stuck spinner); forms.ts error-clear + iOS-safe preview.
+- aria-pressed on appointments/invoices filter chips; notification unread sr-only marker.
+
+**STILL DEFERRED — needs a real browser/phone to verify (do with the app open):**
+- In-table menu + calendar-pop + custom-select + inventory-adjust popover clipping (position:fixed + getBoundingClientRect + flip-above logic — must be eyeballed).
+- Android hardware-back closes overlays (history.pushState integration — needs an Android device).
 - Full body scroll-lock while overlays open (partial: overscroll-behavior done).
-- reset-password / accept-invite: confirm-password feedback + expired-link "request new link" CTA.
-- Remaining ARIA: aria-pressed on all filter chips, aria-live on every alert, label associations on custom controls, segmented/select roving-tabindex + arrow keys, notification unread sr-only marker.
-- switchClinic error handler; forms.ts error-clear; legal page email (left as-is: taveperz@ was explicitly authorized as public contact).
+- Lower-value broad ARIA: aria-live on every alert, label associations on custom controls, segmented/select roving-tabindex + arrow keys.
+- legal page email left as-is: taveperz@ was explicitly authorized as public contact.
 
 The per-file list below is the full original backlog for reference.
 
