@@ -128,6 +128,13 @@ export class Invoices {
       pageSize: 10,
     }).subscribe({
       next: (result) => {
+        // Marking the last row of the last page paid/cancelled empties this
+        // page — step back so the user doesn't land on a false "no invoices"
+        if (result.items.length === 0 && this.page() > 1) {
+          this.page.set(Math.max(1, result.totalPages));
+          this.load();
+          return;
+        }
         this.result.set(result);
         this.loading.set(false);
       },

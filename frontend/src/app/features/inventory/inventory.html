@@ -89,7 +89,7 @@
               <td class="cell-main">
                 {{ item.name }}
                 @if (item.lowStock) {
-                  <span class="chip chip-cancelled" title="At or below the reorder level ({{ item.reorderLevel }} {{ item.unit }})">Low stock</span>
+                  <span class="chip chip-danger" title="At or below the reorder level ({{ item.reorderLevel }} {{ item.unit }})">Low stock</span>
                 }
                 @if (item.expiringSoon) {
                   <span class="chip chip-scheduled" title="Expires within 60 days">Expiring</span>

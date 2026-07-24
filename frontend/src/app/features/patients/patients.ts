@@ -128,8 +128,14 @@ export class Patients {
   readonly fillOpen = signal(false);
   readonly fillSaving = signal(false);
   readonly fillError = signal('');
-  readonly fillSections = signal<IntakeFormSection[]>([]);
-  fillTemplate: IntakeTemplate = 'dental';
+  /** All fetched sections; the visible list is derived by template below. */
+  private readonly allFillSections = signal<IntakeFormSection[]>([]);
+  readonly fillTemplate = signal<IntakeTemplate>('dental');
+  /** Re-filters instantly when the Dental/General chip flips — otherwise
+   *  answers were captured against the previously-selected template. */
+  readonly fillSections = computed(() =>
+    this.allFillSections().filter(
+      (s) => s.template === 'both' || s.template === this.fillTemplate()));
 
   readonly diseaseChecklist = [
     'Diabetic', 'Blood Pressure', 'Drug Allergies', 'Latex Allergy',
@@ -148,8 +154,8 @@ export class Patients {
 
   openFill(): void {
     const previous = this.latestFill();
-    this.fillTemplate = previous?.template
-      ?? this.settingsApi.settings()?.defaultIntakeTemplate ?? 'dental';
+    this.fillTemplate.set(previous?.template
+      ?? this.settingsApi.settings()?.defaultIntakeTemplate ?? 'dental');
 
     // Pre-load previous answers so staff UPDATE instead of retyping
     const answers = previous?.answers;
@@ -170,8 +176,7 @@ export class Patients {
     this.fillError.set('');
     this.fillOpen.set(true);
     this.formsApi.getSections().subscribe({
-      next: (sections) => this.fillSections.set(
-        sections.filter((s) => s.template === 'both' || s.template === this.fillTemplate)),
+      next: (sections) => this.allFillSections.set(sections),   // computed filters by template
       error: () => {},
     });
   }
@@ -202,7 +207,7 @@ export class Patients {
     this.fillSaving.set(true);
     this.fillError.set('');
 
-    this.formsApi.saveResponse(patient.id, this.fillTemplate, {
+    this.formsApi.saveResponse(patient.id, this.fillTemplate(), {
       diseaseChecklist: [...this.checkedDiseases],
       chiefComplaint: this.fillChiefComplaint.trim() || null,
       medicalHistory: this.fillMedicalHistory.trim() || null,

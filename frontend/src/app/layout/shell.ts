@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
@@ -219,6 +219,17 @@ export class Shell {
 
   toggleProfile(): void {
     this.profileOpen.update((open) => !open);
+  }
+
+  /** Escape closes the topmost overlay — nothing here dismissed on Escape before. */
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.installHelpOpen()) { this.installHelpOpen.set(false); return; }
+    if (this.moreOpen()) { this.moreOpen.set(false); return; }
+    if (this.newClinicOpen()) { this.newClinicOpen.set(false); return; }
+    if (this.notifOpen()) { this.notifOpen.set(false); return; }
+    if (this.profileOpen()) { this.profileOpen.set(false); return; }
+    if (this.switcherOpen()) { this.switcherOpen.set(false); return; }
   }
 
   // ---- PWA install ----

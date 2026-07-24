@@ -396,10 +396,12 @@
       <div class="field">
         <label>Template</label>
         <div style="display:flex; gap:8px;">
-          <button type="button" class="filter-chip" [class.active]="fillTemplate === 'dental'"
-                  (click)="fillTemplate = 'dental'">🦷 Dental</button>
-          <button type="button" class="filter-chip" [class.active]="fillTemplate === 'general'"
-                  (click)="fillTemplate = 'general'">🩺 General</button>
+          <button type="button" class="filter-chip" [class.active]="fillTemplate() === 'dental'"
+                  [attr.aria-pressed]="fillTemplate() === 'dental'"
+                  (click)="fillTemplate.set('dental')">🦷 Dental</button>
+          <button type="button" class="filter-chip" [class.active]="fillTemplate() === 'general'"
+                  [attr.aria-pressed]="fillTemplate() === 'general'"
+                  (click)="fillTemplate.set('general')">🩺 General</button>
         </div>
       </div>
 
@@ -429,7 +431,7 @@
       </div>
 
       <div class="field">
-        <label for="fd-sechist">{{ fillTemplate === 'dental' ? 'Dental history' : 'Surgical / family history' }}</label>
+        <label for="fd-sechist">{{ fillTemplate() === 'dental' ? 'Dental history' : 'Surgical / family history' }}</label>
         <textarea id="fd-sechist" class="input" rows="2" [(ngModel)]="fillSecondaryHistory"></textarea>
       </div>
 

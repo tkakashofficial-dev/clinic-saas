@@ -137,7 +137,7 @@
                 <div class="sub-cell">
                   @if (tenant.paidUntil) {
                     <span class="chip" [class.chip-completed]="!tenant.paymentOverdue"
-                          [class.chip-cancelled]="tenant.paymentOverdue">
+                          [class.chip-danger]="tenant.paymentOverdue">
                       {{ tenant.paymentOverdue ? 'Overdue since' : 'Paid until' }}
                       {{ tenant.paidUntil | date: 'd MMM y' }}
                     </span>
