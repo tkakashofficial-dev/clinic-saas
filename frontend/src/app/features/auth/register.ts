@@ -35,6 +35,12 @@ export class Register {
    */
   readonly step = signal<1 | 2>(1);
 
+  /** Enter key / form submit: advance on step 1, register on step 2. */
+  onSubmit(): void {
+    if (this.step() === 1) this.continueToClinic();
+    else this.submit();
+  }
+
   continueToClinic(): void {
     const account = ['firstName', 'lastName', 'email', 'password', 'confirmPassword'] as const;
     account.forEach((name) => this.form.controls[name].markAsTouched());
@@ -58,7 +64,10 @@ export class Register {
     firstName: ['', Validators.required],
     lastName: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(8)]],
+    // Mirror the backend rule (8+ chars incl. a letter AND a digit) so typos
+    // are caught before submit, not bounced by the API
+    password: ['', [Validators.required, Validators.minLength(8),
+      Validators.pattern(/^(?=.*[A-Za-z])(?=.*[0-9]).*$/)]],
     confirmPassword: ['', Validators.required],
     ownerIsDoctor: [true], // most small-clinic owners are the practicing doctor
   }, { validators: passwordsMatch });
@@ -98,6 +107,7 @@ export class Register {
       if (c.errors?.['required']) return 'This field is required.';
       if (c.errors?.['email']) return 'Enter a valid email address.';
       if (c.errors?.['minlength']) return 'At least 8 characters.';
+      if (c.errors?.['pattern']) return 'At least 8 characters, with a letter and a digit.';
     }
     return this.fieldErrors()[control] ?? '';
   }

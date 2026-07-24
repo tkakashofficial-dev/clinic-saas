@@ -47,7 +47,7 @@
         <div class="alert-error">{{ error() }}</div>
       }
 
-      <form [formGroup]="form" (ngSubmit)="submit()">
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
         @if (step() === 1) {
           <h2>Create your account</h2>
           <p class="sub">This is how you'll sign in — your clinic comes next.</p>
@@ -93,7 +93,7 @@
             }
           </div>
 
-          <button type="button" class="btn btn-primary" (click)="continueToClinic()">
+          <button type="submit" class="btn btn-primary">
             Continue →
           </button>
         } @else {

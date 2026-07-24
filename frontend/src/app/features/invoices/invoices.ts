@@ -209,10 +209,16 @@ export class Invoices {
   downloadPdf(invoice: InvoiceDto): void {
     this.api.pdf(invoice.id).subscribe({
       next: (blob) => {
+        // Anchor-download, not window.open in an async callback — iOS Safari's
+        // popup blocker kills the latter, so the receipt never appeared on iPhone
         const url = URL.createObjectURL(blob);
-        window.open(url, '_blank');
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${this.invoiceCode(invoice)}.pdf`;
+        link.click();
         setTimeout(() => URL.revokeObjectURL(url), 60_000);
       },
+      error: (err) => this.error.set(parseApiError(err).message),
     });
   }
 

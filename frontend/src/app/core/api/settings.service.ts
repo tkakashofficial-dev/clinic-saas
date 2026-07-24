@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { AuthService } from '../auth/auth.service';
 import { ClinicSettings } from '../models/api.models';
 
 /**
@@ -15,6 +16,11 @@ export class SettingsService {
   private readonly baseUrl = `${environment.apiUrl}/settings`;
 
   readonly settings = signal<ClinicSettings | null>(null);
+
+  constructor() {
+    // Wipe cached clinic settings on logout (shared-PC hygiene)
+    inject(AuthService).onLogout(() => this.settings.set(null));
+  }
 
   get(): Observable<ClinicSettings> {
     return this.http

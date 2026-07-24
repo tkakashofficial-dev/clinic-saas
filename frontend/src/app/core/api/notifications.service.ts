@@ -2,6 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { AuthService } from '../auth/auth.service';
 import { NotificationDto, PagedResult } from '../models/api.models';
 
 const POLL_INTERVAL_MS = 60_000;
@@ -15,6 +16,16 @@ export class NotificationsService {
   readonly unreadCount = signal(0);
 
   private pollHandle: ReturnType<typeof setInterval> | null = null;
+
+  constructor() {
+    // Stop the 60s poll and clear the badge on ANY logout — including a
+    // silent session-expiry from the interceptor, where the shell's own
+    // stopPolling() never runs
+    inject(AuthService).onLogout(() => {
+      this.stopPolling();
+      this.unreadCount.set(0);
+    });
+  }
 
   startPolling(): void {
     if (this.pollHandle !== null) return;

@@ -25,6 +25,15 @@ export class AuthService {
 
   private readonly _session = signal<AuthResponse | null>(readStoredSession());
 
+  constructor() {
+    // Keep tabs in sync: when one tab rotates its tokens (or logs out), the
+    // others pick up the change instead of holding a now-dead refresh token
+    // and force-logging the user out on their next request.
+    window.addEventListener('storage', (event) => {
+      if (event.key === STORAGE_KEY) this._session.set(readStoredSession());
+    });
+  }
+
   readonly session = this._session.asReadonly();
   readonly isLoggedIn = computed(() => this._session() !== null);
   readonly role = computed<Role | null>(() => this._session()?.role ?? null);
@@ -98,9 +107,20 @@ export class AuthService {
     return this.refreshInFlight$;
   }
 
+  /** Callbacks that wipe tenant-scoped cached state on logout. Services
+   *  register themselves so AuthService needn't import each feature service
+   *  (and risk a DI cycle). Without this, the next user on a shared reception
+   *  PC saw the previous clinic's trial banner, settings and unread badge. */
+  private readonly resetHooks = new Set<() => void>();
+
+  onLogout(reset: () => void): void {
+    this.resetHooks.add(reset);
+  }
+
   logout(): void {
     localStorage.removeItem(STORAGE_KEY);
     this._session.set(null);
+    this.resetHooks.forEach((reset) => reset());
     void this.router.navigate(['/login']);
   }
 
